@@ -1,0 +1,36 @@
+{% include header.html %}
+	<!--[if lte IE 8]>
+	    <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
+	<![endif]-->
+	<!--[if gt IE 8]><!-->
+	    <link rel="stylesheet" href="{{ site.assets }}css/layouts/marketing.css">
+	<!--<![endif]-->
+
+
+</head>
+<body>
+<div class="header">
+    <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
+
+			<a class="home-menu pure-menu-heading-image" href="http://illinois.edu"><img class="pure-img" src="{{ site.assets }}img/common/bold38.gif"></a>
+
+			<a class="pure-menu-heading" href="{{ site.url }}">{{ site.title }}</a>
+
+      <ul class="pure-menu-list">
+        	{% capture location %}{{ page.url }}{% endcapture %}
+            {% for page in site.pages reversed %}
+			<li class="home-menu pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url }}" class="pure-menu-link">{{ page.title }}</a></li>
+			{% endfor %}
+			<li class="home-menu pure-menu-item"><a class="pure-menu-link" href="http://mrfil.github.io">Other Projects</a></li>
+
+			<li class="home-menu pure-menu-item"><a class="pure-menu-link" href="http://mrfil.bioen.illinois.edu">About MRFIL</a></li>
+
+			<li class="home-menu pure-menu-item"><a class="github-button pure-menu-link" href="https://github.com/mrfil/PowerGrid" data-icon="octicon-star" data-style="mega"  aria-label="Star mrfil/PowerGrid on GitHub">Star</a></li>
+
+			<li class="home-menu pure-menu-item"><a class="github-button pure-menu-link" href="https://github.com/mrfil/PowerGrid/fork" data-icon="octicon-git-branch" data-style="mega" aria-label="Fork mrfil/PowerGrid on GitHub">Fork</a></li>
+
+			<li class="home-menu pure-menu-item"><a class="github-button pure-menu-link" href="https://github.com/mrfil/PowerGrid/archive/master.zip" data-icon="octicon-cloud-download" data-style="mega" aria-label="Download mrfil/PowerGrid on GitHub">Download</a></li>
+
+      </ul>
+    </div>
+</div>
