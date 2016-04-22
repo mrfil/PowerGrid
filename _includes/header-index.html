@@ -17,7 +17,7 @@
 			<a class="pure-menu-heading" href="{{ site.github.url }}">{{ site.title }}</a>
 
       <ul class="pure-menu-list">
-        	{% capture location %}{{ page.url }}{% endcapture %}
+        	{% capture location %}{{ page.url | prepend: site.github.url }}{% endcapture %}
             {% for page in site.pages reversed %}
 			<li class="home-menu pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url }}" class="pure-menu-link">{{ page.title }}</a></li>
 			{% endfor %}

@@ -15,7 +15,7 @@
                 {% endif %}
             {% endfor %}
 
-            {% capture location %}{{ page.url }}{% endcapture %}
+            {% capture location %}{{ page.url | prepend: site.github.url }}{% endcapture %}
 
             <ul class="pure-menu-list">
                 {% for post in site.categories[page.category] reversed  %}
