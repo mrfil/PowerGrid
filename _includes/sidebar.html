@@ -11,11 +11,11 @@
           </ul>
             {% for category in site.data.categories %}
                 {% if page.category %}
-                    <a class="pure-menu-heading" href="{{ site.github.url }}/{{ page.category }}">{% if category.slug == page.category %}{{ category.name }}{% endif %}</a>
+                    <a class="pure-menu-heading" href="{{ site.github.url }}/PowerGrid/{{ page.category }}">{% if category.slug == page.category %}{{ category.name }}{% endif %}</a>
                 {% endif %}
             {% endfor %}
 
-            {% capture location %}{{ page.url | prepend: site.github.url }}{% endcapture %}
+            {% capture location %}{{ page.url | prepend: site.github.url }}/PowerGrid/{% endcapture %}
 
             <ul class="pure-menu-list">
                 {% for post in site.categories[page.category] reversed  %}
