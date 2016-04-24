@@ -10,7 +10,7 @@ data_dir: ./_data
 title: 'PowerGrid'
 tagline: 'Develop Iterative MR Image Reconstructions and Run Anywhere'
 description: 'PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.'
-baseurl: /PowerGrid
+base-url: /PowerGrid
 
 #Collections for Documentation
 collections:
