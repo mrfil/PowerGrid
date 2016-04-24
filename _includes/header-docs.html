@@ -3,7 +3,9 @@
 	    <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
 	<![endif]-->
 	<!--[if gt IE 8]><!-->
-	    <link rel="stylesheet" href="{{ site.github.url }}/assets/css/layouts/marketing.css">
+	    <!--<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/layouts/marketing.css">-->
+			<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/layouts/side-menu.css">
+
 	<!--<![endif]-->
 
 
@@ -13,9 +15,9 @@
     <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
 
       <ul class="pure-menu-list">
-        	{% capture location %}{{ page.url | prepend: site.github.url }}{% endcapture %}
+        	{% capture location %}{{ page.url }}{% endcapture %}
             {% for page in site.pages reversed %}
-			<li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url | prepend: site.github.url }}" class="pure-menu-link">{{ page.title }}</a></li>
+			<li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url | prepend: site.baseurl }}" class="pure-menu-link">{{ page.title }}</a></li>
 			{% endfor %}
 			<li class="pure-menu-item"><a class="pure-menu-link" href="http://mrfil.github.io">Other Projects</a></li>
 

@@ -1,2 +1,4 @@
+- name: Install
+  slug: install
 - name: Documentation
   slug: docs

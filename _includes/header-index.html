@@ -3,7 +3,7 @@
 	    <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
 	<![endif]-->
 	<!--[if gt IE 8]><!-->
-	    <link rel="stylesheet" href="{{ site.github.url }}/assets/css/layouts/marketing.css">
+	    <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/layouts/marketing.css">
 	<!--<![endif]-->
 
 
@@ -12,14 +12,14 @@
 <div class="header">
     <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
 
-			<a class="home-menu pure-menu-heading-image" href="http://illinois.edu"><img class="pure-img" src="{{ site.github.url }}/assets/img/common/bold38.gif"></a>
+			<a class="home-menu pure-menu-heading-image" href="http://illinois.edu"><img class="pure-img" src="/assets/img/common/bold38.gif"></a>
 
-			<a class="pure-menu-heading" href="{{ site.github.url }}">{{ site.title }}</a>
+			<a class="pure-menu-heading" href="">{{ site.title }}</a>
 
       <ul class="pure-menu-list">
-        	{% capture location %}{{ page.url | prepend: site.github.url }}{% endcapture %}
+        	{% capture location %}{{ page.url }}{% endcapture %}
             {% for page in site.pages reversed %}
-			<li class="home-menu pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url | prepend: site.github.url }}" class="pure-menu-link">{{ page.title }}</a></li>
+			<li class="home-menu pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url }}" class="pure-menu-link">{{ page.title }}</a></li>
 			{% endfor %}
 			<li class="home-menu pure-menu-item"><a class="pure-menu-link" href="http://mrfil.github.io">Other Projects</a></li>
 

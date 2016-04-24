@@ -1,17 +1,17 @@
 # Where Things Are
 source: .
 destination: ./_site
-plugins: ./_plugins
-layouts: ./_layouts
-data_source: ./_data
+plugins_dir: ./_plugins
+layouts_dir: ./_layouts
+data_dir: ./_data
 collections: null
 
 ## Setup
 title: 'PowerGrid'
 tagline: 'Develop Iterative MR Image Reconstructions and Run Anywhere'
 description: 'PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.'
-url: http://mrfil.github.io/PowerGrid/
-assets: http://mrfil.github.io/PowerGrid/assets/
+baseurl: /PowerGrid
+
 
 # Handling Reading
 safe:         false
@@ -29,7 +29,7 @@ unpublished: false
 
 # Plugins
 whitelist: []
-gems:      []
+gems: [jekyll-paginate]
 
 # Conversion
 markdown:    kramdown
@@ -66,11 +66,3 @@ kramdown:
   toc_levels:     1..6
   smart_quotes:   lsquo,rsquo,ldquo,rdquo
   enable_coderay: false
-
-  coderay:
-    coderay_wrap:              div
-    coderay_line_numbers:      inline
-    coderay_line_number_start: 1
-    coderay_tab_width:         4
-    coderay_bold_every:        10
-    coderay_css:               style

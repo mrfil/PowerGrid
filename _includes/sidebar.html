@@ -7,20 +7,20 @@
     <div id="menu">
         <div class="pure-menu">
           <ul class="pure-menu-list">
-              <li class="pure-menu-item menu-item-divided"><a href="{{ site.github.url }}" class="pure-menu-link">{{ site.title }}</a></li>
+              <li class="pure-menu-item menu-item-divided"><a href="{{ site.baseurl }}" class="pure-menu-link">{{ site.title }}</a></li>
           </ul>
             {% for category in site.data.categories %}
                 {% if page.category %}
-                    <a class="pure-menu-heading" href="{{ site.github.url }}/PowerGrid/{{ page.category }}">{% if category.slug == page.category %}{{ category.name }}{% endif %}</a>
+                    <a class="pure-menu-heading" href="{{ site.baseurl }}{{ page.category }}">{% if category.slug == page.category %}{{ category.name }}{% endif %}</a>
                 {% endif %}
             {% endfor %}
 
-            {% capture location %}{{ page.url | prepend: "/PowerGrid" | prepend: site.github.url }}{% endcapture %}
+            {% capture location %}{{ page.url | prepend: {{ site.baseurl }} }}{% endcapture %}
 
             <ul class="pure-menu-list">
                 {% for post in site.categories[page.category] reversed  %}
 
-                    <li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="/PowerGrid{{ post.url }}" class="pure-menu-link">{{ post.title }}</a></li>
+                    <li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ site.baseurl }}{{ post.url }}" class="pure-menu-link">{{ post.title }}</a></li>
 
                 {% endfor %}
 
