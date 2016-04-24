@@ -1,8 +1,8 @@
 ---
 layout: project
-title: Documentation
-category: docs
-permalink: docs/
+title: Install
+category: install
+permalink: install/
 excerpt: Getting Started
 ---
 

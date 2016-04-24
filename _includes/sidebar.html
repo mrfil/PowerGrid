@@ -6,25 +6,29 @@
 
     <div id="menu">
         <div class="pure-menu">
-          <ul class="pure-menu-list">
-              <li class="pure-menu-item menu-item-divided"><a href="{{ site.baseurl }}" class="pure-menu-link">{{ site.title }}</a></li>
-          </ul>
-            {% for category in site.data.categories %}
-                {% if page.category %}
-                    <a class="pure-menu-heading" href="{{ site.baseurl }}{{ page.category }}">{% if category.slug == page.category %}{{ category.name }}{% endif %}</a>
-                {% endif %}
-            {% endfor %}
-
-            {% capture location %}{{ page.url | prepend: {{ site.baseurl }} }}{% endcapture %}
-
             <ul class="pure-menu-list">
-                {% for post in site.categories[page.category] reversed  %}
-
-                    <li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ site.baseurl }}{{ post.url }}" class="pure-menu-link">{{ post.title }}</a></li>
-
-                {% endfor %}
-
+                <li class="pure-menu-item menu-item-divided"><a class="pure-menu-item" href="{{ site.github.url }}{{ site.baseurl }}" >{{ site.title }}</a></li>
             </ul>
+              {% for category in site.data.categories %}
+                {% for pag in site.pages %}
+                  {% if pag.category == category.slug %}
+                    <a class="pure-menu-heading" href="{{ site.baseurl }}/{{ pag.category }}">{{ category.name }}</a>
+                  {% endif %}
+
+                  {% capture location %}{{ pag.url }}{% endcapture %}
+
+                  {% if pag.category == category.slug %}
+                    <ul class="pure-menu-list">
+                    {% assign documents = site.docs | sort: 'order_page' %}
+                    {% for doc in documents %}
+                        {% if doc.category == category.slug %}
+                          <li class="pure-menu-item {% if location == doc.url %}pure-menu-selected{% endif %}"><a href="{{ doc.url }}" class="pure-menu-link">{{ doc.title }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
 
         </div>
     </div>

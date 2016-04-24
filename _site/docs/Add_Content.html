@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.">
 
-  	<title>PowerGrid - docs - Documentation</title>
+  	<title>PowerGrid - docs - Add Content</title>
 
 	<!-- Pure.css -->
 	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
@@ -44,7 +44,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.">
 
-  	<title>PowerGrid - docs - Documentation</title>
+  	<title>PowerGrid - docs - Add Content</title>
 
 	<!-- Pure.css -->
 	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
@@ -208,36 +208,45 @@
     <div id="main">
 
         <div class="header">
-            <h1>Documentation</h1>
-            <h2>Getting Started</h2>
+            <h1>Add Content</h1>
+            <h2><h2 class="content-subhead" id="add-project">Add project</h2>
+
+</h2>
         </div>
 
         <div class="content">
-            <h1 class="content-subhead" id="algomash">Algomash</h1>
+            <h2 class="content-subhead" id="add-project">Add project</h2>
 
-<p>Wanna write a documentation website for your project… And feeling dull to install and create a lot of pages and configure settings and servers… in (you guessed it) WordPress or some Wiki software?</p>
-
-<p>Let’s mash that all up, I’ve a better and easier solution for you! It just requires you to have… guess what? Some knowledge of HTML &amp; CSS, or may be JavaScript so that you can customize the front-end with what you want!</p>
-
-<p>And interestingly, you’ll have to maintain only the files that really belong of your documentation… What do I mean? Seen those folders… wp-includes, wp-admin… with a lot of functions you don’t know whither they come? Ufff!</p>
-
-<h2 class="content-subhead" id="whos-algomash-for">Who’s Algomash for?</h2>
-
-<p>If you’re developing a project like… umm… let’s write in bullets:</p>
+<p>Follow the instructions to add a new project:</p>
 
 <ul>
-  <li>Your project - in fact documentation needs lesser features, in fact, just text.</li>
-  <li>You’re willing to configure a few things in your code editor.</li>
-  <li>You’re happy to write some CSS or shift some HTML classes so that you get a look you want.</li>
+  <li>Go to <code class="highlighter-rouge">_data &gt; categories.yml</code>. Remove the default <code class="highlighter-rouge">docs</code> and add your project instead.</li>
+  <li>If you’re having single project, you probably would like to use something generic like <code class="highlighter-rouge">documentation</code> or <code class="highlighter-rouge">docs</code>.</li>
+  <li>If you’re making multiple projects, you can use project name.</li>
 </ul>
 
-<h2 class="content-subhead" id="whos-algomash-not-for">Who’s Algomash NOT for?</h2>
+<p>Now you need to create a project page. To do that:</p>
 
 <ul>
-  <li>For developers coding a CMS</li>
-  <li>For developers coding an OS</li>
-  <li>If you want Wiki specific features.</li>
+  <li>Go to <code class="highlighter-rouge">projects</code> folder and add a new file with the project slug as file name. You can use .md as extension if you’re using Markdown, .textile if you’re using Textile, or .html if you want to write raw html.</li>
+  <li>Add the metadata into that file. Copy the meta information from header of default <code class="highlighter-rouge">docs.md</code> and modify the information.<br />
+<strong>layout</strong>: project<br />
+<strong>title</strong>: Project Name<br />
+<strong>category</strong>: Project Slug as in <code class="highlighter-rouge">categories.yml</code>.<br />
+<strong>permalink</strong>: Project Slug with a forward slash.</li>
 </ul>
+
+<h2 class="content-subhead" id="add-post">Add post</h2>
+
+<p>Now you’re ready to write the documentation. Add a new file in <code class="highlighter-rouge">_posts</code> folder. File name structure must start with the date. The name after date would be used as slug.</p>
+
+<p>Add metadata to the post. Copy the meta information from sample pages. Probably you know now what to do with it.</p>
+
+<p>Read more about <a href="http://jekyllrb.com/docs/posts/">writing posts on Jekyll documentation</a>.</p>
+
+<h2 class="content-subhead" id="edit-homepage">Edit Homepage</h2>
+
+<p>I’ve written index.html in HTML so that you can customize it however you wish!</p>
 
         </div>
 

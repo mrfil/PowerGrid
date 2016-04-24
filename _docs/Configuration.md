@@ -1,8 +1,8 @@
 ---
-layout: post
+layout: project
 title: Configuration
 category: docs
-excerpt: Configure Algomash to make it yours
+order_page: 2
 ---
 
 ## Algomash is easy to configure
@@ -15,18 +15,17 @@ Once you've downloaded the Algomash, unzip it into the directory you would like 
 
 You can rename the directory to anything. Instead of `algomash-jekyll` you can use `my-cool-project` or anything you like.
 
-## congif.yml
+## config.yml
 {: .content-subhead }
 
 Open `config.yml` file from the folder into a code editor. You can also drag the folder into a code editor, as it'll be easier to work with.
 
-In this file under the `## Setup` (line 9), you'll find 5 settings. That's all you need to configure.
+In this file under the `## Setup` (line 9), you'll find 4 settings. That's all you need to configure.
 
 * **title**: Change it to your site's title. You can use your project name if you wish.
 * **tagline**: Change it to your site's tagline. A one line description would be sufficient.
 * **description**: Change it to your site's description. This text is used in meta description tag in page header.
-* **url**: Change this to your site URL. If you're developing locally on your machine for now, use **http://localhost:4000** as this is where Jekyll will run the server.
-* **assets**: By default, Algomash uses a folder with name `assets` where all the resources like CSS, JS and images are stored in respective directories. You can rename the folder to something else, like `data` if you want. Also, update the site URL here too.
+* **baseurl**: Change this to your site URL. If you're developing locally on your machine for now, leave this blank as this is where Jekyll will run the server. If you are using GitHub Pages to host a project page, set baseurl to /projectname and leave blank for organization pages.
 
 ## Add Google Analytics Code
 {: .content-subhead }
@@ -39,8 +38,8 @@ You can add Google Analytics tracking code in `_includes/google-analytics.html` 
 Now with the basic configurations done, start the Jekyll server. You can do this by:
 
 * Open a Command Prompt or Terminal.
-* Navigate in your site directory like `Documents\Codes\my-cool-project`.
-* Run the command: `jekyll serve`.
+* Navigate in your site directory like `Documents\Code\my-cool-project`.
+* Run the command: `bundle exec jekyll serve`.
 * Open a web browser and navigate to **http://localhost:4000**.
 
 See the Algomash site? Cool! Now what? Add the content, customize the CSS and host it somewhere.

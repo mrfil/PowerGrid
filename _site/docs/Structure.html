@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.">
 
-  	<title>PowerGrid - docs - Documentation</title>
+  	<title>PowerGrid - docs - Structure</title>
 
 	<!-- Pure.css -->
 	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
@@ -44,7 +44,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="PowerGrid is an open source toolkit for MR Image reconstructions using GPUs and distributed memory.">
 
-  	<title>PowerGrid - docs - Documentation</title>
+  	<title>PowerGrid - docs - Structure</title>
 
 	<!-- Pure.css -->
 	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
@@ -208,36 +208,53 @@
     <div id="main">
 
         <div class="header">
-            <h1>Documentation</h1>
-            <h2>Getting Started</h2>
+            <h1>Structure</h1>
+            <h2><p>Algomash uses Jekyll and hence uses the defined directory structure.</p>
+
+</h2>
         </div>
 
         <div class="content">
-            <h1 class="content-subhead" id="algomash">Algomash</h1>
+            <p>Algomash uses Jekyll and hence uses the defined directory structure.</p>
 
-<p>Wanna write a documentation website for your project… And feeling dull to install and create a lot of pages and configure settings and servers… in (you guessed it) WordPress or some Wiki software?</p>
+<h2 class="content-subhead" id="data">_data</h2>
 
-<p>Let’s mash that all up, I’ve a better and easier solution for you! It just requires you to have… guess what? Some knowledge of HTML &amp; CSS, or may be JavaScript so that you can customize the front-end with what you want!</p>
+<p>This folder contains extra site data like categories and tags. The data can be accessed by <code class="highlighter-rouge">site.data</code> variable.</p>
 
-<p>And interestingly, you’ll have to maintain only the files that really belong of your documentation… What do I mean? Seen those folders… wp-includes, wp-admin… with a lot of functions you don’t know whither they come? Ufff!</p>
+<p>In Algomash, this folder contains a file called <code class="highlighter-rouge">categories.yml</code>. While adding content, you must add the name of your project and URL slug into this file.</p>
 
-<h2 class="content-subhead" id="whos-algomash-for">Who’s Algomash for?</h2>
+<h2 class="content-subhead" id="includes">_includes</h2>
 
-<p>If you’re developing a project like… umm… let’s write in bullets:</p>
+<p>If you’ve worked on a backend language like PHP, you know them! These ae separate parts of a webpage - common to all page usually - that we’re including in our layouts like headers, footers.</p>
 
-<ul>
-  <li>Your project - in fact documentation needs lesser features, in fact, just text.</li>
-  <li>You’re willing to configure a few things in your code editor.</li>
-  <li>You’re happy to write some CSS or shift some HTML classes so that you get a look you want.</li>
-</ul>
+<h2 class="content-subhead" id="layouts">_layouts</h2>
 
-<h2 class="content-subhead" id="whos-algomash-not-for">Who’s Algomash NOT for?</h2>
+<p>Algomash uses 3 types of Jekyll layouts. If you’ve worked on some CMS like WordPress, then they’re like Post Formats, where you can customize different post formats.</p>
 
-<ul>
-  <li>For developers coding a CMS</li>
-  <li>For developers coding an OS</li>
-  <li>If you want Wiki specific features.</li>
-</ul>
+<p>There are 3 post types in Algomash, Page, Post and Project. Algomash uses
+* Page for Index page
+* Posts for the documentation
+* Project for the first page of project’s documentation.</p>
+
+<p>If you want to create more pages, different from the index page layout, you can copy the <code class="highlighter-rouge">page.md</code> file in a separate file like <code class="highlighter-rouge">index.md</code>. Then open <code class="highlighter-rouge">index.html</code> in the root directory and change layout to <code class="highlighter-rouge">index</code>.</p>
+
+<h2 class="content-subhead" id="docs">_docs</h2>
+
+<p>These are the documentation pages for your project(s). The page you’re currently reading is also saved there. Ordering within a category is controlled by the order_page in the front matter YAML in the doc markdown files.</p>
+
+<h2 class="content-subhead" id="site">_site</h2>
+
+<p>While you won’t get this folder in the package, you’ll find it in the folder when you build the site using <code class="highlighter-rouge">bundle exec jekyll build</code> or <code class="highlighter-rouge">bundle exec jekyll serve</code>. This is the folder from where your website is served.</p>
+
+<h2 class="content-subhead" id="assets">assets</h2>
+
+<p>This folder contains CSS, JS and images.</p>
+
+<h2 class="content-subhead" id="projects">projects</h2>
+
+<p>The subdivider pages of your documenatation will be saved here. Name these the same as the slugs of your categories. They will be displayed in the side bar in the order they are listed in _data/categories.yml.</p>
+
+<p>This is a very basic overview of these folders. I recommend that you read <a href="http://jekyllrb.com/docs/structure/">Jekyll documentation</a> to understand Jekyll better. It’s very easy and powerful.</p>
 
         </div>
 

@@ -1,8 +1,8 @@
 ---
-layout: post
+layout: project
 title: Add Content
 category: docs
-excerpt: Adding documentation
+order_page: 2
 ---
 
 ## Add project
@@ -12,11 +12,11 @@ Follow the instructions to add a new project:
 
 * Go to `_data > categories.yml`. Remove the default `docs` and add your project instead.
 * If you're having single project, you probably would like to use something generic like `documentation` or `docs`.
-* If you're maving multiple projects, you can use project name.
+* If you're making multiple projects, you can use project name.
 
 Now you need to create a project page. To do that:
 
-* Go to `projects` folder and add a new file with the project slug as file name. You can use .md as extension if you're using Markdown, .textile if you're using Textile, or .html if you want to write raw html. 
+* Go to `projects` folder and add a new file with the project slug as file name. You can use .md as extension if you're using Markdown, .textile if you're using Textile, or .html if you want to write raw html.
 * Add the metadata into that file. Copy the meta information from header of default `docs.md` and modify the information.  
 **layout**: project  
 **title**: Project Name  
