@@ -12,7 +12,7 @@
               {% for category in site.data.categories %}
                 {% for pag in site.pages %}
                   {% if pag.category == category.slug %}
-                    <a class="pure-menu-heading" href="{{ site.baseurl }}/{{ pag.category }}">{{ category.name }}</a>
+                    <a class="pure-menu-heading" href="{{ site.github.url }}{{ site.baseurl }}/{{ pag.category }}">{{ category.name }}</a>
                   {% endif %}
 
                   {% capture location %}{{ pag.url }}{% endcapture %}
@@ -22,7 +22,7 @@
                     {% assign documents = site.docs | sort: 'order_page' %}
                     {% for doc in documents %}
                         {% if doc.category == category.slug %}
-                          <li class="pure-menu-item {% if location == doc.url %}pure-menu-selected{% endif %}"><a href="{{ doc.url }}" class="pure-menu-link">{{ doc.title }}</a></li>
+                          <li class="pure-menu-item {% if location == doc.url %}pure-menu-selected{% endif %}"><a href="{{ site.github.url }}{{ site.baseurl }}{{ doc.url }}" class="pure-menu-link">{{ doc.title }}</a></li>
                         {% endif %}
                     {% endfor %}
                     </ul>

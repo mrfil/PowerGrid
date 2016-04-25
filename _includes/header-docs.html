@@ -15,10 +15,8 @@
     <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
 
       <ul class="pure-menu-list">
-        	{% capture location %}{{ page.url }}{% endcapture %}
-            {% for page in site.pages reversed %}
-			<li class="pure-menu-item {% if location == post.url %}pure-menu-selected{% endif %}"><a href="{{ page.url | prepend: site.baseurl }}" class="pure-menu-link">{{ page.title }}</a></li>
-			{% endfor %}
+			<li class="pure-menu-item"><a class="pure-menu-link" href="{{ site.github.url }}{{ site.baseurl }}/">Home</a></li>
+
 			<li class="pure-menu-item"><a class="pure-menu-link" href="http://mrfil.github.io">Other Projects</a></li>
 
 			<li class="pure-menu-item"><a class="pure-menu-link" href="http://mrfil.bioen.illinois.edu">About MRFIL</a></li>
