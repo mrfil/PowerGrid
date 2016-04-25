@@ -21,7 +21,7 @@ collections:
 
 # Handling Reading
 safe:         false
-include:      [".htaccess", "_projects"]
+include:      [".htaccess"]
 exclude:      ["README.md"]
 keep_files:   [".git", ".svn"]
 encoding:     "utf-8"

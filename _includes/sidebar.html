@@ -11,11 +11,9 @@
             </ul>
               {% for category in site.data.categories %}
                 {% for pag in site.pages %}
-                 {% for cat in pag.categories %}
-                   {% if cat.slug == category.slug %}
+                   {% if pag.category == category.slug %}
                      <a class="pure-menu-heading" href="{{ site.github.url }}{{ site.baseurl }}/{{ pag.category }}">{{ category.name }}</a>
                    {% endif %}
-                 {% endfor %}
                  {% capture location %}{{ pag.url }}{% endcapture %}
 
                   {% if pag.category == category.slug %}

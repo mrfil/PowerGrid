@@ -24,5 +24,3 @@ Clone the PowerGrid repository and Vagrant up
   vagrant up
 
   vagrant ssh
-
-  
