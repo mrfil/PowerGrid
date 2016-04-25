@@ -10,7 +10,7 @@
                 <li class="pure-menu-item menu-item-divided"><a class="pure-menu-item" href="{{ site.github.url }}{{ site.baseurl }}/"><img style="padding: 0px 13px 0px 0px; vertical-align: middle;" href="http://www.illinois.edu/" src="{{ site.github.url }}{{ site.baseurl }}/assets/img/common/bold26.gif">{{ site.title }}</a></li>
             </ul>
               {% for category in site.data.categories %}
-                {% for pag in site.pages %}
+                {% for pag in site.projects %}
                   {% if pag.category == category.slug %}
                     <a class="pure-menu-heading" href="{{ site.github.url }}{{ site.baseurl }}/{{ pag.category }}">{{ category.name }}</a>
                   {% endif %}
