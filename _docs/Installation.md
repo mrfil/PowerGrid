@@ -5,29 +5,49 @@ category: install
 order_page: 1
 ---
 
-## Install Jekyll
+## Building PowerGrid
 {: .content-subhead }
 
-Installing Jekyll is very easy. Jekyll is a blog-aware CMS that converts your markdown files into webpages with a little configuration. No databases and servers to maintain.
+Building PowerGrid requires several dependencies, depending on the features you want to use or develop. For testing or algorithm development without GPU acceleration, fewer dependencies are required. Testing with GPU support, distributed memory support (MPI), or ISMRMRD support requires additional dependencies.
 
-Installation procedure is given in detail on [Jekyll website](http://jekyllrb.com/docs/installation/). It's available for Linux, Mac OSX and Windows.
+### Required Dependencies
 
-![Jekyll]({{ site.baseurl }}/assets/img/docs/jekyll.png)
+Supported OSes:
 
-For Mac OSX or Linux, you can use [Bundle](http://bundler.io) to setup the GitHub-pages version of Jekyll.
+  * Linux (CPU, GPU, MPI)
+  * Mac OS X (CPU, MPI)
 
-  bundle install
+#### Dependencies for CPU execution
+ * Cmake
+ * libarmadillo
+ * FFTW
+ * Xerces-C++
 
-## Download Algomash
+#### Dependencies for ISMRMRD Support
+ * libismrmrd
+
+#### Dependencies for GPU execution
+ * cufft library
+ * C++ compiler supporting [OpenACC](http://www.openacc.org)
+
+We recommend PGC++ 15.7 from [NVIDIA/The Portland Group](http://www.pgroup.com) as the version we have used most extensively. There is a free license available as part of the [OpenACC Toolkit](https://developer.nvidia.com/openacc-toolkit)
+ for academic users.
+
+## Download PowerGrid
 {: .content-subhead }
 
-Once you've Jekyll installed, you can start creating your documentation website with Algomash on your machine and can upload on the server later.
+You can get a copy of PowerGrid either by cloning the Git repository or by downloading a copy of the repository.
 
-To download Algomash, go to [Algomash GitHub page](https://github.com/deepakbansal/algomash-jekyll) and click "Download Zip" on the right side of the page.
+### Clone Git Repository from GitHub
+
+  git clone git@github.com:mrfil/PowerGrid.git
+
+### Download archive from GitHub
+To download PowerGrid, go to [PowerGrid GitHub page](https://github.com/mrfil/PowerGrid) and click "Download Zip" on the right side of the page.
 
 If you would like to use git to host your website on GitHub Pages you can also click "Clone on Desktop" given that you've got git installed.
 
 ![Download Zip or Clone]( {{site.baseurl}}/assets/img/docs/github-download-clone.png)
 {: .pure-image }
 
-You can fork Algomash also.
+If you want to contribute code back to the project, we recommend forking the project.
