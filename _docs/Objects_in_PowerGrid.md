@@ -34,3 +34,34 @@ Implements a field corrected discrete Fourier transform (DFT). This object suppo
 #### Ggrid
 
 Implements a non-Uniform Fast Fourier Transform (NUFFT). Field correction can be achieved with this object by combining with the TimeSegmentation object. This transform runs on both CPU and GPU, achieving good performance on both.
+
+### Model objects
+
+These objects allow to perform different types of image reconstructions. Forward and adjoint operations are also defined via operator overloading in C++.
+
+#### TimeSegmentation
+
+Implements corrections for image distortions due to magnetic field susceptibility using a time segmentation approach. Hanning interpolator and min-max formulation are implemented.
+
+#### SENSE
+
+Implements a sensitivity encoding (SENSE) operator.
+
+#### pcSENSE
+
+#### mpipcSENSE
+
+### Penalty objects
+
+These objects correspond to different penalty functions that can be used in the solver.
+
+#### Robject
+
+
+#### TVPenalty
+
+Implements a total variation penalty. It inherits from the Robject.
+
+#### QuadPenalty
+
+Implements a quadratic penalty. It inherits from the Robject.
