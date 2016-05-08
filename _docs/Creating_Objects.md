@@ -119,9 +119,8 @@ The most important part goes here. All PowerGrid objects, like their IRT/MATLAB 
 
 ```
 Now we close the class and close the include guard.
-```C++
 
+```C++
 };
 #endif //PowerGrid_SENSE_hpp
-
 ```
