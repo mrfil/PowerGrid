@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:complexType name="PowerGridConfig_t">
+        <xs:sequence>
+            <xs:element name="Nx" type="xs:integer"/>
+            <xs:element name="Ny" type="xs:integer"/>
+            <xs:element name="Nz" type="xs:integer"/>
+            <xs:element name="Niter" type="xs:integer"/>
+            <xs:element name="Ntimeseg" type="xs:integer"/>
+            <xs:element name="Ncoils" type="xs:integer"/>
+	        <xs:element name="Nshots" type="xs:integer"/>
+            <xs:element name="Nphases" type="xs:integer"/>
+	        <xs:element name="Nimages" type="xs:integer"/>
+	        <xs:element name="Nslabs" type="xs:integer"/>
+	        <xs:element name="Beta" type="xs:float"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="PowerGridConfig" type="PowerGridConfig_t">
+      <xs:annotation>
+        <xs:documentation>
+          The PowerGridConfig element is a root of the PowerGridConfig XML vocabulary.
+          Every conforming document should start with this element.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:element>
+
+</xs:schema>
