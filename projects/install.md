@@ -33,8 +33,9 @@ Run the following commands from the ssh session into the virtual machine.
 
 ```shell
 cd /vagrant
-cd /PG
 mkdir build
+cd build
+
 cmake ../
 make
 ```
