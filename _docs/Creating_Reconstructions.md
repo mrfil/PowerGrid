@@ -2,7 +2,7 @@
 layout: project
 title: Creating Reconstructions
 category: docs
-order_page: 3
+order_page: 4
 ---
 ## Performing an Image Reconstruction
 
@@ -100,7 +100,7 @@ Col<complex<double>> SMap;
 Col<complex<double>> data;
 //data must now be define as the data from all the coils
 ```
-The Gdft object can then be wrapped by a  SENSE object
+The Gdft object can then be wrapped by a SENSE object
 
 ```C++
  SENSE<double, Gdft<double>> Sd(Gd,SMap,Nk,Nx*Ny*Nz,Nc);

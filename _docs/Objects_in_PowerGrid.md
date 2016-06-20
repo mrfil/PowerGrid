@@ -68,7 +68,7 @@ Gnufft(dataLength, gridOS, nx, ny, nz, k1, k2, k3, i1, i2, i3)
 | gridOS | grid oversampling parameter |
 | nx | image size in the x direction   |
 | ny | image size in the x direction    |
-| nz |number of slices   |
+| nz | number of slices   |
 | kx | k-space coordinates in the x direction    |
 | ky | k-space coordinates in the y direction    |
 | kz | k-space coordinates in the z direction    |
