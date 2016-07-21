@@ -45,7 +45,7 @@ endif()
 
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
-MESSAGE(${ARMADILLO_INCLUDE_DIRS})
+message(${ARMADILLO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${ARMADILLO_LIBRARIES})
 find_package(Xerces)
 include_directories(${XERCESC_INCLUDE_DIRS})
@@ -116,8 +116,8 @@ endif()
 #Needed for CMake 2.8 or so to not add the -rdynamic flag to compilers like PGI
 #PGI chokes on link because it does not understand the -rdynamic flag
 #Why CMake insists on passing this flag, I don't know...
-#SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-#SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -lfftw3")
+#set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+#set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -lfftw3")
 
 #include(CheckCXXCompilerFlag)
 #CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
