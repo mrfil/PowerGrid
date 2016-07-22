@@ -18,10 +18,11 @@ Supported OSes:
   * Mac OS X (CPU, MPI) - El Capitan has been tested by the developers
 
 #### Dependencies for CPU execution
- * Cmake - Version 2.8 or higher required.
- * libarmadillo[http://arma.sourceforge.net] - Version 6.x required, 6.700.7 recommended, Version 7.x not supported yet.
- * FFTW - We only support FFTW3 and need a reasonably recent version.
- * Xerces-C++ - Version 3.1.0 or greater.
+ * [CMake](https://cmake.org/) - Version 2.8 or higher required.
+ * [libarmadillo](http://arma.sourceforge.net) - Version 6.x required, 6.700.7 recommended, Version 7.x not supported yet.
+ * [FFTW](http://www.fftw.org/) - We only support FFTW3 and need a reasonably recent version.
+ * [Xerces-C++](https://xerces.apache.org/xerces-c/) - Version 3.1.0 or greater.
+ * [XSD](http://www.codesynthesis.com/products/xsd/download.xhtml) - Version 4.0 or greater
 
 #### Dependencies for Experimental ISMRMRD Support
  * libismrmrd - We are using the master branch in the repository but not version 2.0 yet.
@@ -34,7 +35,7 @@ We have experience with PGC++ 15.7 from [NVIDIA/The Portland Group](http://www.p
 
 GCC 6.1 has OpenACC support but has not yet been tested by the developers, we welcome reports of anyone trying to compile with it. We hope to support it alongside PGI compilers in the near future.
 
-For those lucky enough to have access to Cray supercomputers, the Cray compiler does support OpenACC, but we have not tried to build with it. Because the Cray compilers are not available on desktops, workstations, or non-Cray branded clusters, we cannot dedicate resources to testing PowerGrid on it.
+For those lucky enough to have access to Cray supercomputers, the Cray compiler does support OpenACC, but we have not tried to build with it. Because the Cray compilers are not available on desktops, workstations, or non-Cray branded clusters, we have not dedicated resources to testing PowerGrid on it.
 
 ## Download PowerGrid
 {: .content-subhead }
