@@ -16,38 +16,6 @@ Vagrant.configure(2) do |config|
 
     config.vm.box = "boxcutter/ubuntu1604"
 
-    config.vm.provider :aws do |aws, override|
-
-        aws.access_key_id = "#{ENV['AWS_ACCESS_KEY']}"
-        aws.secret_access_key = "#{ENV['AWS_SECRET_KEY']}"
-        aws.keypair_name = "#{ENV['AWS_SSH_KEY']}"
-        aws.ami = "emi-dc40a7ee"
-        aws.instance_ready_timeout = 300
-        aws.instance_type = "m1.medium"
-        aws.tags = {
-            "Name" => "VagrantPowerGrid",
-        }
-        aws.security_groups = ["Default"]
-        aws.region = ""
-        aws.endpoint = ""
-        override.vm.box = "dummy"
-        override.vm.box_url = "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box"
-        override.ssh.username = "ubuntu"
-        # override.ssh.private_key_path = "#{ENV['AWS_SSH_KEY']}"
-        override.vm.synced_folder '.', '/vagrant', disabled: true
-        # override.sync.host_folder = ""  #relative to the folder your Vagrantfile is in
-        # override.sync.guest_folder = "/vagrant" # relative to the vagrant home folder -> /home/vagrant
-        # override.sshfs.enabled = false
-        # override.sshfs.use_ssh_key = true
-        # override.sshfs.mount_on_guest = true
-        # override.sshfs.paths = { "" => "/vagrant" }
-        # override.sshfs.host_addr = "#{ENV['HOSTNAME']}"
-        # override.ssh.private_key_path = "~/.ssh/id_rsa"
-        override.ssh.forward_agent = true
-        override.ssh.insert_key = false
-        override.ssh.private_key_path = ["#{ENV['HOME']}/#{ENV['AWS_SSH_KEY']}.pem", '~/.ssh/id_rsa']
-
-    end
 
     # Enable provisioning with a shell script. Additional provisioners such as
     # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
@@ -79,20 +47,4 @@ Vagrant.configure(2) do |config|
 
     end
 
-    config.vm.provider :aws do |aws, override|
-      override.vm.provision "shell" do |s|
-        s.inline = <<-SHELL
-          sudo mkdir -p /vagrant
-	  sudo chmod a+rwx /vagrant
-	  sudo chmod a+r /etc/fuse.conf
-	  sudo echo 'user_allow_other' >> /etc/fuse.conf
-          sshfs -o StrictHostKeyChecking=no -o allow_other \
-           -o reconnect \
-           -o ServerAliveInterval=45 \
-           -o ServerAliveCountMax=2 \
-           -o ssh_command='autossh -M 0' $1@$2:$3 /vagrant
-          SHELL
-          s.args = ["#{ENV['USER']}","#{ENV['HOSTNAME']}","#{vagrant_root}"]
-        end
-    end
 end
