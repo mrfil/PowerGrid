@@ -3,40 +3,35 @@ cmake_minimum_required(VERSION 3.2) #CMake version 3.2 required to properly supp
 ## Flags and settings that change the compiler (i.e. from default to C++11 or C++14)
 ## need to be set BEFORE calling project command (which does introspection and sets
 ## variables about the behavior of the compiler).
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED 1)
-#include(CheckCXXCompilerFlag)
-#CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-#CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-#if(COMPILER_SUPPORTS_CXX11)
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#elseif(COMPILER_SUPPORTS_CXX0X)
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-#else()
-#        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-#endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11 REQUIRED)
+#set(CMAKE_CXX_STANDARD_REQUIRED 1)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
 endif()
 
 project("PowerGrid" CXX)
 
-
 option(OPENACC "Enable OpenACC support" OFF)
 option(ISMRMRD "Enable ISMRMRD Suppport" OFF)
 option(MPI "Enable MPI Support" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+# Find Matio
 find_package(MATIO REQUIRED)
 include_directories(${MATIO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${MATIO_LIBRARIES})
-set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu/)
-set(BOOST_ROOT /u/sciteam/cerjanic/PGProj/libraries)
-find_package(Boost 1.43 COMPONENTS program_options serialization mpi)
+
+# Find Boost
+if(MPI)
+find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization mpi)
+else(MPI)
+find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization)
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
-
+endif()
 
 if(OPENACC)
 	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS /usr/local/cuda/include
@@ -56,26 +51,31 @@ else()
 	set(LIBS ${LIBS} ${FFTW_LIBRARIES})
 	set(LIBS ${LIBS} ${FFTWF_LIBRARIES})
 endif()
-if(${USE_ACML})
+
+if(USE_ACML)
 	find_package(ACML)
 	set(LIBS ${LIBS} ${ACML_LIBRARIES})
 endif()
 
-
+# Find Armadillo
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 message(${ARMADILLO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${ARMADILLO_LIBRARIES})
+
+# Find Xerces
 find_package(Xerces)
 include_directories(${XERCESC_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${XERCESC_LIBRARY})
+
 if(ISMRMRD)
     find_package(HDF5)
     include_directories(${HDF5_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${HDF5_C_LIBRARIES})
+		set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
 endif()
 
-set(LIBS ${LIBS} ${HDF5_C_LIBRARIES})
-set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
+
 
 set(POWERGRID_TEST_GDFT
     ./PowerGrid/PowerGridGdft.cpp
@@ -105,6 +105,7 @@ target_link_libraries(PowerGridGdft ${LIBS})
 target_link_libraries(PowerGridGnufft ${LIBS})
 target_link_libraries(PowerGridDWI3DDFT ${LIBS})
 target_link_libraries(PowerGridSTEAM ${LIBS})
+
 if (ISMRMRD)
 	set(POWERGRID_ISMRMRD
 			./PowerGrid/PowerGridIsmrmrd.cpp
@@ -114,35 +115,29 @@ if (ISMRMRD)
 	set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
 	add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD})
 	target_link_libraries(PowerGridIsmrmrd ${LIBS})
-
 endif ()
-
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/include")
 if(APPLE)
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lgfortran")
 else()
 	if(CMAKE_COMPILER_IS_GNUCXX)
-		#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  ")
+
 	else()
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4 -gopt -Minfo=accel -ta=tesla:cc35 -fpermissive")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -O4 -gopt -acc  -Minfo=accel,mp -Msmartalloc -ta=tesla:cc35 -pgf77libs -fpermissive")
 		else()
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gopt -O -fpermissive -pgf77libs ")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gopt -fast -O4 -fpermissive -Msmartalloc -pgf77libs ")
 		endif()
 	endif()
 endif()
-#Needed for CMake 2.8 or so to not add the -rdynamic flag to compilers like PGI
-#PGI chokes on link because it does not understand the -rdynamic flag
-#Why CMake insists on passing this flag, I don't know...
-#set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-#set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -lfftw3")
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lfftw3")
 
 #add_definitions(-D__STRICT_ANSI__)
-#remove_definitions(-DARMA_NO_DEBUG)
-add_definitions(-DARMA_DONT_USE_CXX11)
-
+add_definitions(-DARMA_NO_DEBUG)
+#add_definitions(-DARMA_DONT_USE_CXX11)
 
 if (MPI)
     add_subdirectory(PowerGrid/MPI)

@@ -34,13 +34,13 @@
 find_library(ARMADILLO_LIBRARY
   NAMES armadillo
   HINTS $ENV{ARMA_HOME}
-  PATHS /usr/lib "$ENV{ProgramFiles}/Armadillo/lib"  "$ENV{ProgramFiles}/Armadillo/lib64" "$ENV{ProgramFiles}/Armadillo"
-  PATH_SUFFIXES "lib"
+  PATHS /usr/lib /usr/ "$ENV{ProgramFiles}/Armadillo/lib"  "$ENV{ProgramFiles}/Armadillo/lib64" "$ENV{ProgramFiles}/Armadillo"
+  PATH_SUFFIXES "lib" "lib64"
   )
 find_path(ARMADILLO_INCLUDE_DIR
   NAMES armadillo
   HINTS $ENV{ARMA_HOME}
-  PATHS /usr/lib "$ENV{ProgramFiles}/Armadillo/include"
+  PATHS /usr/lib /usr/ "$ENV{ProgramFiles}/Armadillo/include"
 PATH_SUFFIXES "include"
   )
 
