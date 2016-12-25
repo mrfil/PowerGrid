@@ -11,7 +11,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [PowerGridGnufft.h]
+    File Name   [PowerGridGnufft.cpp]
 
     Synopsis    [Field corrected recon using Gdft object.]
 

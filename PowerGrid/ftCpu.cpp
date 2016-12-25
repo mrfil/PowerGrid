@@ -11,7 +11,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [ftCpu.h]
+    File Name   [ftCpu.cpp]
 
     Synopsis    [The CPU and OpenACC annotated version of the discrete Fourier
                 transform and inverse discrete Fourier transform.]
@@ -25,36 +25,15 @@ Developed by:
                  Xiao-Long Wu, ECE UIUC, Jiading Gai, Beckman Institute]
     Revision    [1.1; Remove OpenMP and add OpenACC annotations for GPU
                   acceleration]
-    Date        [4/19/2016]
+    Date        [12/13/2016]
 
  *****************************************************************************/
-
-#ifndef FT_CPU_H
-#define FT_CPU_H
 
 /*---------------------------------------------------------------------------*/
 /*  Included library headers                                                 */
 /*---------------------------------------------------------------------------*/
-// Numeric constants according to the precision type.
-#ifdef ENABLE_DOUBLE_PRECISION
-#define MRI_PI 3.1415926535897932384626433832795029
-#define MRI_NN 64
-#define MRI_DELTAZ 0.003
-#define MRI_ZERO 0.0
-#define MRI_ONE 1.0
-#define MRI_NEG_ONE -1.0
-#define MRI_POINT_FIVE 0.5
-#define MRI_SMOOTH_FACTOR 0.0000001
-#else
-#define MRI_PI 3.1415926535897932384626433832795029f
-#define MRI_NN 64
-#define MRI_DELTAZ 0.003f
-#define MRI_ZERO 0.0f
-#define MRI_ONE 1.0f
-#define MRI_NEG_ONE -1.0f
-#define MRI_POINT_FIVE 0.5f
-#define MRI_SMOOTH_FACTOR 0.000001f
-#endif
+#include "ftCpu.h"
+
 /*---------------------------------------------------------------------------*/
 /*  Namespace declared - begin                                               */
 /*---------------------------------------------------------------------------*/
@@ -80,34 +59,6 @@ iftCpu(T1 *idata_r, T1 *idata_i,
        const T1 *fm, const T1 *t,
        const int num_k, const int num_i
        );
-*/
-/*---------------------------------------------------------------------------*/
-/*  Included library headers                                                 */
-/*---------------------------------------------------------------------------*/
-
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
-#ifdef _OPENACC
-#include "accelmath.h"
-#include "openacc.h"
-#define COS(a) std::cos(a)
-#define SIN(a) std::sin(a)
-#define SQRT(a) std::sqrt(a)
-#else
-#define COS(a) std::cos(a)
-#define SIN(a) std::sin(a)
-#define SQRT(a) std::sqrt(a)
-#endif
-
-//#include <tools.h>
-//#include <structures.h>
-
-/*---------------------------------------------------------------------------*/
-/*  Namespace declared - begin                                               */
-/*---------------------------------------------------------------------------*/
-
-// namespace uiuc_mri {
 
 /*---------------------------------------------------------------------------*/
 /*  Function definitions                                                     */
@@ -253,11 +204,5 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
   // stopMriTimer(getMriTimer()->timer_iftCpu);
 }
 
-/*---------------------------------------------------------------------------*/
-/*  Namespace declared - end                                                 */
-/*---------------------------------------------------------------------------*/
-
 //}
 //}
-
-#endif // FT_CPU_H

@@ -11,7 +11,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [griddingSupport.hpp]
+    File Name   [griddingSupport.cpp]
 
     Synopsis    [Support functions for the forward and adjoint non-uniform
                     Fast Fourier Transform (NUFFT) on CPU and GPU via
@@ -19,28 +19,16 @@ Developed by:
 
     Description []
 
-    Revision    [0.1.0; Alex Cerjanic, BIOE UIUC]
+    Revision    [0.2.0; Alex Cerjanic, BIOE UIUC]
 
-    Date        [4/19/2016]
+    Date        [12/2/2016]
 
  *****************************************************************************/
 
-#ifndef PowerGrid_griddingSupport_hpp
-#define PowerGrid_griddingSupport_hpp
+#ifndef PowerGrid_griddingSupport_cpp
+#define PowerGrid_griddingSupport_cpp
 
-using namespace std; //where to put?
-
-#ifdef _OPENACC
-#include "openacc.h"
-#include "accelmath.h"
-#define COS(a) cos(a)
-#define SIN(a) sin(a)
-#define SINH(a) sinh(a)
-#else //On CPU
-#define COS(a) std::cos(a)
-#define SIN(a) std::sin(a)
-#define SINH(a) std::sinh(a)
-#endif
+#include "PowerGrid/griddingSupport.h"
 
 ///*From Numerical Recipes in C, 2nd Edition
 //Just a vanilla I(0,x) function approximation
@@ -606,4 +594,4 @@ fft3shift_grid(
 
 }
 
-#endif
+#endif // PowerGrid_griddingSupport_cpp

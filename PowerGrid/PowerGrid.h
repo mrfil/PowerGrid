@@ -23,66 +23,62 @@ Developed by:
 
  *****************************************************************************/
 
-
 #ifndef PowerGrid_PowerGrid_h
 #define PowerGrid_PowerGrid_h
 //#define ARMA_NO_DEBUG // Disable this comment only for release.
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <string>
 
 #ifdef PowerGridMPI
-#include <boost/mpi.hpp>
-#include <boost/mpi/environment.hpp>
-#include <boost/mpi/communicator.hpp>
 #include "../Support/ArmaExtensions/arma_extensions.h"
-#endif //PowerGridMPI
+#include <boost/mpi.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/environment.hpp>
+#endif // PowerGridMPI
 
-//Support Headers for making it easier to work with Armadillo and Matio.
+// Support Headers for making it easier to work with Armadillo and Matio.
 //#include "../Support/CeempleComplex.h"
-
 
 #include "../Support/CeempleArmadillo.h"
 #include "../Support/CeempleMatio.h"
 
+#include "config.hxx"
 #include "griddingTypes.h"
 #include <memory>
-#include "config.hxx"
 
-
-//Headers for ISMRMRD Support
+// Headers for ISMRMRD Support
 //#include "ismrmrd/ismrmrd.h"
 //#include "ismrmrd/xml.h"
 //#include "ismrmrd/dataset.h"
 //#include "ismrmrd/version.h"
 
-
 namespace PowerGrid {
 
+#include "Gdft.h"
+#include "Gfft.h"
+#include "Gnufft.h"
+#include "QuadPenalty.h"
+#include "Robject.h"
+#include "SENSE.h"
+#include "TVPenalty.h"
+#include "TimeSegmentation.h"
+#include "fftGPU.h"
 #include "fftshift.hpp"
-#include "ftCpu.hpp"
-#include "Gdft.hpp"
-#include "fftGPU.hpp"
+#include "ftCpu.h"
+#include "gridding.h"
 #include "griddingSupport.hpp"
-#include "gridding.hpp"
-#include "Gnufft.hpp"
-#include "Gfft.hpp"
-#include "SENSE.hpp"
-#include "Robject.hpp"
-#include "QuadPenalty.hpp"
-#include "TVPenalty.hpp"
-#include "solve_pwls_pcg.hpp"
+#include "pcSENSE.h"
 #include "reconSolve.hpp"
-#include "TimeSegmentation.hpp"
-#include "pcSENSE.hpp"
+#include "solve_pwls_pcg.hpp"
 
 #ifdef PowerGridMPI
-#include "mpipcSENSE.hpp"
-#endif //PowerGridMPI
+#include "mpipcSENSE.h"
+#endif // PowerGridMPI
 
-#include "DWIRecon.hpp"
-#include "GdftRecon.hpp"
-#include "GnufftRecon.hpp"
+#include "DWIRecon.h"
+#include "GdftRecon.h"
+#include "GnufftRecon.h"
 }
 
 #endif

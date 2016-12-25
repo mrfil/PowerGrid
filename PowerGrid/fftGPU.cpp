@@ -11,29 +11,25 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [fftGPU.hpp]
+    File Name   [fftGPU.cpp]
 
     Synopsis    [Wrappers to the cuFFT library supporting single and double
                                 precision for GPU accelerated FFTs]
 
     Description []
 
-    Revision    [0.1.0; Alex Cerjanic, BIOE UIUC]
+    Revision    [0.2.0; Alex Cerjanic, BIOE UIUC]
+                [0.1.0; Alex Cerjanic, BIOE UIUC]
 
-    Date        [4/19/2016]
+    Date        [12/13/2016]
 
  *****************************************************************************/
 
 // Based on
 // https://www.olcf.ornl.gov/tutorials/mixing-openacc-with-gpu-libraries/
 
-#ifndef PowerGrid_fftGPU_hpp
-#define PowerGrid_fftGPU_hpp
+#include "fftGPU.h"
 #ifdef _OPENACC
-#include "cufft.h"
-#include <complex>
-#include <type_traits>
-
 // Like Armadillo, we're using SFINAE here to choose between float and double.
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
@@ -189,4 +185,3 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
   cufftDestroy(plan);
 }
 #endif //_OPENACC
-#endif // PowerGrid_fftGPU_hpp
