@@ -59,7 +59,7 @@ iftCpu(T1 *idata_r, T1 *idata_i,
        const T1 *fm, const T1 *t,
        const int num_k, const int num_i
        );
-
+*/
 /*---------------------------------------------------------------------------*/
 /*  Function definitions                                                     */
 /*---------------------------------------------------------------------------*/
@@ -204,5 +204,24 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
   // stopMriTimer(getMriTimer()->timer_iftCpu);
 }
 
+// Explicit Instantiations
+template void ftCpu<float>(float *, float *, const float *, const float *,
+                           const float *, const float *, const float *,
+                           const float *, const float *, const float *,
+                           const float *, const float *, const int, const int);
+template void ftCpu<double>(double *, double *, const double *, const double *,
+                            const double *, const double *, const double *,
+                            const double *, const double *, const double *,
+                            const double *, const double *, const int,
+                            const int);
+template void iftCpu<float>(float *, float *, const float *, const float *,
+                            const float *, const float *, const float *,
+                            const float *, const float *, const float *,
+                            const float *, const float *, const int, const int);
+template void iftCpu<double>(double *, double *, const double *, const double *,
+                             const double *, const double *, const double *,
+                             const double *, const double *, const double *,
+                             const double *, const double *, const int,
+                             const int);
 //}
 //}

@@ -39,7 +39,7 @@ template <typename T1> mpipcSENSE<T1>::~mpipcSENSE() {
 template <typename T1>
 mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
                            uword ny, uword nz, uword nc, Col<T1> t,
-                           Col<CxT1> SENSEmap, Col<T1> FieldMap,
+                           Col<complex<T1>> SENSEmap, Col<T1> FieldMap,
                            Col<T1> ShotPhaseMap, bmpi::environment &en,
                            bmpi::communicator &wor) {
   Ni = nx * ny * nz;
@@ -142,13 +142,13 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
 // d is the vector of data of type T1, note it is const, so we don't modify it
 // directly rather return another vector of type T1
 template <typename T1>
-Col<CxT1> mpipcSENSE<T1>::operator*(const Col<CxT1> &d) const {
+Col<complex<T1>> mpipcSENSE<T1>::operator*(const Col<complex<T1>> &d) const {
   // uword ShotRank = world->rank();
-  Mat<CxT1> outData = zeros<Mat<CxT1>>(Nd, Ns * Nc);
-  Mat<CxT1> tempOutData =
-      zeros<Mat<CxT1>>(Nd, (*taskList)[world->rank()].size());
-  Mat<CxT1> tempOutData2 =
-      zeros<Mat<CxT1>>(Nd, (*taskList)[world->rank()].size());
+  Mat<complex<T1>> outData = zeros<Mat<complex<T1>>>(Nd, Ns * Nc);
+  Mat<complex<T1>> tempOutData =
+      zeros<Mat<complex<T1>>>(Nd, (*taskList)[world->rank()].size());
+  Mat<complex<T1>> tempOutData2 =
+      zeros<Mat<complex<T1>>>(Nd, (*taskList)[world->rank()].size());
   uword taskIndex;
   uword coilIndex;
   uword shotIndex;
@@ -169,11 +169,11 @@ Col<CxT1> mpipcSENSE<T1>::operator*(const Col<CxT1> &d) const {
   //}
   // Now let's do some MPI stuff here.
   if (world->rank() == 0) {
-    std::vector<Mat<CxT1>> OutDataGather(world->size());
+    std::vector<Mat<complex<T1>>> OutDataGather(world->size());
     // Collect all the data into OutDataGather an std::vector collective
     // std::cout << "Rank #: " << world->rank() << " reached foward xform
     // gather" << std::endl;
-    bmpi::gather<Mat<CxT1>>(*world, tempOutData, OutDataGather, 0);
+    bmpi::gather<Mat<complex<T1>>>(*world, tempOutData, OutDataGather, 0);
     // std::cout << "Rank #: " << world->rank() << " passed forward xform
     // gather" << std::endl;
     for (uword jj = 0; jj < world->size(); jj++) {
@@ -193,7 +193,7 @@ Col<CxT1> mpipcSENSE<T1>::operator*(const Col<CxT1> &d) const {
   } else {
     std::cout << "Rank #: " << world->rank() << " reached foward xform gather"
               << std::endl;
-    bmpi::gather<Mat<CxT1>>(*world, tempOutData, 0);
+    bmpi::gather<Mat<complex<T1>>>(*world, tempOutData, 0);
   }
   std::cout << "Rank #: " << world->rank() << " reached foward xform broadcast"
             << std::endl;
@@ -208,14 +208,14 @@ Col<CxT1> mpipcSENSE<T1>::operator*(const Col<CxT1> &d) const {
 // For the adjoint operation, we have to weight the adjoint transform of the
 // coil data by the SENSE map.
 template <typename T1>
-Col<CxT1> mpipcSENSE<T1>::operator/(const Col<CxT1> &d) const {
+Col<complex<T1>> mpipcSENSE<T1>::operator/(const Col<complex<T1>> &d) const {
   // uword ShotRank = world->rank();
-  Mat<CxT1> inData = reshape(d, Nd, Ns * Nc);
+  Mat<complex<T1>> inData = reshape(d, Nd, Ns * Nc);
   uword taskIndex;
   uword coilIndex;
   uword shotIndex;
-  // Col <CxT1> tempOutData = zeros < Col < CxT1 >> (Ni);
-  Col<CxT1> outData = zeros<Col<CxT1>>(Ni);
+  // Col <complex<T1>> tempOutData = zeros < Col < complex<T1> >> (Ni);
+  Col<complex<T1>> outData = zeros<Col<complex<T1>>>(Ni);
   // Shot Loop. Each shot has it's own k-space trajectory
   // for (unsigned int jj = 0; jj < Ns; jj++) {
   // Coil Loop - for each shot we have a full set of coil data.
@@ -230,9 +230,9 @@ Col<CxT1> mpipcSENSE<T1>::operator/(const Col<CxT1> &d) const {
   }
 
   if (world->rank() == 0) {
-    std::vector<Col<CxT1>> OutDataGather;
+    std::vector<Col<complex<T1>>> OutDataGather;
     // Collect all the data into OutDataGather an std::vector collective
-    bmpi::gather<Col<CxT1>>(*world, outData, OutDataGather, 0);
+    bmpi::gather<Col<complex<T1>>>(*world, outData, OutDataGather, 0);
     outData.zeros(Ni);
     for (uword jj = 0; jj < world->size(); jj++) {
       // Skip the zeroth rank because that is the outData we started with on
@@ -241,13 +241,17 @@ Col<CxT1> mpipcSENSE<T1>::operator/(const Col<CxT1> &d) const {
       outData += OutDataGather.at(jj);
     }
   } else {
-    bmpi::gather<Col<CxT1>>(*world, outData, 0);
+    bmpi::gather<Col<complex<T1>>>(*world, outData, 0);
   }
   // Broadcast will send the data to all machines if the rank==0 and receive
   // the broadcasted data from rank=0 to
   // all other machines in the communicator, overwriting the outData value
   // already there.
-  bmpi::broadcast<Col<CxT1>>(*world, outData, 0);
+  bmpi::broadcast<Col<complex<T1>>>(*world, outData, 0);
   // equivalent to returning col(output) in MATLAB with IRT
   return vectorise(outData);
 }
+
+// Explict Instantiation
+template class mpipcSENSE<float>;
+template class mpipcSENSE<double>;

@@ -28,9 +28,14 @@ Developed by:
 
  *****************************************************************************/
 
-#ifndef PowerGrid_Ggrid_h
-#define PowerGrid_Ggrid_h
-namespace ar = arma;
+#ifndef PowerGrid_Gnufft_h
+#define PowerGrid_Gnufft_h
+
+#include "PGIncludes.h"
+#include "gridding.h"
+
+using namespace arma;
+using namespace std;
 
 template <typename T1> // This is of type complex<double> or complex<float>, or
 // any other type like float or single
@@ -85,7 +90,7 @@ public:
 };
 
 // Explicit Instantiation
-template class Gnufft<float>;
-template class Gnufft<double>;
+extern template class Gnufft<float>;
+extern template class Gnufft<double>;
 
-#endif
+#endif // PowerGrid_Gnufft_h

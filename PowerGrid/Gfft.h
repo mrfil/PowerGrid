@@ -32,13 +32,13 @@ Developed by:
 #ifdef _OPENACC // GPU Version
 
 #include "cufft.h"
-#include "fftGPU.hpp"
+#include "fftGPU.h"
+#include "gridding.h"
 #include "openacc.h"
-
 #else // CPU Version
 
-#include "fftCPU.hpp"
-
+#include "fftCPU.h"
+#include "gridding.h"
 #endif
 
 // We want to operate on many types of variables (assume of type Col<type>)
@@ -65,7 +65,7 @@ public:
 };
 
 // Explicit Instantiations
-template class Gfft<float>;
-template class Gfft<double>;
+extern template class Gfft<float>;
+extern template class Gfft<double>;
 
 #endif // __PowerGrid__Gfft__h

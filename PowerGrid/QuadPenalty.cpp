@@ -1,13 +1,13 @@
 /*
-(C) Copyright 2015-2016 The Board of Trustees of the University of Illinois.
-All rights reserved.
+   (C) Copyright 2015-2016 The Board of Trustees of the University of Illinois.
+   All rights reserved.
 
-See LICENSE.txt for the University of Illinois/NCSA Open Source license.
+   See LICENSE.txt for the University of Illinois/NCSA Open Source license.
 
-Developed by:
+   Developed by:
                      MRFIL Research Groups
                 University of Illinois, Urbana-Champaign
-*/
+ */
 
 /*****************************************************************************
 
@@ -22,7 +22,7 @@ Developed by:
 
     Date        [4/19/2016]
 
- *****************************************************************************/
+*****************************************************************************/
 
 #include "QuadPenalty.h"
 
@@ -30,26 +30,31 @@ Developed by:
 // vectorize it before it is passed to QuadPenalty.
 // Custom Class Constructor
 template <typename T1>
-QuadPenalty<T1>::QuadPenalty(uword nx, uword ny, uword nz, double beta) {
-  // Set Class Memebers
-  this->Nx = nx;
-  this->Ny = ny;
-  this->Nz = nz;
-  this->Beta = beta;
+QuadPenalty<T1>::QuadPenalty(uword nx, uword ny, uword nz, T1 beta) {
+        // Set Class Memebers
+        this->Nx = nx;
+        this->Ny = ny;
+        this->Nz = nz;
+        this->Beta = beta;
 }
 
 // Class Methods
 
 template <typename T1>
-Col<CxT1> QuadPenalty<T1>::wpot(const Col<CxT1> &d) const {
-  return ones<Col<CxT1>>(d.n_rows);
+Col<complex<T1> > QuadPenalty<T1>::wpot(const Col<complex<T1> > &d) const {
+        return ones<Col<complex<T1> > >(d.n_rows);
 }
 
 template <typename T1>
-Col<CxT1> QuadPenalty<T1>::dpot(const Col<CxT1> &d) const {
-  return d;
+Col<complex<T1> > QuadPenalty<T1>::dpot(const Col<complex<T1> > &d) const {
+        return d;
 }
 template <typename T1>
-Col<CxT1> QuadPenalty<T1>::pot(const Col<CxT1> &d) const {
-  Col<T1> temp = abs(d) % abs(d) / 2.0;
-  return conv_to<Col<CxT1>>::from(temp);
+Col<complex<T1> > QuadPenalty<T1>::pot(const Col<complex<T1> > &d) const {
+        Col<T1> temp = abs(d) % abs(d) / 2.0;
+        return conv_to<Col<complex<T1> > >::from(temp);
+}
+
+// Explicit Instantiation
+template class QuadPenalty<float>;
+template class QuadPenalty<double>;

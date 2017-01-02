@@ -22,6 +22,7 @@ Developed by:
     Date        [4/19/2016]
 
  *****************************************************************************/
+#include "SENSE.h"
 
 using namespace arma;
 
@@ -29,7 +30,8 @@ using namespace arma;
 // processed (ie Col<cx_double>) and one for the type of G object (ie
 // Gfft<Col<cx_double>>
 template <typename T1, typename Tobj>
-SENSE<T1, Tobj>::SENSE(Tobj &G, Col<CxT1> SENSEmap, uword a, uword b, uword c) {
+SENSE<T1, Tobj>::SENSE(Tobj &G, Col<complex<T1>> SENSEmap, uword a, uword b,
+                       uword c) {
   n1 = a;
   n2 = b;
   nc = c;
@@ -43,10 +45,10 @@ SENSE<T1, Tobj>::SENSE(Tobj &G, Col<CxT1> SENSEmap, uword a, uword b, uword c) {
 // d is the vector of data of type T1, note it is const, so we don't modify it
 // directly rather return another vector of type T1
 template <typename T1, typename Tobj>
-Col<CxT1> SENSE<T1, Tobj>::operator*(const Col<CxT1> &d) const {
+Col<complex<T1>> SENSE<T1, Tobj>::operator*(const Col<complex<T1>> &d) const {
 
-  Mat<CxT1> outData = zeros<Mat<CxT1>>(this->n1, this->nc);
-  // Col<CxT1> temp;
+  Mat<complex<T1>> outData = zeros<Mat<complex<T1>>>(this->n1, this->nc);
+  // Col<complex<T1>> temp;
   // In SENSE we store coil data using the columns of the data matrix, and we
   // weight the data by the coil sensitivies from the SENSE map
 
@@ -54,7 +56,7 @@ Col<CxT1> SENSE<T1, Tobj>::operator*(const Col<CxT1> &d) const {
 
     outData.col(ii) = (*this->G_obj) * (d % (this->SMap.col(ii)));
   }
-  Col<CxT1> out = vectorise(outData);
+  Col<complex<T1>> out = vectorise(outData);
   // equivalent to returning col(output) in MATLAB with IRT
   return out;
 }
@@ -62,12 +64,12 @@ Col<CxT1> SENSE<T1, Tobj>::operator*(const Col<CxT1> &d) const {
 // For the adjoint operation, we have to weight the adjoint transform of the
 // coil data by the SENSE map.
 template <typename T1, typename Tobj>
-Col<CxT1> SENSE<T1, Tobj>::operator/(const Col<CxT1> &d) const {
+Col<complex<T1>> SENSE<T1, Tobj>::operator/(const Col<complex<T1>> &d) const {
 
-  Mat<CxT1> inData = reshape(d, this->n1, this->nc);
+  Mat<complex<T1>> inData = reshape(d, this->n1, this->nc);
 
-  Col<CxT1> outData = zeros<Col<CxT1>>(this->n2);
-  // Mat <CxT1> coilImages(n2,nc);
+  Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
+  // Mat <complex<T1>> coilImages(n2,nc);
 
   for (unsigned int ii = 0; ii < this->nc; ii++) {
     // coilImages.col(ii) = (*this->G_obj)/inData.col(ii);
@@ -77,3 +79,11 @@ Col<CxT1> SENSE<T1, Tobj>::operator/(const Col<CxT1> &d) const {
   // equivalent to returning col(output) in MATLAB with IRT
   return vectorise(outData);
 }
+
+// Explicit Instantiations
+template class SENSE<float, Gnufft<float>>;
+template class SENSE<float, TimeSegmentation<float, Gnufft<float>>>;
+template class SENSE<double, Gnufft<double>>;
+template class SENSE<double, TimeSegmentation<double, Gnufft<double>>>;
+template class SENSE<float, Gdft<float>>;
+template class SENSE<double, Gdft<double>>;

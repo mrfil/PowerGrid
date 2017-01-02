@@ -36,9 +36,9 @@ int GnufftRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L,
                 uword niter, uword nc, uword nshots, T1 beta);
 
 // Explicit Instantiation
-template int GnufftRecon<float>(string, uword, uword, uword, uword, uword,
-                                uword, uword, float);
-template int GnufftRecon<double>(string, uword, uword, uword, uword, uword,
-                                 uword, uword, double);
+extern template int GnufftRecon<float>(string, uword, uword, uword, uword,
+                                       uword, uword, uword, float);
+extern template int GnufftRecon<double>(string, uword, uword, uword, uword,
+                                        uword, uword, uword, double);
 
 #endif //__PowerGrid__GnufftRecon

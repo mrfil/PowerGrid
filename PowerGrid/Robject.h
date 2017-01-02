@@ -27,7 +27,10 @@ Developed by:
 #ifndef PowerGrid_Robject_h
 #define PowerGrid_Robject_h
 
+#include "PGIncludes.h"
+
 using namespace arma;
+using namespace std;
 
 template <typename T1> class Robject {
   typedef complex<T1> CxT1;
@@ -75,7 +78,7 @@ public:
 };
 
 // Explicit Instantiation
-template class Robject<float>;
-template class Robject<double>;
+extern template class Robject<float>;
+extern template class Robject<double>;
 
 #endif // PowerGrid_Robject_h

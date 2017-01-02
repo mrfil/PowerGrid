@@ -28,57 +28,61 @@ Developed by:
 #ifndef PowerGrid_fftCPU_hpp
 #define PowerGrid_fftCPU_hpp
 
+#include "PGIncludes.h"
 #include "fftw3.h"
 #include <complex>
+#include <iostream>
 #include <type_traits>
 
+using namespace std;
+using namespace arma;
 // Like Armadillo, we're using SFINAE here to choose between float and double.
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
 // template parameter.
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void ifft2dCPU(T1 *d_data, int nx, int ny);
+                                               uword>::type = 0>
+void ifft2dCPU(T1 *d_data, uword nx, uword ny);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void fft2dCPU(T1 *d_data, int nx, int ny);
+                                               uword>::type = 0>
+void fft2dCPU(T1 *d_data, uword nx, uword ny);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void ifft3dCPU(T1 *d_data, int nx, int ny, int nz);
+                                               uword>::type = 0>
+void ifft3dCPU(T1 *d_data, uword nx, uword ny, uword nz);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void fft3dCPU(T1 *d_data, int nx, int ny, int nz);
+                                               uword>::type = 0>
+void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void ifft2dCPU(T1 *d_data, int nx, int ny);
+                                               uword>::type = 0>
+void ifft2dCPU(T1 *d_data, uword nx, uword ny);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void fft2dCPU(T1 *d_data, int nx, int ny);
+                                               uword>::type = 0>
+void fft2dCPU(T1 *d_data, uword nx, uword ny);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void ifft3dCPU(T1 *d_data, int nx, int ny, int nz);
+                                               uword>::type = 0>
+void ifft3dCPU(T1 *d_data, uword nx, uword ny, uword nz);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void fft3dCPU(T1 *d_data, int nx, int ny, int nz);
+                                               uword>::type = 0>
+void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz);
 
 // Explicit Instantiations
-template void ifft2dCPU<float>(float *, int, int);
-template void ifft2dCPU<double>(double *, int, int);
+extern template void ifft2dCPU(float *, uword, uword);
+extern template void ifft2dCPU<double>(double *, uword, uword);
 
-template void fft2dCPU<float>(float *, int, int);
-template void fft2dCPU<double>(double *, int, int);
+extern template void fft2dCPU<float>(float *, uword, uword);
+extern template void fft2dCPU<double>(double *, uword, uword);
 
-template void ifft3dCPU<float>(float *, int, int, int);
-template void ifft3dCPU<double>(double *, int, int, int);
+extern template void ifft3dCPU<float>(float *, uword, uword, uword);
+extern template void ifft3dCPU<double>(double *, uword, uword, uword);
 
-template void fft3dCPU<float>(float *, int, int, int);
-template void fft3dCPU<double>(double *, int, int, int);
+extern template void fft3dCPU<float>(float *, uword, uword, uword);
+extern template void fft3dCPU<double>(double *, uword, uword, uword);
 
 #endif // PowerGrid_fftCPU_hpp

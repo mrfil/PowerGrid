@@ -29,7 +29,11 @@ Developed by:
 #ifndef PowerGrid_Gdft_h
 #define PowerGrid_Gdft_h
 
+#include "PGIncludes.h"
+#include "ftCpu.h"
+
 using namespace arma;
+using namespace std;
 
 template <typename T1> // This is of type complex<double> or complex<float>, or
 // any other type like float or single
@@ -63,5 +67,8 @@ public:
   // Adjoint transform operation
   Col<CxT1> operator/(const Col<CxT1> &d) const;
 };
+
+extern template class Gdft<float>;
+extern template class Gdft<double>;
 
 #endif // PowerGrid_Gdft_h

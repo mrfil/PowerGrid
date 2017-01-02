@@ -25,11 +25,12 @@ Developed by:
     Date        [12/2/2016]
 
  *****************************************************************************/
+#include "Gdft.h"
 
 using namespace arma;
 
 template <typename T1>
-Gdft::Gdft(
+Gdft<T1>::Gdft(
     uword a, uword b, const Col<T1> &k1, const Col<T1> &k2, const Col<T1> &k3,
     const Col<T1> &i1, const Col<T1> &i2, const Col<T1> &i3, const Col<T1> &f1,
     const Col<T1> &t1) // Change these arguments as you need to setup the object
@@ -48,7 +49,8 @@ Gdft::Gdft(
 
 // Overloaded methods for forward and adjoint transform
 // Forward transform operation
-template <typename CxT1> Col<CxT1> Gdft::operator*(const Col<CxT1> &d) const {
+template <typename T1>
+Col<complex<T1>> Gdft<T1>::operator*(const Col<complex<T1>> &d) const {
   // This is just specifying size assuming things are the same size, change as
   // necessary
   Col<T1> realData = real(d);
@@ -86,15 +88,16 @@ template <typename CxT1> Col<CxT1> Gdft::operator*(const Col<CxT1> &d) const {
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<CxT1> XformedData(this->n1);
+  Col<complex<T1>> XformedData(this->n1);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return XformedData.eval(); // Return a vector of type T1
 }
 
 // Adjoint transform operation
-template <typename CxT1> Col<CxT1> Gdft::operator/(const Col<CxT1> &d) const {
+template <typename T1>
+Col<complex<T1>> Gdft<T1>::operator/(const Col<complex<T1>> &d) const {
 
   Col<T1> realData = real(d);
   Col<T1> imagData = imag(d);
@@ -124,12 +127,12 @@ template <typename CxT1> Col<CxT1> Gdft::operator/(const Col<CxT1> &d) const {
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<CxT1> XformedData(this->n2);
+  Col<complex<T1>> XformedData(this->n2);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return XformedData.eval(); // Return a vector of type T1
 }
-
-template class Gdft<std::complex<float>>;
-template class Gdft<std::complex<double>>;
+// Explicit Instantiations
+template class Gdft<float>;
+template class Gdft<double>;

@@ -31,9 +31,9 @@ Developed by:
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
 // template parameter.
-template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void ifft2dCPU(T1 *d_data, int nx, int ny) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
+void ifft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running backward xform 2d" << endl;
   fftwf_plan plan;
   plan =
@@ -41,14 +41,14 @@ void ifft2dCPU(T1 *d_data, int nx, int ny) {
                         (fftwf_complex *)d_data, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
-  // fftwf_print_plan(plan);
+  // fftwf_pruword_plan(plan);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void fft2dCPU(T1 *d_data, int nx, int ny) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
+void fft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running forward xform 2d" << endl;
   fftwf_plan plan;
   plan =
@@ -56,14 +56,14 @@ void fft2dCPU(T1 *d_data, int nx, int ny) {
                         (fftwf_complex *)d_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
-  // fftwf_print_plan(plan);
+  // fftwf_pruword_plan(plan);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void ifft3dCPU(T1 *d_data, int nx, int ny, int nz) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
+void ifft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
   cout << "Running backward xform 3d" << endl;
   fftwf_plan plan;
   plan =
@@ -71,14 +71,14 @@ void ifft3dCPU(T1 *d_data, int nx, int ny, int nz) {
                         (fftwf_complex *)d_data, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
-  // fftwf_print_plan(plan);
+  // fftwf_pruword_plan(plan);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
-                                               int>::type = 0>
-void fft3dCPU(T1 *d_data, int nx, int ny, int nz) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
+void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
   cout << "Running forward xform 3d" << endl;
   fftwf_plan plan;
   plan =
@@ -86,14 +86,14 @@ void fft3dCPU(T1 *d_data, int nx, int ny, int nz) {
                         (fftwf_complex *)d_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
-  // fftwf_print_plan(plan);
+  // fftwf_pruword_plan(plan);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void ifft2dCPU(T1 *d_data, int nx, int ny) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, double>::value, uword>::type>
+void ifft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running backward xform 2d" << endl;
 
   fftw_plan plan;
@@ -105,9 +105,9 @@ void ifft2dCPU(T1 *d_data, int nx, int ny) {
   fftw_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void fft2dCPU(T1 *d_data, int nx, int ny) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, double>::value, uword>::type>
+void fft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running forward xform 2d" << endl;
 
   fftw_plan plan;
@@ -119,9 +119,9 @@ void fft2dCPU(T1 *d_data, int nx, int ny) {
   fftw_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void ifft3dCPU(T1 *d_data, int nx, int ny, int nz) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, double>::value, uword>::type>
+void ifft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
   cout << "Running backward xform 3d" << endl;
 
   fftw_plan plan;
@@ -133,9 +133,9 @@ void ifft3dCPU(T1 *d_data, int nx, int ny, int nz) {
   fftw_destroy_plan(plan);
 }
 
-template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
-                                               int>::type = 0>
-void fft3dCPU(T1 *d_data, int nx, int ny, int nz) {
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, double>::value, uword>::type>
+void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
   cout << "Running forward xform 3d" << endl;
 
   fftw_plan plan;
@@ -147,4 +147,15 @@ void fft3dCPU(T1 *d_data, int nx, int ny, int nz) {
   fftw_destroy_plan(plan);
 }
 
-#endif // PowerGrid_fftCPU_hpp
+// Explicit Instantiations
+template void ifft2dCPU<float>(float *, uword, uword);
+template void ifft2dCPU<double>(double *, uword, uword);
+
+template void fft2dCPU<float>(float *, uword, uword);
+template void fft2dCPU<double>(double *, uword, uword);
+
+template void ifft3dCPU<float>(float *, uword, uword, uword);
+template void ifft3dCPU<double>(double *, uword, uword, uword);
+
+template void fft3dCPU<float>(float *, uword, uword, uword);
+template void fft3dCPU<double>(double *, uword, uword, uword);

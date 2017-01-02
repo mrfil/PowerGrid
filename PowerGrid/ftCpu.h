@@ -35,26 +35,7 @@ Developed by:
 /*---------------------------------------------------------------------------*/
 /*  Included library headers                                                 */
 /*---------------------------------------------------------------------------*/
-// Numeric constants according to the precision type.
-#ifdef ENABLE_DOUBLE_PRECISION
-#define MRI_PI 3.1415926535897932384626433832795029
-#define MRI_NN 64
-#define MRI_DELTAZ 0.003
-#define MRI_ZERO 0.0
-#define MRI_ONE 1.0
-#define MRI_NEG_ONE -1.0
-#define MRI_POINT_FIVE 0.5
-#define MRI_SMOOTH_FACTOR 0.0000001
-#else
-#define MRI_PI 3.1415926535897932384626433832795029f
-#define MRI_NN 64
-#define MRI_DELTAZ 0.003f
-#define MRI_ZERO 0.0f
-#define MRI_ONE 1.0f
-#define MRI_NEG_ONE -1.0f
-#define MRI_POINT_FIVE 0.5f
-#define MRI_SMOOTH_FACTOR 0.000001f
-#endif
+#include "PGIncludes.h"
 /*---------------------------------------------------------------------------*/
 /*  Namespace declared - begin                                               */
 /*---------------------------------------------------------------------------*/
@@ -138,15 +119,17 @@ void ftCpu(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata_i,
            const int num_i);
 
 // Explicit Instantiations
-template void ftCpu<float>(float *, float *, const float *, const float *,
-                           const float *, const float *, const float *,
-                           const float *, const float *, const float *,
-                           const float *, const float *, const int, const int);
-template void ftCpu<double>(double *, double *, const double *, const double *,
-                            const double *, const double *, const double *,
-                            const double *, const double *, const double *,
-                            const double *, const double *, const int,
-                            const int);
+extern template void ftCpu<float>(float *, float *, const float *,
+                                  const float *, const float *, const float *,
+                                  const float *, const float *, const float *,
+                                  const float *, const float *, const float *,
+                                  const int, const int);
+extern template void ftCpu<double>(double *, double *, const double *,
+                                   const double *, const double *,
+                                   const double *, const double *,
+                                   const double *, const double *,
+                                   const double *, const double *,
+                                   const double *, const int, const int);
 /*===========================================================================*/
 /*                                                                           */
 /*  Synopsis    [CPU kernel of the Inverse Fourier Transformation (IFT).] */
@@ -161,15 +144,17 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
             const int num_k, const int num_i);
 
 // Explicit Instantiations
-template void iftCpu<float>(float *, float *, const float *, const float *,
-                            const float *, const float *, const float *,
-                            const float *, const float *, const float *,
-                            const float *, const float *, const int, const int);
-template void iftCpu<double>(double *, double *, const double *, const double *,
-                             const double *, const double *, const double *,
-                             const double *, const double *, const double *,
-                             const double *, const double *, const int,
-                             const int);
+extern template void iftCpu<float>(float *, float *, const float *,
+                                   const float *, const float *, const float *,
+                                   const float *, const float *, const float *,
+                                   const float *, const float *, const float *,
+                                   const int, const int);
+extern template void iftCpu<double>(double *, double *, const double *,
+                                    const double *, const double *,
+                                    const double *, const double *,
+                                    const double *, const double *,
+                                    const double *, const double *,
+                                    const double *, const int, const int);
 /*---------------------------------------------------------------------------*/
 /*  Namespace declared - end                                                 */
 /*---------------------------------------------------------------------------*/

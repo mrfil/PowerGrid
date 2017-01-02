@@ -23,7 +23,7 @@
     Date        [4/19/2016]
 
 *****************************************************************************/
-
+#include "TimeSegmentation.h"
 // This using field correction by time segmentation
 // The data is corrected to time 0 with reference to the time vector passed
 //
@@ -36,9 +36,8 @@
 template <typename T1, typename Tobj>
 TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
                                              Col<T1> timeVec_in, uword a,
-                                             uword b, uword c,
-                                             uword interptype = 1,
-                                             uword shots = 1) {
+                                             uword b, uword c, uword interptype,
+                                             uword shots) {
   cout << "Entering Class constructor" << endl;
   n1 = a;            // Data size
   n2 = b;            // Image size
@@ -63,12 +62,12 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
     tau = 0;
     AA.ones();
   } else {
-    Mat<CxT1> tempAA(NOneShot, L);
+    Mat<complex<T1>> tempAA(NOneShot, L);
     if (type == 1) { // Hanning interpolator
       cout << "Hanning interpolation" << endl;
       for (unsigned int ii = 0; ii < L; ii++) {
         for (unsigned int jj = 0; jj < NOneShot; jj++) {
-          if ((std::abs(timeVec(jj) - ((ii)*tau))) <= tau) {
+          if ((abs(timeVec(jj) - ((ii)*tau))) <= tau) {
             tempAA(jj, ii) =
                 0.5 +
                 0.5 * std::cos((datum::pi) * (timeVec(jj) - ((ii)*tau)) / tau);
@@ -82,15 +81,15 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
 
       cout << "Min Max time segmentation" << endl;
 
-      Mat<CxT1> Ltp;
+      Mat<complex<T1>> Ltp;
       Ltp.ones(1, L);
-      Col<CxT1> ggtp;
+      Col<complex<T1>> ggtp;
       ggtp.ones(n2, 1);
-      Mat<CxT1> gg;
+      Mat<complex<T1>> gg;
       gg = exp(i * fieldMap * tau) * Ltp;
-      Mat<CxT1> iGTGGT;
+      Mat<complex<T1>> iGTGGT;
       iGTGGT.set_size(L + 1, n2);
-      Mat<CxT1> gl;
+      Mat<complex<T1>> gl;
       gl.zeros(n2, L);
 
       for (unsigned int ii = 0; ii < L; ii++) {
@@ -99,7 +98,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         }
       }
 
-      Mat<CxT1> G;
+      Mat<complex<T1>> G;
       G.set_size(n2, L);
 
       for (unsigned int jj = 0; jj < L; jj++) {
@@ -110,12 +109,12 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         }
       }
 
-      Col<CxT1> glsum;
-      Mat<CxT1> GTG;
+      Col<complex<T1>> glsum;
+      Mat<complex<T1>> GTG;
       GTG.zeros(L, L);
       GTG.diag(0) += n2;
       glsum = sum(gl.t(), 1);
-      Mat<CxT1> GTGtp(L, L);
+      Mat<complex<T1>> GTGtp(L, L);
       for (unsigned int ii = 0; ii < (L - 1); ii++) {
         GTGtp.zeros();
         GTGtp.diag(-(T1)(ii + 1)) += glsum(ii);
@@ -131,9 +130,9 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         iGTGGT = pinv(GTG) * G.t(); // pseudo inverse
       }
 
-      Mat<CxT1> iGTGGTtp;
-      Mat<CxT1> ftp;
-      Col<CxT1> res, temp;
+      Mat<complex<T1>> iGTGGTtp;
+      Mat<complex<T1>> ftp;
+      Col<complex<T1>> res, temp;
 
       for (unsigned int ii = 0; ii < NOneShot; ii++) {
         ftp = exp(i * fieldMap * timeVec(ii));
@@ -153,12 +152,13 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
 // d is the vector of data of type T1, note it is const, so we don't modify it
 // directly rather return another vector of type T1
 template <typename T1, typename Tobj>
-Col<CxT1> TimeSegmentation<T1, Tobj>::operator*(const Col<CxT1> &d) const {
+Col<complex<T1>> TimeSegmentation<T1, Tobj>::
+operator*(const Col<complex<T1>> &d) const {
   Tobj *G = this->obj;
   // output is the size of the kspace data
-  Col<CxT1> outData = zeros<Col<CxT1>>(this->n1);
+  Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n1);
   // cout << "OutData size = " << this->n1 << endl;
-  Col<CxT1> Wo;
+  Col<complex<T1>> Wo;
   // uvec dataMaskTrimmed;
   // loop through time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
@@ -167,23 +167,25 @@ Col<CxT1> TimeSegmentation<T1, Tobj>::operator*(const Col<CxT1> &d) const {
     Wo = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
 
     // perform multiplication by the object and sum up the time segments
-    // outData += (this->AA.col(ii))%(*G*(Wo%d));
+    outData += (this->AA.col(ii)) % (*G * (Wo % d));
 
     // dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
     // std::cout << "Length dataMaskTrimmed = " << dataMaskTrimmed.n_rows <<
     // std::endl;
 
-    outData +=
-        (this->AA.col(ii)) % ((*G).trimmedForwardOp(Wo % d, this->AA.col(ii)));
+    // outData +=
+    //    (this->AA.col(ii)) % ((*G).trimmedForwardOp(Wo % d,
+    //    this->AA.col(ii)));
   }
   return outData;
 }
 template <typename T1, typename Tobj>
-Col<CxT1> TimeSegmentation<T1, Tobj>::operator/(const Col<CxT1> &d) const {
+Col<complex<T1>> TimeSegmentation<T1, Tobj>::
+operator/(const Col<complex<T1>> &d) const {
   Tobj *G = this->obj;
   // output is the size of the image
-  Col<CxT1> outData = zeros<Col<CxT1>>(this->n2);
-  Col<CxT1> Wo;
+  Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
+  Col<complex<T1>> Wo;
   // loop through the time segemtns
   for (unsigned int ii = 0; ii < this->L; ii++) {
 
@@ -191,8 +193,16 @@ Col<CxT1> TimeSegmentation<T1, Tobj>::operator/(const Col<CxT1> &d) const {
     Wo = exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
 
     // perform adjoint operation by the object and sum up the time segments
-    outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
+    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
+    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
+    outData += Wo % ((*G) / (AA.col(ii) % d));
   }
 
   return outData;
 }
+
+// Explicit Instantiations
+template class TimeSegmentation<float, Gnufft<float>>;
+template class TimeSegmentation<float, Gdft<float>>;
+template class TimeSegmentation<double, Gnufft<double>>;
+template class TimeSegmentation<double, Gdft<double>>;

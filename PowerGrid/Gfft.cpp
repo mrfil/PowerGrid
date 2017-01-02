@@ -37,8 +37,9 @@ template <typename T1> Gfft<T1>::Gfft(uword ix, uword iy, uword iz) {
 
 // Overloaded methods for forward and adjoint transform
 // Forward transform operation
-tempalte<typename T1> Col<CxT1> Gfft<T1>::operator*(const Col<CxT1> &d) const {
-  uword stx = (this->n2 - this->n1) / 2;
+template <typename T1>
+Col<complex<T1>> Gfft<T1>::operator*(const Col<complex<T1>> &d) const {
+  // uword stx = (this->n2 - this->n1) / 2;
 
   Col<T1> realData = real(d);
   Col<T1> imagData = imag(d);
@@ -56,8 +57,8 @@ tempalte<typename T1> Col<CxT1> Gfft<T1>::operator*(const Col<CxT1> &d) const {
   T1 *realXformedDataPtr = realXformedData.memptr();
   T1 *imagXformedDataPtr = imagXformedData.memptr();
   // allocate gridData
-  CxT1 *gridData = new CxT1[imageNumElems];
-  CxT1 *gridData_d = new CxT1[imageNumElems];
+  complex<T1> *gridData = new complex<T1>[ imageNumElems ];
+  complex<T1> *gridData_d = new complex<T1>[ imageNumElems ];
 
   // Have to set 'gridData' to zero.
   // Because they will be involved in accumulative operations
@@ -89,16 +90,16 @@ tempalte<typename T1> Col<CxT1> Gfft<T1>::operator*(const Col<CxT1> &d) const {
       // Launch FFT on the GPU
       if (Nz == 1) {
         fftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-        fft2dGPU(pGridData_d, Nx, Ny, stream);
+        fft2dGPU<T1>(pGridData_d, Nx, Ny, stream);
         fftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
-        deinterleave_data2d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                                Ny);
+        deinterleave_data2d<T1>(pGridData, realXformedDataPtr,
+                                imagXformedDataPtr, Nx, Ny);
       } else {
         fftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-        fft3dGPU(pGridData_d, Nx, Ny, Nz, stream);
+        fft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream);
         fftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
-        deinterleave_data3d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                                Ny, Nz);
+        deinterleave_data3d<T1>(pGridData, realXformedDataPtr,
+                                imagXformedDataPtr, Nx, Ny, Nz);
       }
     }
   }
@@ -106,28 +107,30 @@ tempalte<typename T1> Col<CxT1> Gfft<T1>::operator*(const Col<CxT1> &d) const {
 #else // We're on CPU
   if (Nz == 1) {
     fftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-    fft2dCPU(pGridData_d, Nx, Ny);
+    fft2dCPU<T1>(pGridData_d, Nx, Ny);
     fftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
-    deinterleave_data2d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                            Ny);
+    deinterleave_data2d<T1>(pGridData, realXformedDataPtr, imagXformedDataPtr,
+                            Nx, Ny);
   } else {
     fftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-    fft3dCPU(pGridData_d, Nx, Ny, Nz);
+    fft3dCPU<T1>(pGridData_d, Nx, Ny, Nz);
     fftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
-    deinterleave_data3d<T1>(pGridData, realXformedData, imagXformedData, Nx, Ny,
-                            Nz);
+    deinterleave_data3d<T1>(pGridData, realXformedDataPtr, imagXformedDataPtr,
+                            Nx, Ny, Nz);
   }
 #endif
 
-  Col<CxT1> XformedData(Nx * Ny * Nz);
+  Col<complex<T1>> XformedData(Nx * Ny * Nz);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return conv_to<Col<complex<T1>>>::from(
+      XformedData); // Return a vector of type T1
 }
 
 // Adjoint transform operation
-template <typename T1> Col<CxT1> Gfft<T1>::operator/(const Col<CxT1> &d) const {
+template <typename T1>
+Col<complex<T1>> Gfft<T1>::operator/(const Col<complex<T1>> &d) const {
   Col<T1> realData = real(d);
   Col<T1> imagData = imag(d);
 
@@ -145,8 +148,8 @@ template <typename T1> Col<CxT1> Gfft<T1>::operator/(const Col<CxT1> &d) const {
   T1 *imagXformedDataPtr = imagXformedData.memptr();
 
   // allocate gridData
-  CxT1 *gridData = new CxT1[imageNumElems];
-  CxT1 *gridData_d = new CxT1[imageNumElems];
+  complex<T1> *gridData = new complex<T1>[ imageNumElems ];
+  complex<T1> *gridData_d = new complex<T1>[ imageNumElems ];
 
   // Have to set 'gridData' to zero.
   // Because they will be involved in accumulative operations
@@ -178,16 +181,16 @@ template <typename T1> Col<CxT1> Gfft<T1>::operator/(const Col<CxT1> &d) const {
       // Launch FFT on the GPU
       if (Nz == 1) {
         ifftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-        ifft2dGPU(pGridData_d, Nx, Ny, stream);
+        ifft2dGPU<T1>(pGridData_d, Nx, Ny, stream);
         ifftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
-        deinterleave_data2d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                                Ny);
+        deinterleave_data2d<T1>(pGridData, realXformedDataPtr,
+                                imagXformedDataPtr, Nx, Ny);
       } else {
         ifftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-        ifft3dGPU(pGridData_d, Nx, Ny, Nz, stream);
+        ifft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream);
         ifftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
-        deinterleave_data3d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                                Ny, Nz);
+        deinterleave_data3d<T1>(pGridData, realXformedDataPtr,
+                                imagXformedDataPtr, Nx, Ny, Nz);
       }
     }
   }
@@ -195,15 +198,24 @@ template <typename T1> Col<CxT1> Gfft<T1>::operator/(const Col<CxT1> &d) const {
 #else // We're on CPU
   if (Nz == 1) {
     ifftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-    ifft2dCPU(pGridData_d, Nx, Ny);
+    ifft2dCPU<T1>(pGridData_d, Nx, Ny);
     ifftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
-    deinterleave_data2d<T1>(pGridData, realXformedData, imagXformedData, Nx,
-                            Ny);
+    deinterleave_data2d<T1>(pGridData, realXformedDataPtr, imagXformedDataPtr,
+                            Nx, Ny);
   } else {
     ifftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-    ifft3dCPU(pGridData_d, Nx, Ny, Nz);
+    ifft3dCPU<T1>(pGridData_d, Nx, Ny, Nz);
     ifftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
-    deinterleave_data3d<T1>(pGridData, realXformedData, imagXformedData, Nx, Ny,
-                            Nz);
+    deinterleave_data3d<T1>(pGridData, realXformedDataPtr, imagXformedDataPtr,
+                            Nx, Ny, Nz);
   }
 #endif
+
+  Col<CxT1> XformedData(Nx * Ny * Nz);
+  XformedData.set_real(realXformedData);
+  XformedData.set_imag(imagXformedData);
+  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+}
+// Explicit Instantiations
+template class Gfft<float>;
+template class Gfft<double>;

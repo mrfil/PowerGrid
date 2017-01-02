@@ -25,6 +25,13 @@ Developed by:
 
 #ifndef PowerGrid_SENSE_hpp
 #define PowerGrid_SENSE_hpp
+
+#include "Gdft.h"
+#include "Gnufft.h"
+#include "PGIncludes.h"
+#include "TimeSegmentation.h"
+
+using namespace std;
 using namespace arma;
 
 // We are using two template types at the moment. One for the type of data to be
@@ -58,9 +65,12 @@ public:
   Col<CxT1> operator/(const Col<CxT1> &d) const;
 };
 
-template class SENSE<float, Gnufft<float>>;
-template class SENSE<double, Gnufft<double>>;
-template class SENSE<float, Gdft<float>>;
-template class SENSE<double, Gdft<double>>;
+// Explicit Instantiations
+extern template class SENSE<float, Gnufft<float>>;
+extern template class SENSE<float, TimeSegmentation<float, Gnufft<float>>>;
+extern template class SENSE<double, Gnufft<double>>;
+extern template class SENSE<double, TimeSegmentation<double, Gnufft<double>>>;
+extern template class SENSE<float, Gdft<float>>;
+extern template class SENSE<double, Gdft<double>>;
 
 #endif

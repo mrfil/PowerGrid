@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.2) #CMake version 3.2 required to properly supp
 ## Flags and settings that change the compiler (i.e. from default to C++11 or C++14)
 ## need to be set BEFORE calling project command (which does introspection and sets
 ## variables about the behavior of the compiler).
-set(CMAKE_CXX_STANDARD 11 REQUIRED)
+set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_STANDARD_REQUIRED 1)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -15,7 +15,7 @@ project("PowerGrid" CXX)
 
 option(OPENACC "Enable OpenACC support" OFF)
 option(ISMRMRD "Enable ISMRMRD Suppport" OFF)
-option(MPI "Enable MPI Support" OFF)
+option(MPI "Enable MPI Support" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -26,12 +26,16 @@ set(LIBS ${LIBS} ${MATIO_LIBRARIES})
 
 # Find Boost
 if(MPI)
+find_package(mpi)
+set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES})
+include_directories(${MPI_C_INCLUDE_PATH})
 find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization mpi)
 else(MPI)
 find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization)
+endif()
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
-endif()
+
 
 if(OPENACC)
 	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS /usr/local/cuda/include
@@ -75,7 +79,31 @@ if(ISMRMRD)
 		set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
 endif()
 
+include_directories(Support/ArmaExtensions)
 
+#Define files to be compiled
+set(PG_FILES
+	PowerGrid/Robject.cpp
+	PowerGrid/QuadPenalty.cpp
+	PowerGrid/TVPenalty.cpp
+	PowerGrid/fftCPU.cpp
+	PowerGrid/fftGPU.cpp
+	PowerGrid/ftCpu.cpp
+	PowerGrid/Gdft.cpp
+	PowerGrid/Gfft.cpp
+	PowerGrid/TimeSegmentation.cpp
+	PowerGrid/gridding.cpp
+	PowerGrid/griddingSupport.cpp
+	PowerGrid/Gnufft.cpp
+	PowerGrid/SENSE.cpp
+	PowerGrid/mpipcSENSE.cpp
+	PowerGrid/pcSENSE.cpp
+	PowerGrid/reconSolve.cpp
+	PowerGrid/GdftRecon.cpp
+	PowerGrid/GnufftRecon.cpp
+	PowerGrid/DWIRecon.cpp
+
+)
 
 set(POWERGRID_TEST_GDFT
     ./PowerGrid/PowerGridGdft.cpp
@@ -87,24 +115,29 @@ set(POWERGRID_TEST_Gnufft
 	./PowerGrid/config.cxx
 )
 
-set(POWERGRID_TEST_DWI3DDFT
-		./PowerGrid/PowerGridDWI3DDFT.cpp
-		./PowerGrid/config.cxx
-		)
 
+
+add_executable(PowerGridGdft ${PG_FILES} ${POWERGRID_TEST_GDFT})
+add_executable(PowerGridGnufft ${PG_FILES} ${POWERGRID_TEST_Gnufft})
+
+target_link_libraries(PowerGridGdft ${LIBS})
+target_link_libraries(PowerGridGnufft ${LIBS})
+
+if(MPI)
 set(POWERGRID_STEAM
 		./PowerGrid/PowerGridSTEAM.cpp
 		./PowerGrid/config.cxx
 		)
-
-add_executable(PowerGridGdft ${POWERGRID_TEST_GDFT})
-add_executable(PowerGridGnufft ${POWERGRID_TEST_Gnufft})
-add_executable(PowerGridDWI3DDFT ${POWERGRID_TEST_DWI3DDFT})
-add_executable(PowerGridSTEAM ${POWERGRID_STEAM})
-target_link_libraries(PowerGridGdft ${LIBS})
-target_link_libraries(PowerGridGnufft ${LIBS})
-target_link_libraries(PowerGridDWI3DDFT ${LIBS})
+add_executable(PowerGridSTEAM ${PG_FILES} ${POWERGRID_STEAM})
 target_link_libraries(PowerGridSTEAM ${LIBS})
+set(POWERGRID_TEST_DWI3DDFT
+		./PowerGrid/PowerGridDWI3DDFT.cpp
+		./PowerGrid/config.cxx
+		)
+add_executable(PowerGridDWI3DDFT ${PG_FILES} ${POWERGRID_TEST_DWI3DDFT})
+target_link_libraries(PowerGridDWI3DDFT ${LIBS})
+
+endif(MPI)
 
 if (ISMRMRD)
 	set(POWERGRID_ISMRMRD
@@ -113,7 +146,7 @@ if (ISMRMRD)
 	)
 	find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/)
 	set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
-	add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD})
+	add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD} ${PG_FILES})
 	target_link_libraries(PowerGridIsmrmrd ${LIBS})
 endif ()
 
@@ -125,15 +158,17 @@ else()
 	else()
 		if(OPENACC)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -O4 -gopt -acc  -Minfo=accel,mp -Msmartalloc -ta=tesla:cc35 -pgf77libs -fpermissive")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gopt -fast -O4 -fpermissive -Msmartalloc -pgf77libs ")
-		endif()
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
+
+endif()
 	endif()
 endif()
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lfftw3")
 
 #add_definitions(-D__STRICT_ANSI__)
 add_definitions(-DARMA_NO_DEBUG)

@@ -76,8 +76,8 @@ template <typename T1> Gnufft<T1>::~Gnufft() {
 // Overloaded methods for forward and adjoint transform
 // Forward transform operation using gridding
 template <typename T1>
-Col<CxT1> Gnufft<T1>::
-operator*(const Col<CxT1> &d) const // Don't change these arguments
+Col<complex<T1>> Gnufft<T1>::
+operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 {
   // cout << "Entering forward operator overload in Ggrid." << endl;
   // This is just specifying size assuming things are the same size, change as
@@ -138,16 +138,17 @@ operator*(const Col<CxT1> &d) const // Don't change these arguments
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<CxT1> XformedData(this->n2);
+  Col<complex<T1>> XformedData(this->n2);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return conv_to<Col<complex<T1>>>::from(
+      XformedData); // Return a vector of type T1
 }
 
 // Adjoint transform operation
 template <typename T1>
-Col<CxT1> Gnufft<T1>::operator/(const Col<CxT1> &d) const {
+Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
 
   // uword dataLength = n2;
   // Let's trim the operations to avoid data overhead and transfers
@@ -197,18 +198,20 @@ Col<CxT1> Gnufft<T1>::operator/(const Col<CxT1> &d) const {
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<CxT1> XformedData(n1);
+  Col<complex<T1>> XformedData(n1);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
   // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
   // savemat("/shared/mrfil-data/data/PowerGridTest/64_64_16_4coils/ggrid.mat","img",XformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return conv_to<Col<complex<T1>>>::from(
+      XformedData); // Return a vector of type T1
 }
-template <T1>
-Col<CxT1> Gnufft<T1>::trimmedForwardOp(
-    const Col<CxT1> &d,
-    const Col<CxT1> &tempInterp) const // Don't change these arguments
+
+template <typename T1>
+Col<complex<T1>> Gnufft<T1>::trimmedForwardOp(
+    const Col<complex<T1>> &d,
+    const Col<complex<T1>> &tempInterp) const // Don't change these arguments
 {
   // Let's trim the operations to avoid data overhead and transfers
   // Basically if we know that the data points are zero, they have no impact
@@ -268,19 +271,21 @@ Col<CxT1> Gnufft<T1>::trimmedForwardOp(
   // We can free the realDataXformPtr and imagDataXformPtr at this point and
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
-  Col<CxT1> XformedDataTrimmed(dataLengthTrimmed);
-  Col<CxT1> XformedData(dataLength);
+  Col<complex<T1>> XformedDataTrimmed(dataLengthTrimmed);
+  Col<complex<T1>> XformedData(dataLength);
   XformedDataTrimmed.set_real(realXformedDataTrimmed);
   XformedDataTrimmed.set_imag(imagXformedDataTrimmed);
   XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return conv_to<Col<complex<T1>>>::from(
+      XformedData); // Return a vector of type T1
 }
 
 // Adjoint transform operation
 template <typename T1>
-Col<CxT1> Gnufft<T1>::trimmedAdjointOp(const Col<CxT1> &d,
-                                       const Col<CxT1> &tempInterp) const {
+Col<complex<T1>>
+Gnufft<T1>::trimmedAdjointOp(const Col<complex<T1>> &d,
+                             const Col<complex<T1>> &tempInterp) const {
 
   // uword dataLength = n2;
   // Let's trim the operations to avoid data overhead and transfers
@@ -293,7 +298,7 @@ Col<CxT1> Gnufft<T1>::trimmedAdjointOp(const Col<CxT1> &d,
   // std::cout << "Length of DataMaskTrimmed = " << dataLengthTrimmed <<
   // std::endl;
 
-  Col<CxT1> dTrimmed = d.elem(dataMaskTrimmed);
+  Col<complex<T1>> dTrimmed = d.elem(dataMaskTrimmed);
   Col<T1> kxTrimmed = kx.elem(dataMaskTrimmed);
   Col<T1> kyTrimmed = ky.elem(dataMaskTrimmed);
   Col<T1> kzTrimmed = kz.elem(dataMaskTrimmed);
@@ -339,11 +344,16 @@ Col<CxT1> Gnufft<T1>::trimmedAdjointOp(const Col<CxT1> &d,
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<CxT1> XformedData(n1);
+  Col<complex<T1>> XformedData(n1);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
   // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
   // savemat("/shared/mrfil-data/data/PowerGridTest/64_64_16_4coils/ggrid.mat","img",XformedData);
 
-  return conv_to<Col<CxT1>>::from(XformedData); // Return a vector of type T1
+  return conv_to<Col<complex<T1>>>::from(
+      XformedData); // Return a vector of type T1
 }
+
+// Explicit Instantiation
+template class Gnufft<float>;
+template class Gnufft<double>;

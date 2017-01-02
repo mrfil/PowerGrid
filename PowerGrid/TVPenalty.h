@@ -26,7 +26,7 @@ Developed by:
 #ifndef PowerGrid_TVPenalty_h
 #define PowerGrid_TVPenalty_h
 
-//#include <armadillo>
+#include "Robject.h"
 
 using namespace arma;
 
@@ -53,7 +53,8 @@ private:
   T1 Delta;
 };
 
-template class TVPenalty<double>;
-template class TVPenalty<float>;
+// Explicit Instantiation
+extern template class TVPenalty<double>;
+extern template class TVPenalty<float>;
 
 #endif // PowerGrid_TVPenalty_h

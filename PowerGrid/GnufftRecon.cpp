@@ -110,4 +110,8 @@ int GnufftRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L,
   return 0;
 }
 
-#endif //__PowerGrid__GnufftRecon
+// Explicit Instantiation
+template int GnufftRecon<float>(string, uword, uword, uword, uword, uword,
+                                uword, uword, float);
+template int GnufftRecon<double>(string, uword, uword, uword, uword, uword,
+                                 uword, uword, double);

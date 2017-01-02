@@ -184,4 +184,18 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
   };
   cufftDestroy(plan);
 }
+
+// Explicit Instantiations
+template void ifft2dGPU<float>(float *, int, int);
+template void ifft2dGPU<double>(double *, int, int);
+
+template void fft2dGPU<float>(float *, int, int);
+template void fft2dGPU<double>(double *, int, int);
+
+template void ifft3dGPU<float>(float *, int, int, int);
+template void ifft3dGPU<double>(double *, int, int, int);
+
+template void fft3dGPU<float>(float *, int, int, int);
+template void fft3dGPU<double>(double *, int, int, int);
+
 #endif //_OPENACC

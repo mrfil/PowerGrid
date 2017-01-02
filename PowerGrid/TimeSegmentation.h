@@ -32,6 +32,11 @@ Developed by:
 #ifndef PowerGrid_TimeSegmentation_h
 #define PowerGrid_TimeSegmentation_h
 
+#include "Gdft.h"
+#include "Gnufft.h"
+#include "PGIncludes.h"
+using namespace std;
+
 template <typename T1, typename Tobj> class TimeSegmentation {
   typedef complex<T1> CxT1;
 
@@ -41,7 +46,7 @@ public:
   // Class variables go here
   uword n1;     // Data size
   uword n2;     // Image size
-  uword L;      // number of time segments
+  int L;        // number of time segments
   uword type;   // type of time segmentation
   uword Nshots; // Number of shots, used to reduce complexity of calculating
                 // interpolator
@@ -64,8 +69,8 @@ public:
 };
 
 // Now we insert the explicit instantiations we need
-template class TimeSegmentation<std::complex<float>, Gnufft<float>>;
-template class TimeSegmentation<std::complex<float>, Gdft<float>>;
-template class TimeSegmentation<std::complex<double>, Gnufft<double>>;
-template class TimeSegmentation<std::complex<double>, Gdft<double>>;
+extern template class TimeSegmentation<float, Gnufft<float>>;
+extern template class TimeSegmentation<float, Gdft<float>>;
+extern template class TimeSegmentation<double, Gnufft<double>>;
+extern template class TimeSegmentation<double, Gdft<double>>;
 #endif // PowerGrid_TimeSegmentation_h

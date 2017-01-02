@@ -1,13 +1,13 @@
 /*
-(C) Copyright 2015-2016 The Board of Trustees of the University of Illinois.
-All rights reserved.
+   (C) Copyright 2015-2016 The Board of Trustees of the University of Illinois.
+   All rights reserved.
 
-See LICENSE.txt for the University of Illinois/NCSA Open Source license.
+   See LICENSE.txt for the University of Illinois/NCSA Open Source license.
 
-Developed by:
+   Developed by:
                      MRFIL Research Groups
                 University of Illinois, Urbana-Champaign
-*/
+ */
 
 /*****************************************************************************
 
@@ -23,9 +23,7 @@ Developed by:
 
     Date        [12/2/2016]
 
- *****************************************************************************/
-
-using namespace std; // where to put?
+*****************************************************************************/
 
 #ifdef _OPENACC
 #include "accelmath.h"
@@ -38,6 +36,10 @@ using namespace std; // where to put?
 #define SIN(a) std::sin(a)
 #define SINH(a) std::sinh(a)
 #endif
+
+#include "PGIncludes.h"
+
+using namespace std; // where to put?
 
 // From Numerical Recipes in C, 2nd Edition
 // Just a vanilla I(0,x) function approximation
@@ -104,114 +106,133 @@ void ifftshift3(T *__restrict out, const T *__restrict in, int xdim, int ydim,
                 int zdim);
 
 template <typename T1>
+void fft2shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX);
+
+template <typename T1>
 void fft3shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX,
                     int dimZ);
 
 // Explicit Instantiation
-template float bessi0<float>(float x);
-template double bessi0<double>(double x);
-template void calculateLUT<float>(float beta, float width, float *&LUT,
-                                  uword &sizeLUT);
-template void calculateLUT<double>(double beta, double width, double *&LUT,
-                                   uword &sizeLUT);
-template void deinterleave_data2d<float>(float *__restrict pSrc,
-                                         float *__restrict outR_d,
-                                         float *__restrict outI_d, int imageX,
-                                         int imageY);
-template void deinterleave_data2d<double>(double *__restrict pSrc,
-                                          double *__restrict outR_d,
-                                          double *__restrict outI_d, int imageX,
-                                          int imageY);
-template void deinterleave_data3d<float>(float *__restrict pSrc,
-                                         float *__restrict outR_d,
-                                         float *__restrict outI_d, int imageX,
-                                         int imageY, int imageZ);
-template void deinterleave_data3d<double>(double *__restrict pSrc,
-                                          double *__restrict outR_d,
-                                          double *__restrict outI_d, int imageX,
-                                          int imageY, int imageZ);
-template void deapodization2d<float>(float *__restrict pDst,
-                                     float *__restrict pSrc, int imageX,
-                                     int imageY, float kernelWidth, float beta,
-                                     float gridOS);
-template void deapodization2d<double>(double *__restrict pDst,
-                                      double *__restrict pSrc, int imageX,
-                                      int imageY, double kernelWidth,
-                                      double beta, double gridOS);
-template void deapodization3d<float>(float *__restrict pDst,
-                                     float *__restrict pSrc, int imageX,
-                                     int imageY, int imageZ, float kernelWidth,
-                                     float beta, float gridOS);
-template void deapodization3d<double>(double *__restrict pDst,
-                                      double *__restrict pSrc, int imageX,
-                                      int imageY, int imageZ,
-                                      double kernelWidth, double beta,
-                                      double gridOS);
+extern template float bessi0<float>(float x);
+extern template double bessi0<double>(double x);
+extern template void calculateLUT<float>(float beta, float width, float *&LUT,
+                                         uword &sizeLUT);
+extern template void calculateLUT<double>(double beta, double width,
+                                          double *&LUT, uword &sizeLUT);
 
-template void crop_center_region2d<float>(float *__restrict pDst,
-                                          float *__restrict pSrc,
-                                          int imageSizeX, int imageSizeY,
-                                          int gridSizeX, int gridSizeY);
-template void crop_center_region2d<double>(double *__restrict pDst,
-                                           double *__restrict pSrc,
-                                           int imageSizeX, int imageSizeY,
-                                           int gridSizeX, int gridSizeY);
+extern template
+float kernel_value_LUT(float dist, const float *LUT, uword sizeLUT, float width);
+extern template
+double kernel_value_LUT(double dist, const double *LUT, uword sizeLUT, double width);
+extern template void deinterleave_data2d<float>(float *__restrict pSrc,
+                                                float *__restrict outR_d,
+                                                float *__restrict outI_d,
+                                                int imageX, int imageY);
+extern template void deinterleave_data2d<double>(double *__restrict pSrc,
+                                                 double *__restrict outR_d,
+                                                 double *__restrict outI_d,
+                                                 int imageX, int imageY);
+extern template void deinterleave_data3d<float>(float *__restrict pSrc,
+                                                float *__restrict outR_d,
+                                                float *__restrict outI_d,
+                                                int imageX, int imageY,
+                                                int imageZ);
+extern template void deinterleave_data3d<double>(double *__restrict pSrc,
+                                                 double *__restrict outR_d,
+                                                 double *__restrict outI_d,
+                                                 int imageX, int imageY,
+                                                 int imageZ);
+extern template void deapodization2d<float>(float *__restrict pDst,
+                                            float *__restrict pSrc, int imageX,
+                                            int imageY, float kernelWidth,
+                                            float beta, float gridOS);
+extern template void deapodization2d<double>(double *__restrict pDst,
+                                             double *__restrict pSrc,
+                                             int imageX, int imageY,
+                                             double kernelWidth, double beta,
+                                             double gridOS);
+extern template void deapodization3d<float>(float *__restrict pDst,
+                                            float *__restrict pSrc, int imageX,
+                                            int imageY, int imageZ,
+                                            float kernelWidth, float beta,
+                                            float gridOS);
+extern template void deapodization3d<double>(double *__restrict pDst,
+                                             double *__restrict pSrc,
+                                             int imageX, int imageY, int imageZ,
+                                             double kernelWidth, double beta,
+                                             double gridOS);
 
-template void crop_center_region3d<float>(float *__restrict pDst,
-                                          float *__restrict pSrc,
-                                          int imageSizeX, int imageSizeY,
-                                          int imageSizeZ, int gridSizeX,
-                                          int gridSizeY, int gridSizeZ);
-template void crop_center_region3d<double>(double *__restrict pDst,
-                                           double *__restrict pSrc,
-                                           int imageSizeX, int imageSizeY,
-                                           int imageSizeZ, int gridSizeX,
-                                           int gridSizeY, int gridSizeZ);
+extern template void crop_center_region2d<float>(float *__restrict pDst,
+                                                 float *__restrict pSrc,
+                                                 int imageSizeX, int imageSizeY,
+                                                 int gridSizeX, int gridSizeY);
+extern template void crop_center_region2d<double>(double *__restrict pDst,
+                                                  double *__restrict pSrc,
+                                                  int imageSizeX,
+                                                  int imageSizeY, int gridSizeX,
+                                                  int gridSizeY);
 
-template void zero_pad2d<float>(float *__restrict pDst, float *__restrict pSrc,
-                                int imageSizeX, int imageSizeY, float gridOS);
-template void zero_pad2d<double>(double *__restrict pDst,
-                                 double *__restrict pSrc, int imageSizeX,
-                                 int imageSizeY, double gridOS);
-template void zero_pad3d<float>(float *__restrict pDst, float *__restrict pSrc,
-                                int imageSizeX, int imageSizeY, int imageSizeZ,
-                                float gridOS);
-template void zero_pad3d<double>(double *__restrict pDst,
-                                 double *__restrict pSrc, int imageSizeX,
-                                 int imageSizeY, int imageSizeZ, double gridOS);
-template void circshift2<float>(float *__restrict pDst,
-                                const float *__restrict pSrc, int xdim,
-                                int ydim, int xshift, int yshift);
-template void circshift2<double>(double *__restrict pDst,
-                                 const double *__restrict pSrc, int xdim,
-                                 int ydim, int xshift, int yshift);
-template void fftshift2<float>(float *__restrict out,
-                               const float *__restrict in, int xdim, int ydim);
-template void fftshift2<double>(double *__restrict out,
-                                const double *__restrict in, int xdim,
-                                int ydim);
-template void ifftshift2<float>(float *__restrict out,
-                                const float *__restrict in, int xdim, int ydim);
-template void ifftshift2<double>(double *__restrict out,
-                                 const double *__restrict in, int xdim,
-                                 int ydim);
-template void fftshift3<float>(float *__restrict out,
-                               const float *__restrict in, int xdim, int ydim,
-                               int zdim);
-template void fftshift3<double>(double *__restrict out,
-                                const double *__restrict in, int xdim, int ydim,
-                                int zdim);
-template void ifftshift3<float>(float *__restrict out,
-                                const float *__restrict in, int xdim, int ydim,
-                                int zdim);
-template void ifftshift3<double>(double *__restrict out,
-                                 const double *__restrict in, int xdim,
-                                 int ydim, int zdim);
-template void fft2shift_grid<float>(std::complex<float> *__restrict src,
-                                    int dimY, int dimX);
-template void fft2shift_grid<double>(std::complex<double> *__restrict src,
-                                     int dimY, int dimX);
-template void fft3shift_grid<float>(std::complex<float> *__restrict src,
-                                    int dimY, int dimX, int dimZ);
-template void fft3shift_grid<double>(std::complex<double> *__restrict src,
-                                     int dimY, int dimX, int dimZ);
+extern template void crop_center_region3d<float>(float *__restrict pDst,
+                                                 float *__restrict pSrc,
+                                                 int imageSizeX, int imageSizeY,
+                                                 int imageSizeZ, int gridSizeX,
+                                                 int gridSizeY, int gridSizeZ);
+extern template void
+crop_center_region3d<double>(double *__restrict pDst, double *__restrict pSrc,
+                             int imageSizeX, int imageSizeY, int imageSizeZ,
+                             int gridSizeX, int gridSizeY, int gridSizeZ);
+
+extern template void zero_pad2d<float>(float *__restrict pDst,
+                                       float *__restrict pSrc, int imageSizeX,
+                                       int imageSizeY, float gridOS);
+extern template void zero_pad2d<double>(double *__restrict pDst,
+                                        double *__restrict pSrc, int imageSizeX,
+                                        int imageSizeY, double gridOS);
+extern template void zero_pad3d<float>(float *__restrict pDst,
+                                       float *__restrict pSrc, int imageSizeX,
+                                       int imageSizeY, int imageSizeZ,
+                                       float gridOS);
+extern template void zero_pad3d<double>(double *__restrict pDst,
+                                        double *__restrict pSrc, int imageSizeX,
+                                        int imageSizeY, int imageSizeZ,
+                                        double gridOS);
+extern template void circshift2<float>(float *__restrict pDst,
+                                       const float *__restrict pSrc, int xdim,
+                                       int ydim, int xshift, int yshift);
+extern template void circshift2<double>(double *__restrict pDst,
+                                        const double *__restrict pSrc, int xdim,
+                                        int ydim, int xshift, int yshift);
+extern template void fftshift2<float>(float *__restrict out,
+                                      const float *__restrict in, int xdim,
+                                      int ydim);
+extern template void fftshift2<double>(double *__restrict out,
+                                       const double *__restrict in, int xdim,
+                                       int ydim);
+extern template void ifftshift2<float>(float *__restrict out,
+                                       const float *__restrict in, int xdim,
+                                       int ydim);
+extern template void ifftshift2<double>(double *__restrict out,
+                                        const double *__restrict in, int xdim,
+                                        int ydim);
+extern template void fftshift3<float>(float *__restrict out,
+                                      const float *__restrict in, int xdim,
+                                      int ydim, int zdim);
+extern template void fftshift3<double>(double *__restrict out,
+                                       const double *__restrict in, int xdim,
+                                       int ydim, int zdim);
+extern template void ifftshift3<float>(float *__restrict out,
+                                       const float *__restrict in, int xdim,
+                                       int ydim, int zdim);
+extern template void ifftshift3<double>(double *__restrict out,
+                                        const double *__restrict in, int xdim,
+                                        int ydim, int zdim);
+extern template void fft2shift_grid<float>(std::complex<float> *__restrict src,
+                                           int dimY, int dimX);
+extern template void
+fft2shift_grid<double>(std::complex<double> *__restrict src, int dimY,
+                       int dimX);
+extern template void fft3shift_grid<float>(std::complex<float> *__restrict src,
+                                           int dimY, int dimX, int dimZ);
+extern template void
+fft3shift_grid<double>(std::complex<double> *__restrict src, int dimY, int dimX,
+                       int dimZ);
