@@ -81,15 +81,15 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
     for (nx = NxL; nx <= NxH; ++nx) {
       int k0;
       distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+      // Working around issue with PGI 16.10 and OpenACC and kernel_value_LUT
       if (params.useLUT) {
         k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
                    (T1)sizeLUT);
         if (k0 >= sizeLUT)
-          kbY = (T1)0.0;
+          kbX = (T1)0.0;
         else
-          kbY = LUT[k0];
-        kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
-
+          kbX = LUT[k0];
+        // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
       } else {
         kbX = bessi0(beta * SQRT((T1)1.0 -
                                  ((T1)2.0 * distX / kernelWidth) *
@@ -101,7 +101,6 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
         kbX = 0;
       }
 #pragma acc loop seq
-
       for (ny = NyL; ny <= NyH; ++ny) {
         distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
         if (params.useLUT) {
@@ -128,14 +127,15 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
         w = kbX * kbY;
 
         /* grid data */
-        idx = ny + (nx)*params.gridSize[1] /* + (nz)*gridOS*Nx*gridOS*Ny*/;
+        idx =
+            2 * (ny + (nx)*params.gridSize[1]) /* + (nz)*gridOS*Nx*gridOS*Ny*/;
 
 #pragma acc atomic update
-        pGData[2 * idx] += w * pt.real;
+        pGData[idx] += w * pt.real;
 // atomicAdd(pGData+2*idx, w*pt.real);
 
 #pragma acc atomic update
-        pGData[2 * idx + 1] += w * pt.imag;
+        pGData[idx + 1] += w * pt.imag;
         // atomicAdd(pGData+2*idx+1, w*pt.imag);
 
         // gridData[idx].y += (w*pt.imag*atm);
@@ -216,6 +216,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
     for (nz = NzL; nz <= NzH; ++nz) {
       int k0;
       distZ = ABS(shiftedKz - ((T1)nz)) / (gridOS);
+
       if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
         k0 = (int)((distZ * distZ * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -254,7 +255,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
         for (ny = NyL; ny <= NyH; ++ny) {
           distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
           if (params.useLUT) {
-            //                      kbY = kernel_value_LUT(distY, LUT, sizeLUT,
+            //                      kbY = kernel_value_LUT(distY, LUT,sizeLUT,
             //                      kernelWidth);
             k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
                        (T1)sizeLUT);
@@ -509,6 +510,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
     for (nz = NzL; nz <= NzH; ++nz) {
       int k0;
       distZ = ABS(shiftedKz - ((T1)nz)) / (gridOS);
+
       if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
         k0 = (int)((distZ * distZ * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -532,6 +534,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 #pragma acc loop seq
       for (nx = NxL; nx <= NxH; ++nx) {
         distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+
         if (params.useLUT) {
           // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
           k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -555,6 +558,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 #pragma acc loop seq
         for (ny = NyL; ny <= NyH; ++ny) {
           distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
+
           if (params.useLUT) {
             // kbY = kernel_value_LUT(distY, LUT, sizeLUT, kernelWidth);
 
@@ -694,7 +698,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
-  complex<T1> *gridData = new complex<T1>[ gridNumElems ];
+  complex<T1> *gridData = new complex<T1>[gridNumElems];
 
   // Have to set 'gridData' and 'sampleDensity' to zero.
   // Because they will be involved in accumulative operations
@@ -705,9 +709,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     gridData[i].imag((T1)0.0);
     // sampleDensity[i] = (T1)0.0;
   }
-  gridData_d = new complex<T1>[ gridNumElems ];
-  complex<T1> *gridData_crop_d = new complex<T1>[ imageNumElems ];
-  complex<T1> *gridData_crop_deAp = new complex<T1>[ imageNumElems ];
+  gridData_d = new complex<T1>[gridNumElems];
+  complex<T1> *gridData_crop_d = new complex<T1>[imageNumElems];
+  complex<T1> *gridData_crop_deAp = new complex<T1>[imageNumElems];
   T1 *pGridData_crop_d = reinterpret_cast<T1 *>(gridData_crop_d);
   T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
@@ -831,7 +835,8 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 beta = MRI_PI * std::sqrt( (gridOS - 0.5) * (gridOS - 0.5) *
                                                             (kernelWidth *
   kernelWidth*4.0) /
-                                                            (gridOS * gridOS) -
+                                                            (gridOS * gridOS)
+  -
   0.8
   );i
   */
@@ -854,7 +859,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
-  complex<T1> *samples = new complex<T1>[ params.numSamples ];
+  complex<T1> *samples = new complex<T1>[params.numSamples];
 
   if (samples == NULL) {
     printf("ERROR: Unable to allocate memory for input data\n");
@@ -901,7 +906,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
   // allocate gridData
-  complex<T1> *gridData = new complex<T1>[ imageNumElems ];
+  complex<T1> *gridData = new complex<T1>[imageNumElems];
   // Have to set 'gridData' to zero.
   // Because they will be involved in accumulative operations
   // inside gridding functions.
@@ -909,9 +914,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     gridData[i].real(dR[i]);
     gridData[i].imag(dI[i]);
   }
-  complex<T1> *gridData_d = new complex<T1>[ imageNumElems ];
-  complex<T1> *gridData_os_d = new complex<T1>[ gridNumElems ];
-  complex<T1> *gridData_os = new complex<T1>[ gridNumElems ];
+  complex<T1> *gridData_d = new complex<T1>[imageNumElems];
+  complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
+  complex<T1> *gridData_os = new complex<T1>[gridNumElems];
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData_os_d = reinterpret_cast<T1 *>(gridData_os_d);
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);

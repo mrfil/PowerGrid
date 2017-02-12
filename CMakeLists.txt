@@ -13,9 +13,9 @@ endif()
 
 project("PowerGrid" CXX)
 
-option(OPENACC "Enable OpenACC support" OFF)
+option(OPENACC "Enable OpenACC support" ON)
 option(ISMRMRD "Enable ISMRMRD Suppport" OFF)
-option(MPI "Enable MPI Support" ON)
+option(MPISupport "Enable MPI Support" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -25,14 +25,16 @@ include_directories(${MATIO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${MATIO_LIBRARIES})
 
 # Find Boost
-if(MPI)
-find_package(mpi)
+set(BOOST_LIBRARYDIR /usr/lib64)
+if(MPISupport)
+find_package(MPI)
 set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES})
-include_directories(${MPI_C_INCLUDE_PATH})
+include_directories(${MPI_CXX_INCLUDE_PATH})
 find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization mpi)
-else(MPI)
+else(MPISupport)
 find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization)
-endif()
+endif(MPISupport)
+set(Boost_USE_STATIC_LIBS ON)
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -46,6 +48,12 @@ $ENV{CUDATOOLKIT_HOME}/include )
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
 	#find_library(cudaRT_LIBRARIES cudart HINTS /usr/local/cuda/lib64)
 	#set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
+	find_path(FFTW_INCLUDE_DIR fftw3.h)
+				find_library(FFTW_LIBRARIES NAMES fftw3 HINTS /usr/lib/x86_64-linux-gnu/)
+				find_library(FFTWF_LIBRARIES NAMES fftw3f HINTS /usr/lib/x86_64-linux-gnu/)
+	include_directories(${FFTW_INCLUDE_DIR})
+	set(LIBS ${LIBS} ${FFTW_LIBRARIES})
+	set(LIBS ${LIBS} ${FFTWF_LIBRARIES})
 else()
 	#find_package(FFTW REQUIRED)
 	find_path(FFTW_INCLUDE_DIR fftw3.h)
@@ -92,8 +100,8 @@ set(PG_FILES
 	PowerGrid/Gdft.cpp
 	PowerGrid/Gfft.cpp
 	PowerGrid/TimeSegmentation.cpp
-	PowerGrid/gridding.cpp
 	PowerGrid/griddingSupport.cpp
+	PowerGrid/gridding.cpp
 	PowerGrid/Gnufft.cpp
 	PowerGrid/SENSE.cpp
 	PowerGrid/mpipcSENSE.cpp
@@ -115,15 +123,13 @@ set(POWERGRID_TEST_Gnufft
 	./PowerGrid/config.cxx
 )
 
-
-
 add_executable(PowerGridGdft ${PG_FILES} ${POWERGRID_TEST_GDFT})
 add_executable(PowerGridGnufft ${PG_FILES} ${POWERGRID_TEST_Gnufft})
 
 target_link_libraries(PowerGridGdft ${LIBS})
 target_link_libraries(PowerGridGnufft ${LIBS})
 
-if(MPI)
+if(MPISupport)
 set(POWERGRID_STEAM
 		./PowerGrid/PowerGridSTEAM.cpp
 		./PowerGrid/config.cxx
@@ -137,7 +143,7 @@ set(POWERGRID_TEST_DWI3DDFT
 add_executable(PowerGridDWI3DDFT ${PG_FILES} ${POWERGRID_TEST_DWI3DDFT})
 target_link_libraries(PowerGridDWI3DDFT ${LIBS})
 
-endif(MPI)
+endif(MPISupport)
 
 if (ISMRMRD)
 	set(POWERGRID_ISMRMRD
@@ -156,11 +162,12 @@ else()
 	if(CMAKE_COMPILER_IS_GNUCXX)
 
 	else()
+	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -O4 -gopt -acc  -Minfo=accel,mp -Msmartalloc -ta=tesla:cc35 -pgf77libs -fpermissive")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -acc -gopt -Mipa=fast,inline -Minfo=accel -ta=tesla:cc35 -pgf77libs -fpermissive")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 		else()
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gopt -fast -O4 -fpermissive -Msmartalloc -pgf77libs ")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -gopt -fpermissive -pgf77libs ")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 
 endif()
@@ -168,12 +175,12 @@ endif()
 endif()
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 
 #add_definitions(-D__STRICT_ANSI__)
 add_definitions(-DARMA_NO_DEBUG)
 #add_definitions(-DARMA_DONT_USE_CXX11)
 
-if (MPI)
+if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
-endif ()
+endif (MPISupport)

@@ -43,11 +43,13 @@ using namespace std; // where to put?
 
 // From Numerical Recipes in C, 2nd Edition
 // Just a vanilla I(0,x) function approximation
+#pragma acc routine seq
 template <typename T1> T1 bessi0(T1 x);
 
 template <typename T1>
 void calculateLUT(T1 beta, T1 width, T1 *&LUT, uword &sizeLUT);
 
+#pragma acc routine seq
 template <typename T1>
 T1 kernel_value_LUT(T1 dist, const T1 *LUT, uword sizeLUT, T1 width);
 
