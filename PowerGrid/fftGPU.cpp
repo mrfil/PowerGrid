@@ -29,6 +29,9 @@
 // https://www.olcf.ornl.gov/tutorials/mixing-openacc-with-gpu-libraries/
 
 #include "fftGPU.h"
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+
 #ifdef _OPENACC
 // Like Armadillo, we're using SFINAE here to choose between float and double.
 // (Maybe FP16 some day in the future)
@@ -48,6 +51,12 @@ void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         cufftSetStream(plan, (cudaStream_t)stream);
         cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
                      CUFFT_INVERSE);
+
+        // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -64,6 +73,12 @@ void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         cufftSetStream(plan, (cudaStream_t)stream);
         cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
                      CUFFT_FORWARD);
+
+                             // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -80,6 +95,12 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
         cufftSetStream(plan, (cudaStream_t)stream);
         cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
                      CUFFT_INVERSE);
+
+                             // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -96,6 +117,12 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
         cufftSetStream(plan, (cudaStream_t)stream);
         cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
                      CUFFT_FORWARD);
+
+                             // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -117,6 +144,12 @@ void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
                          CUFFT_INVERSE) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
         };
+
+                // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -139,6 +172,12 @@ void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
                          CUFFT_FORWARD) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
         };
+
+                // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -160,6 +199,12 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
                          CUFFT_INVERSE) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
         };
+
+                // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 
@@ -182,6 +227,12 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
                          CUFFT_FORWARD) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
         };
+
+                // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
         cufftDestroy(plan);
 }
 

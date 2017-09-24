@@ -68,7 +68,6 @@ Gnufft<T1>::Gnufft(
 template <typename T1> Gnufft<T1>::~Gnufft() {
   if (LUT) {
 #pragma acc exit data delete (LUT)
-#pragma acc exit data delete (LUT)
     free(LUT);
   }
 }

@@ -97,7 +97,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
               kernelWidth;
       }
 
-      if (kbX != kbX) { // if kbX = NaN
+      if (isnan(kbX)) { // if kbX = NaN
         kbX = 0;
       }
 #pragma acc loop seq
@@ -120,7 +120,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
                 kernelWidth;
         }
 
-        if (kbY != kbY) { // if kbY = NaN
+        if (isnan(kbY)) { // if kbY = NaN
           kbY = (T1)0.0;
         }
 
@@ -361,7 +361,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
               kernelWidth;
       }
 
-      if (kbX != kbX) { // if kbX = NaN
+      if (isnan(kbX)) { // if kbX = NaN
         kbX = 0;
       }
 
@@ -385,7 +385,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
                 kernelWidth;
         }
 
-        if (kbY != kbY) { // if kbY = NaN
+        if (isnan(kbY)) { // if kbY = NaN
           kbY = 0;
         }
 
@@ -527,7 +527,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
               kernelWidth;
       }
 
-      if (kbZ != kbZ) { // if kbY = NaN
+      if (isnan(kbZ)) { // if kbZ = NaN
         kbZ = 0;
       }
 
@@ -551,7 +551,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                 kernelWidth;
         }
 
-        if (kbX != kbX) { // if kbX = NaN
+        if (isnan(kbX)) { // if kbX = NaN
           kbX = 0;
         }
 
@@ -576,7 +576,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                   kernelWidth;
           }
 
-          if (kbY != kbY) { // if kbY = NaN
+          if (isnan(kbY)) { // if kbY = NaN
             kbY = 0;
           }
 
@@ -742,6 +742,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 #pragma acc host_data use_device(pGridData_d)
   {
+
     // Query OpenACC for CUDA stream
     void *stream = acc_get_cuda_stream(acc_async_sync);
 
@@ -752,11 +753,13 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
                 params.gridSize[2], stream);
     }
+
   }
+
 
 #else // We're on CPU so we'll use FFTW
 
-  // Launch FFT on the GPU
+  // Launch FFT on the CPU
   if (Nz == 1) {
     ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
   } else {
@@ -765,21 +768,32 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   }
 
 #endif
+
+  // Need to deal with 1/N normalization from the inverse FFT
+
+  if (Nz == 1) {
+    normalize_fft2d<T1>(pGridData, pGridData_d, params.gridSize[0],
+            params.gridSize[1]);
+  } else {
+    normalize_fft3d<T1>(pGridData, pGridData_d, params.gridSize[0],
+            params.gridSize[1], params.gridSize[2]);
+  }
+
   // cout << "Got through the update device directive" << endl;
   if (Nz == 1) {
-    fftshift2<T1>(pGridData, pGridData_d, params.gridSize[0],
+    fftshift2<T1>(pGridData_d, pGridData, params.gridSize[0],
                   params.gridSize[1]);
   } else {
-    fftshift3<T1>(pGridData, pGridData_d, params.gridSize[0],
+    fftshift3<T1>(pGridData_d, pGridData, params.gridSize[0],
                   params.gridSize[1], params.gridSize[2]);
   }
 
   if (Nz == 1) {
-    crop_center_region2d<T1>(pGridData_crop_d, pGridData, params.imageSize[0],
+    crop_center_region2d<T1>(pGridData_crop_d, pGridData_d, params.imageSize[0],
                              params.imageSize[1], params.gridSize[0],
                              params.gridSize[1]);
   } else {
-    crop_center_region3d<T1>(pGridData_crop_d, pGridData, params.imageSize[0],
+    crop_center_region3d<T1>(pGridData_crop_d, pGridData_d, params.imageSize[0],
                              params.imageSize[1], params.imageSize[2],
                              params.gridSize[0], params.gridSize[1],
                              params.gridSize[2]);
@@ -959,8 +973,10 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 //#pragma acc data copy(pGridData_os_d[0:2*gridNumElems])
 //{
+
 #pragma acc host_data use_device(pGridData_os_d)
   {
+
     // Query OpenACC for CUDA stream
     void *stream = acc_get_cuda_stream(acc_async_sync);
 
@@ -971,7 +987,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       fft3dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1],
                params.gridSize[2], stream);
     }
+
   }
+
 #else // We're on CPU
   if (Nz == 1) {
     fft2dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1]);

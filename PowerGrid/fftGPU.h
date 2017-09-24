@@ -73,17 +73,17 @@ template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
 void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream);
 
 // Explicit Instantiations
-extern template void ifft2dGPU<float>(float *, int, int);
-extern template void ifft2dGPU<double>(double *, int, int);
+extern template void ifft2dGPU<float>(float *, int, int, void *);
+extern template void ifft2dGPU<double>(double *, int, int, void *);
 
-extern template void fft2dGPU<float>(float *, int, int);
-extern template void fft2dGPU<double>(double *, int, int);
+extern template void fft2dGPU<float>(float *, int, int, void *);
+extern template void fft2dGPU<double>(double *, int, int, void *);
 
-extern template void ifft3dGPU<float>(float *, int, int, int);
-extern template void ifft3dGPU<double>(double *, int, int, int);
+extern template void ifft3dGPU<float>(float *, int, int, int, void *);
+extern template void ifft3dGPU<double>(double *, int, int, int, void *);
 
-extern template void fft3dGPU<float>(float *, int, int, int);
-extern template void fft3dGPU<double>(double *, int, int, int);
+extern template void fft3dGPU<float>(float *, int, int, int, void *);
+extern template void fft3dGPU<double>(double *, int, int, int, void *);
 
 #endif //_OPENACC
 #endif // PowerGrid_fftGPU_hpp

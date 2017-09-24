@@ -143,6 +143,61 @@ void deinterleave_data3d(T1 *__restrict pSrc, T1 *__restrict outR_d,
   }
 }
 
+// We oversample the FFT by zeropadding so now we need to crop
+template <typename T1>
+void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
+		int gridSizeY) {
+	// (gridSizeX,gridSizeY) is the size of 'src'
+
+T1 vectorLength= gridSizeX*gridSizeY;
+int common_index;
+#pragma acc parallel loop collapse(2)                                          \
+    independent present(pSrc[0 : 2 * gridSizeX *gridSizeY])                    \
+                            present(pDst[0 : 2 * gridSizeX * gridSizeY])
+	for (int dX = 0; dX < gridSizeX; dX++) {
+		for (int dY = 0; dY < gridSizeY; dY++) {
+			common_index = dX * gridSizeY + dY;
+			pDst[ 2 * common_index ]    = pSrc[ 2 * common_index ]/vectorLength;
+			pDst[ 2 * common_index + 1] = pSrc[ 2 * common_index + 1]/vectorLength;
+		}
+	}
+}
+
+// We oversample the FFT so now we need to crop
+template <typename T1>
+void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ) {
+	// (gridSizeX,gridSizeY,gridSizeZ) is the size of 'src'
+	//    assert( (!(gridSizeX%2) && !(gridSizeY%2) && !(gridSizeZ%2)) );
+	//    assert( (!(imageSizeX%2) && !(imageSizeY%2) && !(imageSizeZ%2)) );
+
+	T1 vectorLength;
+
+	vectorLength = gridSizeX*gridSizeY*gridSizeZ;
+
+	int common_index;
+
+#pragma acc parallel loop collapse(3) independent present(                     \
+    pSrc[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])                             \
+        present(pDst[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])
+	for (int dZ = 0; dZ < gridSizeZ; dZ++) {
+		for (int dX= 0; dX < gridSizeX; dX++) {
+			for (int dY = 0; dY < gridSizeY; dY++) {
+
+				common_index =
+						dZ * gridSizeX * gridSizeY + dX * gridSizeY + dY;
+
+				// dst[common_index_dst] = src[common_index_src];
+
+				// dst[common_index_dst].real() = src[common_index_src].real();
+				// dst[common_index_dst].imag() = src[common_index_src].imag();
+				pDst[ 2 * common_index ] = pSrc[ 2 * common_index]/vectorLength;
+				pDst[ 2 * common_index + 1] = pSrc[ 2 * common_index + 1]/vectorLength;
+			}
+		}
+	}
+}
+
 // Deapodizes 2d data by FT of the Kasier-Bessel kernel
 template <typename T1>
 void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
@@ -205,11 +260,11 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
                          std::sqrt((T1)-1.0 * common_exprY));
 
       gridKernel = common_exprX1 * common_exprY1;
+	    common_index = Y + X * imageY;
 
-      if (gridKernel == gridKernel) // Check for NaN
+      if (!isnan(gridKernel)) // Check for NaN
       {
 
-        common_index = Y + X * imageY;
         gridOS2 = gridOS * gridOS;
 
         // dst[common_index] =
@@ -219,6 +274,9 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
             (pSrc[2 * common_index]) / gridKernel * ((T1)1.0 / gridOS2); // Real
         pDst[2 * common_index + 1] = (pSrc[2 * common_index + 1]) / gridKernel *
                                      ((T1)1.0 / gridOS2); // Imaginary
+      } else {
+	      pDst[2 * common_index] = 0.0;
+	      pDst[2 * common_index + 1] = 0.0;
       }
     }
   }
@@ -301,10 +359,10 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
                            std::sqrt(-1.0 * common_exprZ));
 
         T1 gridKernel = common_exprX1 * common_exprY1 * common_exprZ1;
+	      int common_index = Z * imageY * imageX + X * imageY + Y;
 
-        if (gridKernel == gridKernel) // Checking for NaN
+        if (!isnan(gridKernel)) // Checking for NaN
         {
-          int common_index = Z * imageY * imageX + X * imageY + Y;
           gridOS3 = gridOS * gridOS * gridOS;
           // dst[common_index] =
           //(src[common_index]) / gridKernel *(1.0 / gridOS3);
@@ -313,6 +371,9 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
           pDst[2 * common_index + 1] = (pSrc[2 * common_index + 1]) /
                                        gridKernel *
                                        (1.0 / gridOS3); // Imaginary
+        } else {
+	        pDst[2 * common_index] = 0.0;
+	        pDst[2 * common_index + 1] = 0.0;
         }
       }
     }
@@ -726,3 +787,18 @@ template void fft3shift_grid<float>(std::complex<float> *__restrict src,
                                     int dimY, int dimX, int dimZ);
 template void fft3shift_grid<double>(std::complex<double> *__restrict src,
                                      int dimY, int dimX, int dimZ);
+template void
+normalize_fft2d<float>(float *__restrict pDst, float *__restrict pSrc, int gridSizeX,
+		int gridSizeY);
+
+template void
+normalize_fft2d<double>(double *__restrict pDst, double *__restrict pSrc, int gridSizeX,
+		int gridSizeY);
+
+template void
+normalize_fft3d<double>(double *__restrict pDst, double *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ);
+
+template void
+normalize_fft3d<float>(float *__restrict pDst, float *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ);

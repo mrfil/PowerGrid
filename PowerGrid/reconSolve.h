@@ -31,10 +31,15 @@
 #include "Gdft.h"
 #include "Gnufft.h"
 #include "SENSE.h"
+#include "pcSENSE.h"
 #include "TimeSegmentation.h"
 #include "QuadPenalty.h"
 #include "TVPenalty.h"
 #include "solve_pwls_pcg.hpp"
+
+#ifdef PowerGridMPI
+#include "MPI/mpipcSENSE.h"
+#endif
 
 using namespace arma;
 
@@ -46,7 +51,7 @@ void initImageSpaceCoords(Col<T1> &ix, Col<T1> &iy, Col<T1> &iz, uword Nx,
 // Template parameters are  T1: data precision (double, float, FP16 etc...),
 // TObj: Transform Object, RObj is regularization object
 template <typename T1, typename TObj, typename RObj>
-Col<complex<T1> > reconSolve(Col<complex<T1> > data, TObj &Sg, RObj &R,
+Col<complex<T1> > reconSolve(Col<complex<T1> > data, TObj &Sg, RObj R,
                              Col<T1> kx, Col<T1> ky, Col<T1> kz, uword Nx,
                              uword Ny, uword Nz, Col<T1> tvec, uword niter);
 
@@ -59,15 +64,28 @@ extern template void initImageSpaceCoords<double>(Col<double> &, Col<double> &,
                                                   uword Nz);
 // Explicit Instantiation
 extern template
-Col<complex<float> >
-reconSolve<float, SENSE<float, Gnufft<float> > &, QuadPenalty<float> &>(Col<complex<float> >, SENSE<float, Gnufft<float> > &,
-                                                                        QuadPenalty<float> &, Col<float>, Col<float>, Col<float>, uword,
-                                                                        uword, uword, Col<float>, uword);
+Col<complex<float>>
+reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>>&, QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
+              uword, uword, Col<float>, uword);
+
 extern template
-Col<complex<float> > reconSolve<float, SENSE<float, Gdft<float> > &, QuadPenalty<float> &>(Col<complex<float> >, SENSE<float, Gdft<float> > &,
-                                                                                           QuadPenalty<float> &, Col<float>, Col<float>,
+Col<complex<float> > reconSolve<float, SENSE<float, Gdft<float> >, QuadPenalty<float>>(Col<complex<float>>, SENSE<float, Gdft<float>>&,
+                                                                                           QuadPenalty<float>, Col<float>, Col<float>,
                                                                                            Col<float>, uword, uword, uword, Col<float>,
                                                                                            uword);
+
+extern template
+Col<complex<float>>
+reconSolve(Col<complex<float>>, pcSENSE<float>&, QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
+		uword, uword, Col<float>, uword);
+#ifdef PowerGridMPI
+
+extern template  Col<complex<float>> reconSolve(Col<complex<float>>, mpipcSENSE<float>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
+                               Col<float>, uword, uword, uword, Col<float>,
+                               uword);
+#endif
+/*
 extern template
 Col<complex<double> >
 reconSolve<double, SENSE<double, Gnufft<double> > &,
@@ -100,4 +118,6 @@ reconSolve<double, SENSE<double, Gdft<double> > &, TVPenalty<double> &>(Col<comp
                                                                         TVPenalty<double> &, Col<double>, Col<double>, Col<double>, uword,
                                                                         uword, uword, Col<double>, uword);
 
+
+*/
 #endif // POWERGRID_RECONSOLVE_H

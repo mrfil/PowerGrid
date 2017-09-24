@@ -27,8 +27,8 @@
 #define PowerGrid_mpipcSENSE_hpp
 
 #include "../Support/ArmaExtensions/arma_extensions.h"
-#include "PGIncludes.h"
-#include "Gdft.h"
+#include "../PGIncludes.h"
+#include "../Gdft.h"
 #include <boost/mpi.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/environment.hpp>

@@ -24,6 +24,7 @@ Developed by:
  *****************************************************************************/
 
 #include "reconSolve.h"
+#include "pcSENSE.h"
 
 template <typename T1>
 void initImageSpaceCoords(Col<T1> &ix, Col<T1> &iy, Col<T1> &iz, uword Nx,
@@ -54,7 +55,7 @@ void initImageSpaceCoords(Col<T1> &ix, Col<T1> &iy, Col<T1> &iz, uword Nx,
 // Template parameters are  T1: data precision (double, float, FP16 etc...),
 // TObj: Transform Object, RObj is regularization object
 template <typename T1, typename TObj, typename RObj>
-Col<complex<T1>> reconSolve(Col<complex<T1>> data, TObj &Sg, RObj &R,
+Col<complex<T1>> reconSolve(Col<complex<T1>> data, TObj& Sg, RObj R,
                             Col<T1> kx, Col<T1> ky, Col<T1> kz, uword Nx,
                             uword Ny, uword Nz, Col<T1> tvec, uword niter) {
   typedef std::complex<T1> CxT1;
@@ -81,44 +82,60 @@ template void initImageSpaceCoords<float>(Col<float> &, Col<float> &,
 template void initImageSpaceCoords<double>(Col<double> &, Col<double> &,
                                            Col<double> &, uword Nx, uword Ny,
                                            uword Nz);
-
-template <float &, SENSE<float, Gnufft<float>> &, QuadPenalty<float> &>
+/*
+template <float, SENSE<float, Gnufft<float>>, QuadPenalty<float>>
 Col<complex<float>>
-reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>> &,
-           QuadPenalty<float> &, Col<float>, Col<float>, Col<float>, uword,
+reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>>,
+           QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
            uword, uword, Col<float>, uword);
-template <float &, SENSE<float, Gdft<float>> &, QuadPenalty<float> &>
-Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gdft<float>> &,
-                               QuadPenalty<float> &, Col<float>, Col<float>,
+*/
+
+template
+Col<complex<float>>
+reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>>&,
+		QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
+		uword, uword, Col<float>, uword);
+
+template  Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gdft<float>>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
                                Col<float>, uword, uword, uword, Col<float>,
                                uword);
-template <double &, SENSE<double, Gnufft<double>> &, QuadPenalty<double> &>
-Col<complex<double>>
-reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>> &,
+
+template  Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, TimeSegmentation<float,Gnufft<float>>>&,
+		QuadPenalty<float>, Col<float>, Col<float>,
+		Col<float>, uword, uword, uword, Col<float>,
+		uword);
+
+template  Col<complex<float>> reconSolve(Col<complex<float>>, pcSENSE<float>&,
+		QuadPenalty<float>, Col<float>, Col<float>,
+		Col<float>, uword, uword, uword, Col<float>,
+		uword);
+
+#ifdef PowerGridMPI
+
+template  Col<complex<float>> reconSolve(Col<complex<float>>, mpipcSENSE<float>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
+                               Col<float>, uword, uword, uword, Col<float>,
+                               uword);
+#endif
+/*
+template <double &, SENSE<double, Gnufft<double>> &, QuadPenalty<double> &> Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>> &,
            QuadPenalty<double> &, Col<double>, Col<double>, Col<double>, uword,
            uword, uword, Col<double>, uword);
-template <double &, SENSE<double, Gdft<double>> &, QuadPenalty<double> &>
-Col<complex<double>>
-reconSolve(Col<complex<double>>, SENSE<double, Gdft<double>> &,
+template Col<complex<double>> reconSolve<double, SENSE<double, Gdft<double>>, QuadPenalty<double>> (Col<complex<double>>, SENSE<double, Gdft<double>> &,
            QuadPenalty<double> &, Col<double>, Col<double>, Col<double>, uword,
            uword, uword, Col<double>, uword);
-template <float &, SENSE<float, Gnufft<float>> &, TVPenalty<float> &>
-Col<complex<float>>
-reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>> &,
+template <float &, SENSE<float, Gnufft<float>> &, TVPenalty<float> &> Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gnufft<float>> &,
            TVPenalty<float> &, Col<float>, Col<float>, Col<float>, uword, uword,
            uword, Col<float>, uword);
-template <float &, SENSE<float, Gdft<float>> &, TVPenalty<float> &>
-Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gdft<float>> &,
+template <float &, SENSE<float, Gdft<float>> &, TVPenalty<float> &> Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gdft<float>> &,
                                TVPenalty<float> &, Col<float>, Col<float>,
                                Col<float>, uword, uword, uword, Col<float>,
                                uword);
-template <double &, SENSE<double, Gnufft<double>> &, TVPenalty<double> &>
-Col<complex<double>>
-reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>> &,
+template <double &, SENSE<double, Gnufft<double>> &, TVPenalty<double> &> Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>> &,
            TVPenalty<double> &, Col<double>, Col<double>, Col<double>, uword,
            uword, uword, Col<double>, uword);
-template <double &, SENSE<double, Gdft<double>> &, TVPenalty<double> &>
-Col<complex<double>>
-reconSolve(Col<complex<double>>, SENSE<double, Gdft<double>> &,
+template <double &, SENSE<double, Gdft<double>> &, TVPenalty<double> &>  Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, Gdft<double>> &,
            TVPenalty<double> &, Col<double>, Col<double>, Col<double>, uword,
            uword, uword, Col<double>, uword);
+*/

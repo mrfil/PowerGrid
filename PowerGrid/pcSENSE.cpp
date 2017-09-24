@@ -26,18 +26,19 @@
 
 template <typename T1> pcSENSE<T1>::~pcSENSE() {
 
-        for (uword jj = 0; jj < Ns; jj++) {
-                delete AObj[jj];
-                // delete G[jj];
-        }
-        delete[] AObj;
-        // delete[] G;
+	for (uword jj = 0; jj < Ns; jj++) {
+		delete G[jj];
+		delete AObj[jj];
+	}
+	delete[] G;
+	delete[] AObj;
+
 }
 
 // Class constructor
 template <typename T1>
 pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
-                     uword nz, uword nc, Col<T1> t, Col<complex<T1> > SENSEmap,
+                     uword nz, uword nc, Col<T1> t, Col<complex<T1>> SENSEmap,
                      Col<T1> FieldMap, Col<T1> ShotPhaseMap) {
         Ni = nx * ny * nz;
         Nc = nc;
@@ -82,21 +83,20 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
         Iy = vectorise(iy);
         Iz = vectorise(iz);
 
-        AObj = new Gdft<T1> *[Ns];
-        // AObj = new TimeSegmentation <T1, Gnufft<T1>> *[Ns];
+        //AObj = new Gdft<T1> *[Ns];
+		G = new Gnufft<T1> *[Ns];
+		AObj = new TimeSegmentation <T1, Gnufft<T1>> *[Ns];
 
         // Initialize the field correction and G objects we need for this
         // reconstruction
         for (uword jj = 0; jj < Ns; jj++) {
 
-                AObj[jj] =
-                        new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
-                                     Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
-                // AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
-                // vectorise(Tvec.col(jj)),
-                //                                               (uword) Nd, (uword)(Nx * Ny
-                //                                               * Nz), (uword) L, type,
-                //                                               (uword) 1);
+                //AObj[jj] =
+                //        new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
+                //                     Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
+	            G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
+                AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
+                 vectorise(Tvec.col(jj)), (uword) Nd, (uword)(Nx * Ny * Nz), (uword) L, type, (uword) 1);
         }
 }
 

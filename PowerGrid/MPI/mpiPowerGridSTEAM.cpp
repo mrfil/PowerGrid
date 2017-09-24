@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
                 for (uword slab = 0; slab < Nslabs; slab++) {
                         for (uword image = 0; image < Nimages; image++) {
                                 for (uword phase = 0; phase < Nphases; phase++) {
-                                        int test = test_DWIDft<float>(testPath, Nx, Ny, Nz, NL, Niter, Ncoils, image, phase, slab, env,
+                                        int test = DWIRecon<float>(testPath, Nx, Ny, Nz, NL, Niter, Ncoils, image, phase, slab, env,
                                                                       world);
                                 }
                         }

@@ -159,7 +159,7 @@ operator*(const Col<complex<T1>> &d) const {
   Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n1);
   // cout << "OutData size = " << this->n1 << endl;
   Col<complex<T1>> Wo;
-  // uvec dataMaskTrimmed;
+  uvec dataMaskTrimmed;
   // loop through time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
     // cout << "Entering time segmentation loop" << endl;
@@ -169,11 +169,11 @@ operator*(const Col<complex<T1>> &d) const {
     // perform multiplication by the object and sum up the time segments
     outData += (this->AA.col(ii)) % (*G * (Wo % d));
 
-    // dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
+    //dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
     // std::cout << "Length dataMaskTrimmed = " << dataMaskTrimmed.n_rows <<
     // std::endl;
 
-    // outData +=
+    //outData +=
     //    (this->AA.col(ii)) % ((*G).trimmedForwardOp(Wo % d,
     //    this->AA.col(ii)));
   }
@@ -186,7 +186,7 @@ operator/(const Col<complex<T1>> &d) const {
   // output is the size of the image
   Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
   Col<complex<T1>> Wo;
-  // loop through the time segemtns
+  // loop through the time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
 
     // create the phase map for the Lth time segment
@@ -194,7 +194,7 @@ operator/(const Col<complex<T1>> &d) const {
 
     // perform adjoint operation by the object and sum up the time segments
     // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
-    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
+    //outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
     outData += Wo % ((*G) / (AA.col(ii) % d));
   }
 
@@ -203,6 +203,4 @@ operator/(const Col<complex<T1>> &d) const {
 
 // Explicit Instantiations
 template class TimeSegmentation<float, Gnufft<float>>;
-template class TimeSegmentation<float, Gdft<float>>;
 template class TimeSegmentation<double, Gnufft<double>>;
-template class TimeSegmentation<double, Gdft<double>>;

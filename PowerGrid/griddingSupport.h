@@ -114,6 +114,15 @@ template <typename T1>
 void fft3shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX,
                     int dimZ);
 
+template <typename T1>
+void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
+		int gridSizeY);
+
+template <typename T1>
+void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ);
+
+
 // Explicit Instantiation
 extern template float bessi0<float>(float x);
 extern template double bessi0<double>(double x);
@@ -238,3 +247,19 @@ extern template void fft3shift_grid<float>(std::complex<float> *__restrict src,
 extern template void
 fft3shift_grid<double>(std::complex<double> *__restrict src, int dimY, int dimX,
                        int dimZ);
+
+extern template void
+normalize_fft2d<float>(float *__restrict pDst, float *__restrict pSrc, int gridSizeX,
+		int gridSizeY);
+
+extern template void
+normalize_fft2d<double>(double *__restrict pDst, double *__restrict pSrc, int gridSizeX,
+		int gridSizeY);
+
+extern template void
+normalize_fft3d<double>(double *__restrict pDst, double *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ);
+
+extern template void
+normalize_fft3d<float>(float *__restrict pDst, float *__restrict pSrc,
+		int gridSizeX, int gridSizeY, int gridSizeZ);

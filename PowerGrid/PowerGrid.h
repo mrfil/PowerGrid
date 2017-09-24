@@ -57,7 +57,8 @@
 #include "reconSolve.h"
 
 #ifdef PowerGridMPI
-#include "mpipcSENSE.h"
+
+#include "MPI/mpipcSENSE.h"
 #endif // PowerGridMPI
 
 #include "DWIRecon.h"

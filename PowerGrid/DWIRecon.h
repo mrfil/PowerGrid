@@ -31,7 +31,9 @@
 #include "PGIncludes.h"
 #include "Gdft.h"
 #include "pcSENSE.h"
-#include "mpipcSENSE.h"
+#ifdef PowerGridMPI
+#include "MPI/mpipcSENSE.h"
+#endif 
 #include "QuadPenalty.h"
 #include "solve_pwls_pcg.hpp"
 
