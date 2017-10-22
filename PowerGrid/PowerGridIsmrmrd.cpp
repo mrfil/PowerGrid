@@ -28,10 +28,6 @@ Developed by:
 
 // //Project headers.
 #include "PowerGrid.h"
-#include "ismrmrd/dataset.h"
-#include "ismrmrd/ismrmrd.h"
-#include "ismrmrd/version.h"
-#include "ismrmrd/xml.h"
 #include "processIsmrmrd.hpp"
 #include <boost/program_options.hpp>
 
@@ -147,40 +143,58 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  uword NSliceMax = hdr.encoding[0].encodingLimits.slice;
-  uword NSetMax = hdr.encoding[0].encodingLimits.set;
-  uword NRepMax = hdr.encoding[0].encodingLimits.repetition;
-	uword NAvgMax = hdr.encoding[0].encodingLimits.average;
+  int NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_0->maximum;
+  int NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
+  int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+  int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
+  int NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
+  int NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
+  int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
+  int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
+  int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
 
+  std::cout << "NParMax = "   << NParMax << std::endl;
+  std::cout << "NShotMax = "  << NShotMax << std::endl;
   std::cout << "NSliceMax = " << NSliceMax << std::endl;
-  std::cout << "NSetMax = " << NSetMax << std::endl;
-  std::cout << "NRepMax = " << NRepMax << std::endl;
-	std::cout << "NAvgMax = " << NAvgMax << std::endl;
+  std::cout << "NSetMax = "   << NSetMax << std::endl;
+  std::cout << "NRepMax = "   << NRepMax << std::endl;
+  std::cout << "NAvgMax = "   << NAvgMax << std::endl;
+  std::cout << "NEchoMax = "  << NEchoMax << std::endl;
+  std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
+  std::cout << "NSegMax = "   << NSegMax << std::endl;
+
   std::cout << "About to loop through the counters and scan the file"
             << std::endl;
-	for (uword NRep = 0; NRep < NRepMax; NRep++) {
-      for( uword NAvg = 0; NAvg < 1; NAvg++) {
-		for (uword NSet = 0; NSet < NSetMax + 1; NSet++) {
-          for (uword NSlice = 0; NSlice < NSliceMax + 1; NSlice++) {
-            getCompleteISMRMRDAcqData<float>(d, NSlice, NSet, NRep, NAvg, data, kx, ky,
-                kz, tvec);
-            std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
-            std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
-            std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
-            std::cout << "Number of rows in data = " << data.n_rows << std::endl;
-            std::cout << "Number of columns in data = " << data.n_cols << std::endl;
+  uword NSet = 0; //Set is only used for arrayed ADCs
+  uword NSeg = 0;
+  for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
+    for (uword NSeg = 0; NSeg <= NSegMax; NSeg++) {
+      for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
+        for( uword NAvg = 0; NAvg < 1; NAvg++) {
+          for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
+            //for (uword NSet = 0; NSet < NSetMax + 1; NSet++) {
+            for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+              getCompleteISMRMRDAcqData<float>(d, NSlice, NSet, NRep, NAvg, data, kx, ky,
+                      kz, tvec);
+              std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
+              std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
+              std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
+              std::cout << "Number of rows in data = " << data.n_rows << std::endl;
+              std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-            Gnufft<float> G(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
-               iy, iz);
-            //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-            TimeSegmentation<float, Gnufft<float>> A(G, FM, tvec, kx.n_rows, Nx*Ny*Nz, L, type, NShots);
-            SENSE<float, TimeSegmentation<float,Gnufft<float>>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-            QuadPenalty<float> R(Nx, Ny, Nz, beta);
+              Gnufft<float> G(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
+                      iy, iz);
+              //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
+              TimeSegmentation<float, Gnufft<float>> A(G, FM, tvec, kx.n_rows, Nx*Ny*Nz, L, type, NShots);
+              SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
+              QuadPenalty<float> R(Nx, Ny, Nz, beta);
 
-            ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float,Gnufft<float>>>,
-                QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
-                Ny, Nz, tvec, NIter);
-            writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+              ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
+                      QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
+                      Ny, Nz, tvec, NIter);
+              writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+            }
+          }
         }
       }
     }

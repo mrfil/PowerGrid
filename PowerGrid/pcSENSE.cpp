@@ -111,7 +111,7 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
         Mat<complex<T1> > outData = zeros<Mat<complex<T1> > >(Nd, Ns * Nc);
         Mat<complex<T1> > temp;
         Mat<T1> temp2;
-        // Shot loop. Each shot has it's own kspace trajectory
+        // Shot loop. Each shot has its own kspace trajectory
         for (unsigned int jj = 0; jj < Ns; jj++) {
                 /*
                    Gnufft <T1>*  G = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj),

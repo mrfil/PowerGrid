@@ -102,7 +102,7 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/GdftRecon.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/GnufftRecon.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/DWIRecon.cpp
-)
+		PowerGrid/acqTracking.cpp PowerGrid/acqTracking.h)
 
 set(POWERGRID_TEST_GDFT
     ./PowerGrid/PowerGridGdft.cpp
@@ -151,7 +151,7 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -gopt -Minfo=accel,ccff -ta=tesla:cc35,cuda8.0 -pgf77libs -fpermissive")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=tesla:cc35,cuda8.0 -pgf77libs -fpermissive")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive -pgf77libs")

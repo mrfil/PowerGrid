@@ -30,10 +30,10 @@
 #include "PGIncludes.h"
 
 // Headers for ISMRMRD Support
-//#include "ismrmrd/ismrmrd.h"
-//#include "ismrmrd/xml.h"
-//#include "ismrmrd/dataset.h"
-//#include "ismrmrd/version.h"
+#include "ismrmrd/ismrmrd.h"
+#include "ismrmrd/xml.h"
+#include "ismrmrd/dataset.h"
+#include "ismrmrd/version.h"
 
 //namespace PowerGrid {
 #include "Robject.h"

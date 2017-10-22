@@ -104,6 +104,8 @@ int main(int argc, char **argv) {
   arma::Col<float> FM;
   arma::Col<std::complex<float>> sen;
   arma::Col<float> PMap;
+	arma::Col<float> FMap;
+	arma::Col<std::complex<float>> SMap;
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
   processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen);
@@ -140,22 +142,25 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  int NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_0->maximum;
+  int NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
+  int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+  int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
+  int NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
+  int NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
+  int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
+  int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
+  int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
 
-	uword NSliceMax = hdr.encoding[0].encodingLimits.slice;
-	uword NSetMax   = hdr.encoding[0].encodingLimits.set;
-	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition;
-	uword NAvgMax   = hdr.encoding[0].encodingLimits.average;
-	uword NSegMax   = hdr.encoding[0].encodingLimits.segment;
-	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast;
-	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase;
-
+  std::cout << "NParMax = "   << NParMax << std::endl;
+  std::cout << "NShotMax = "  << NShotMax << std::endl;
   std::cout << "NSliceMax = " << NSliceMax << std::endl;
-  std::cout << "NSetMax = " << NSetMax << std::endl;
-  std::cout << "NRepMax = " << NRepMax << std::endl;
-  std::cout << "NAvgMax = " << NAvgMax << std::endl;
-  std::cout << "NEchoMax = " << NEchoMax << std::endl;
+  std::cout << "NSetMax = "   << NSetMax << std::endl;
+  std::cout << "NRepMax = "   << NRepMax << std::endl;
+  std::cout << "NAvgMax = "   << NAvgMax << std::endl;
+  std::cout << "NEchoMax = "  << NEchoMax << std::endl;
   std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
-  std::cout << "NSegMax = " << NSegMax << std::endl;
+  std::cout << "NSegMax = "   << NSegMax << std::endl;
   std::cout << "About to loop through the counters and scan the file"
             << std::endl;
 
@@ -163,7 +168,7 @@ int main(int argc, char **argv) {
   uword NSeg = 0;
   for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
     for (uword NSeg = 0; NSeg <= NSegMax; NSeg++) {
-      for (uword NRep = 0; NRep < NRepMax; NRep++) {
+      for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
         for( uword NAvg = 0; NAvg < 1; NAvg++) {
           for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
 		  //for (uword NSet = 0; NSet < NSetMax + 1; NSet++) {
@@ -172,7 +177,10 @@ int main(int argc, char **argv) {
                 kz, tvec);
 
               PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg, (uword)(Nx*Ny*Nz));
+			  SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d,NSlice,  (uword)(Nx*Ny*Nz));
+			  FMap = getISMRMRDCompleteFieldMap<float>(d,NSlice,  (uword)(Nx*Ny*Nz));
 
+			  std::cout << "Number of elements in SMap = " << SMap.n_rows << std::endl;
               std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
               std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
               std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
@@ -184,7 +192,7 @@ int main(int argc, char **argv) {
               //Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
               // iy, iz);
               //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-              pcSENSE<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, sen, FM,
+              pcSENSE<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, SMap, FMap,
 		              0 - PMap);
               //pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
               QuadPenalty<float> R(Nx, Ny, Nz, beta);

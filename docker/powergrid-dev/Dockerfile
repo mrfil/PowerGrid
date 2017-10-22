@@ -21,10 +21,10 @@ RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 	make install;
 
 # Install PGI Compiler Community Edition (17.4)
-
+# Download a copy of PGI 17.4 Community Edition and place in the same directory as the Dockerfile
 COPY pgilinux-2017-174-x86_64.tar.gz /root
-RUN mkdir /root/pgi
-RUN tar xvf /root/pgilinux-2017-174-x86_64.tar.gz -C /root/pgi
+RUN mkdir /root/pgi; \
+    tar xvf /root/pgilinux-2017-174-x86_64.tar.gz -C /root/pgi; 
 ENV PGI_SILENT true
 ENV PGI_ACCEPT_EULA accept
 ENV PGI_INSTALL_DIR /opt/pgi

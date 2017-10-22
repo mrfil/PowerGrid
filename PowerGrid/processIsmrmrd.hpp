@@ -30,7 +30,7 @@ Developed by:
 
 using namespace arma;
 
-void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr) {
+void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *acqTrack) {
     std::cout << "trying to create an ISMRMD::Dataset object" << std::endl;
     d = new ISMRMRD::Dataset(inputDataFile.c_str(), "dataset", false);
     //std::cout << "address of the  ISMRMD::Dataset object = " << d << std::endl;
@@ -41,6 +41,9 @@ void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::I
     //ISMRMRD::IsmrmrdHeader hdr;
     ISMRMRD::deserialize(xml.c_str(), hdr);
     std::cout << "trying to deserialze the xml header from the string" << std::endl;
+
+	//Intitalize the acqTracking object to handle bookkeeping for the file
+	acqTrack = new acqTrack(d,hdr);
 
 }
 
@@ -124,28 +127,95 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	ISMRMRD::IsmrmrdHeader hdr;
 	ISMRMRD::deserialize(xml.c_str(), hdr);
 
-	uword NSliceMax = hdr.encoding[0].encodingLimits.slice;
-	uword NSetMax   = hdr.encoding[0].encodingLimits.set;
-	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition;
-	uword NAvgMax   = hdr.encoding[0].encodingLimits.average;
-	uword NSegMax   = hdr.encoding[0].encodingLimits.segment;
-	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast;
-	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase;
+	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+	uword NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
+	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
+	uword NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
+	uword NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
+	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
+	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
 
-	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1;
-	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2;
+	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_0->maximum;
+	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
 
 	uword PMapSize   = imageSize*(NShotMax+1)*(NParMax+1);
 	uword startIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg;
 
 	std::cout << "PMap slicing startIndex = " << startIndex << std::endl;
 
-	uword endIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg + PMapSize;
+	uword endIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg + PMapSize - 1;
 
 	std::cout << "PMap slicing endIndex = " << endIndex << std::endl;
 
 	arma::Col<T1> pMapOut = pMaps.subvec(startIndex, endIndex);
 	return pMapOut;
+}
+
+template<typename T1>
+arma::Col<T1> getISMRMRDCompleteSENSEMap(ISMRMRD::Dataset *d, uword NSlice, uword imageSize)
+{
+	arma::Col<T1> SENSEMaps = getISMRMRDSenseMap<T1>(d);
+
+	std::string xml;
+	std::cout << "trying to read the header from the ISMRMD::Dataset object" << std::endl;
+	d->readHeader(xml);
+	std::cout << "read the header from the ISMRMD::Dataset object" << std::endl;
+	ISMRMRD::IsmrmrdHeader hdr;
+	ISMRMRD::deserialize(xml.c_str(), hdr);
+
+
+	// Grab first acquisition to get parameters (We assume all subsequent
+	// acquisitions will be similar).
+	ISMRMRD::Acquisition acq;
+	d->readAcquisition(0, acq);
+	uword nCoils = acq.active_channels();
+
+	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+
+	uword SENSEMapSize   = imageSize*nCoils;
+	uword startIndex = SENSEMapSize*NSlice;
+
+	std::cout << "SENSEMap slicing startIndex = " << startIndex << std::endl;
+
+	uword endIndex = SENSEMapSize*(NSlice+1) - 1;
+
+	std::cout << "SENSEMap slicing endIndex = " << endIndex << std::endl;
+
+	arma::Col<T1> SENSEMapOut = SENSEMaps.subvec(startIndex, endIndex);
+	return SENSEMapOut;
+}
+
+template<typename T1>
+arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uword imageSize)
+{
+	arma::Col<T1> FieldMaps = getISMRMRDFieldMap<T1>(d);
+
+	std::string xml;
+	std::cout << "trying to read the header from the ISMRMD::Dataset object" << std::endl;
+	d->readHeader(xml);
+	std::cout << "read the header from the ISMRMD::Dataset object" << std::endl;
+	ISMRMRD::IsmrmrdHeader hdr;
+	ISMRMRD::deserialize(xml.c_str(), hdr);
+
+
+	// Grab first acquisition to get parameters (We assume all subsequent
+	// acquisitions will be similar).
+	ISMRMRD::Acquisition acq;
+	d->readAcquisition(0, acq);
+	uword nCoils = acq.active_channels();
+
+	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+
+	uword startIndex = imageSize*NSlice;
+
+	std::cout << "FieldMap slicing startIndex = " << startIndex << std::endl;
+
+	uword endIndex = imageSize*(NSlice+1) - 1;
+
+	std::cout << "FieldMap slicing endIndex = " << endIndex << std::endl;
+
+	arma::Col<T1> FieldMapOut = FieldMaps.subvec(startIndex, endIndex);
+	return FieldMapOut;
 }
 
 template<typename T1>
@@ -298,8 +368,8 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, uword NSlice, uword NSet, uw
 
     //Vectorise coils from matrix to column vector
     data = vectorise(dataTemp);
-    //savemat("kxOut.mat", "kx", kx);
-    //savemat("kyOut.mat", "ky", ky);
+    savemat("kxOut.mat", "kx", kx);
+    savemat("kyOut.mat", "ky", ky);
     //savemat("kzOut.mat", "kz", kz);
     //savemat("tvecOut.mat", "tvec", tvec);
     //savemat("dataOut.mat", "dataOut", data);

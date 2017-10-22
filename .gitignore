@@ -31,6 +31,10 @@
 *.out
 *.app
 
+# Archive files
+*.zip
+*.tar.gz
+
 # Directories
 /build/*
 /.idea/*

@@ -142,7 +142,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
       AA = repmat(tempAA, Nshots, 1);
     }
   }
-  savemat("aamat.mat", "AA", vectorise(AA));
+  //savemat("aamat.mat", "AA", vectorise(AA));
   cout << "Exiting class constructor." << endl;
 }
 
