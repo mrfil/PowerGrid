@@ -78,6 +78,22 @@ extern template
 Col<complex<float>>
 reconSolve(Col<complex<float>>, pcSENSE<float>&, QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
 		uword, uword, Col<float>, uword);
+
+extern template
+Col<complex<double>>
+reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>>&, QuadPenalty<double>, Col<double>, Col<double>, Col<double>, uword,
+		uword, uword, Col<double>, uword);
+
+extern template
+Col<complex<double> > reconSolve<double, SENSE<double, Gdft<double> >, QuadPenalty<double>>(Col<complex<double>>, SENSE<double, Gdft<double>>&,
+		QuadPenalty<double>, Col<double>, Col<double>,
+		Col<double>, uword, uword, uword, Col<double>,
+		uword);
+
+extern template
+Col<complex<double>>
+reconSolve(Col<complex<double>>, pcSENSE<double>&, QuadPenalty<double>, Col<double>, Col<double>, Col<double>, uword,
+		uword, uword, Col<double>, uword);
 #ifdef PowerGridMPI
 
 extern template  Col<complex<float>> reconSolve(Col<complex<float>>, mpipcSENSE<float>&,

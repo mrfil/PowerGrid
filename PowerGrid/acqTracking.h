@@ -11,11 +11,13 @@ class acqTracking {
 
 public:
 	~acqTracking() {};
-	acqTracking(ISMRMRD::dataset *d);
+	acqTracking(ISMRMRD::Dataset *d, ISMRMRD::IsmrmrdHeader &hdr);
+
+	int NShotMax, NParMax, NSliceMax, NRepMax, NAvgMax, NEchoMax, NPhaseMax;
 
 	ISMRMRD::NDArray<int> acqArray;
 private:
-	ISMRMRD::Dataset &d;
+	ISMRMRD::Dataset *d;
 
 
 

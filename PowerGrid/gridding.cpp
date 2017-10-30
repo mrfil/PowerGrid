@@ -32,7 +32,7 @@ template <typename T1>
 int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *__restrict gridData) {
+                        T1 *__restrict pGData) {
 
   unsigned int NxL, NxH;
   unsigned int NyL, NyH;
@@ -46,7 +46,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
 
   T1 shiftedKx, shiftedKy /*, shiftedKz*/;
   T1 distX, kbX, distY, kbY /*, distZ, kbZ*/;
-  T1 *__restrict pGData;
+  //T1 *__restrict pGData;
 
   T1 kernelWidth = params.kernelWidth;
   T1 gridOS = params.gridOS;
@@ -55,12 +55,12 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
   unsigned int Ny = params.imageSize[1];
   int gridNumElems = params.gridSize[0] * params.gridSize[1];
 
-  pGData = reinterpret_cast<T1 *>(gridData);
+  //pGData = reinterpret_cast<T1 *>(gridData);
 
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector pcopyin(LUT[0 : sizeLUT])                \
-    pcopy(pGData[0 : gridNumElems * 2])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT])                \
+    present(pGData[0 : gridNumElems * 2], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -161,7 +161,7 @@ template <typename T1>
 int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *gridData) {
+                        T1 *pGData) {
   int NxL, NxH;
   int NyL, NyH;
   int NzL, NzH;
@@ -176,7 +176,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
   T1 shiftedKx, shiftedKy, shiftedKz;
   T1 distX, kbX, distY, kbY, distZ, kbZ;
-  T1 *pGData;
+  //T1 *pGData;
 
   T1 kernelWidth = params.kernelWidth;
   T1 gridOS = params.gridOS;
@@ -187,10 +187,10 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
   int gridNumElems =
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
 
-  pGData = reinterpret_cast<T1 *>(gridData);
+  //pGData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector pcopyin(LUT[0 : sizeLUT])                \
-    pcopy(pGData[0 : gridNumElems * 2])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT])                \
+    present(pGData[0 : gridNumElems * 2], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -291,9 +291,9 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 // 2D forward gridding on CPU
 template <typename T1>
 int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
-                        const T1 *ky, T1 beta, complex<T1> *__restrict sample,
+                        const T1 *ky, T1 beta, T1 *__restrict pSamples,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *__restrict gridData) {
+                        T1 *__restrict pGridData) {
 
   int NxL, NxH;
   int NyL, NyH;
@@ -304,8 +304,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   // unsigned int nz;
 
   int idx;
-  T1 *pSamples;
-  T1 *pGridData;
+  //T1 *pSamples;
+  //T1 *pGridData;
   T1 w;
   T1 sampleReal;
   T1 sampleImag;
@@ -321,11 +321,11 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   int imageNumElems = params.imageSize[0] * params.imageSize[1];
   int gridNumElems = params.gridSize[0] * params.gridSize[1];
 
-  pSamples = reinterpret_cast<T1 *>(sample);
-  pGridData = reinterpret_cast<T1 *>(gridData);
+  //pSamples = reinterpret_cast<T1 *>(sample);
+  //pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector pcopyin(LUT[0 : sizeLUT])                \
-    pcopy(pSamples[0 : n * 2]) pcopy(pGridData[0 : gridNumElems * 2])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],pSamples[0 : n * 2])\
+    present(pGridData[0 : gridNumElems * 2], kx[0:n],ky[0:n])
   for (int i = 0; i < n; i++) {
 
     shiftedKx = (gridOS) * (kx[i] + ((T1)Nx) / (T1)2.0);
@@ -446,8 +446,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
 template <typename T1>
 int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                         const T1 *ky, const T1 *kz, T1 beta,
-                        complex<T1> *__restrict sample, const T1 *LUT,
-                        const uword sizeLUT, complex<T1> *__restrict gridData) {
+                        T1 *__restrict pSamples, const T1 *LUT,
+                        const uword sizeLUT, T1 *__restrict pGridData) {
   int NxL, NxH;
   int NyL, NyH;
   int NzL, NzH;
@@ -457,8 +457,8 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
   int nz;
 
   int idx;
-  T1 *pSamples;
-  T1 *pGridData;
+  //T1 *pSamples;
+  //T1 *pGridData;
   T1 w;
 
   T1 shiftedKx, shiftedKy, shiftedKz;
@@ -475,13 +475,12 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
   int gridNumElems =
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
-  pSamples = reinterpret_cast<T1 *>(sample);
-  pGridData = reinterpret_cast<T1 *>(gridData);
+  //pGridData = reinterpret_cast<T1 *>(gridData);
 // Jiading GAI
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector pcopyin(LUT[0 : sizeLUT])                \
-    pcopy(pSamples[0 : n * 2]) pcopy(pGridData[0 : gridNumElems * 2])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],kx[0:n],ky[0:n],\
+    kz[0:n],pSamples[0 : n * 2],pGridData[0 : gridNumElems * 2])
   for (int i = 0; i < n; i++) {
     // complex<T1> pt = sample[i];
 
@@ -666,7 +665,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
              "window -N/2 to N/2.\n");
       cout << "kx = " << kx[i] << " ky = " << ky[i] << " kz = " << kz[i]
            << " i = " << i << endl;
-      exit(1);
+      //exit(1);
     } else {
 
       samples[i].kX = kx[i];
@@ -716,17 +715,15 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
-#pragma acc enter data copyin(pGridData[0 : 2 * gridNumElems]) create(         \
-    pGridData_d[0 : 2 * gridNumElems],                                         \
-                pGridData_crop_d[0 : 2 * imageNumElems], pGridData_crop_deAp   \
-                                 [0 : 2 * imageNumElems],                      \
-                                  outR_d[0 : imageNumElems],                   \
-                                         outI_d[0 : imageNumElems])
+#pragma acc enter data copyin(pGridData[0 : 2 * gridNumElems], samples[0:n]) \
+	pcreate( pGridData_d[0 : 2 * gridNumElems], pGridData_crop_d[0:2*imageNumElems],\
+	pGridData_crop_deAp[0 : 2 * imageNumElems], outR_d[0 : imageNumElems],    \
+	outI_d[0 : imageNumElems])
   // Gridding with CPU - adjoint
   if (Nz == 1) {
-    gridding_adjoint_2D<T1>(n, params, beta, samples, LUT, sizeLUT, gridData);
+    gridding_adjoint_2D<T1>(n, params, beta, samples, LUT, sizeLUT, pGridData);
   } else {
-    gridding_adjoint_3D<T1>(n, params, beta, samples, LUT, sizeLUT, gridData);
+    gridding_adjoint_3D<T1>(n, params, beta, samples, LUT, sizeLUT, pGridData);
   }
 
   if (Nz == 1) {
@@ -737,24 +734,32 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                    params.gridSize[1], params.gridSize[2]);
   }
 
+  // Need to deal with 1/N normalization from the inverse FFT
+
+
 #ifdef _OPENACC // We're on GPU
 // Inside this region the device data pointer will be used for cuFFT
 
-#pragma acc host_data use_device(pGridData_d)
-  {
+//#pragma acc host_data use_device(pGridData_d)
+
+
 
     // Query OpenACC for CUDA stream
-    void *stream = acc_get_cuda_stream(acc_async_sync);
+    //void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
+    #pragma acc update self(pGridData_d[0:2*gridNumElems])
     if (Nz == 1) {
-      ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream);
+        ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
+      //ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream);
     } else {
-      ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
-                params.gridSize[2], stream);
+        ifft3dCPU(pGridData_, params.gridSize[0], params.gridSize[1],
+              params.gridSize[2]);
+      //ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
+      //          params.gridSize[2], stream);
     }
 
-  }
+
 
 
 #else // We're on CPU so we'll use FFTW
@@ -769,15 +774,15 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 #endif
 
-  // Need to deal with 1/N normalization from the inverse FFT
 
-  if (Nz == 1) {
-    normalize_fft2d<T1>(pGridData, pGridData_d, params.gridSize[0],
-            params.gridSize[1]);
-  } else {
-    normalize_fft3d<T1>(pGridData, pGridData_d, params.gridSize[0],
-            params.gridSize[1], params.gridSize[2]);
-  }
+	#pragma acc update device(pGridData_d[0:2*gridNumElems])
+	if (Nz == 1) {
+		normalize_fft2d<T1>(pGridData, pGridData_d, params.gridSize[0],
+				params.gridSize[1]);
+	} else {
+		normalize_fft3d<T1>(pGridData, pGridData_d, params.gridSize[0],
+				params.gridSize[1], params.gridSize[2]);
+	}
 
   // cout << "Got through the update device directive" << endl;
   if (Nz == 1) {
@@ -817,9 +822,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     deinterleave_data3d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny, Nz);
   }
 
-#pragma acc exit data copyout(outR_d[0 : imageNumElems],                       \
-                                     outI_d[0 : imageNumElems]) delete (       \
-    pGridData_crop_d, pGridData_d, pGridData, pGridData_crop_deAp)
+#pragma acc exit data copyout(outR_d[0 : imageNumElems],                        \
+    outI_d[0 : imageNumElems]) delete (pGridData_crop_d, pGridData_d, pGridData,\
+	pGridData_crop_deAp)
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
   free(samples);
@@ -928,7 +933,10 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     gridData[i].real(dR[i]);
     gridData[i].imag(dI[i]);
   }
-  complex<T1> *gridData_d = new complex<T1>[imageNumElems];
+
+	T1 *pSamples = reinterpret_cast<T1 *>(samples);
+
+	complex<T1> *gridData_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_os = new complex<T1>[gridNumElems];
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
@@ -936,10 +944,11 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc enter data copyin(pGridData[0 : 2 * imageNumElems]) create(        \
-    pGridData_d[0 : 2 * imageNumElems],                                        \
-                pGridData_os[0 : 2 * gridNumElems],                            \
-                             pGridData_os_d[0 : 2 * gridNumElems])
+#pragma acc enter data copyin(pGridData[0 : 2 * imageNumElems], kx[0 : n], ky[0:n],kz[0,n]) pcreate(        \
+    pGridData_d[0 : 2 * imageNumElems], pGridData_os[0 : 2 * gridNumElems],    \
+    pGridData_os_d[0 : 2 * gridNumElems]) create(pSamples[0 : 2 * n],           \
+	outR_d[0 : n],outI_d[0 : n] )
+std::cout << " about to run deapodization " << std::endl;
   // deapodization
   if (Nz == 1) {
     deapodization2d<T1>(pGridData_d, pGridData, Nx, Ny, kernelWidth, beta,
@@ -950,14 +959,14 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   }
 
   // zero pad
-
+	std::cout << " about to run zero pad " << std::endl;
   if (Nz == 1) {
     zero_pad2d<T1>(pGridData_os, pGridData_d, Nx, Ny, params.gridOS);
   } else {
 
     zero_pad3d<T1>(pGridData_os, pGridData_d, Nx, Ny, Nz, params.gridOS);
   }
-
+	std::cout << " about to run fftshift " << std::endl;
   if (Nz == 1) {
     fftshift2<T1>(pGridData_os_d, pGridData_os, params.gridSize[0],
                   params.gridSize[1]);
@@ -999,6 +1008,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   }
 #endif
   // ifftshift(gridData):
+	std::cout << " about to run ifftshift " << std::endl;
   if (Nz == 1) {
     ifftshift2<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
                    params.gridSize[1]);
@@ -1006,26 +1016,27 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     ifftshift3<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
                    params.gridSize[1], params.gridSize[2]);
   }
-
+	std::cout << " about to run gridding " << std::endl;
   // Gridding with CPU - forward
   if (Nz == 1) {
-    gridding_forward_2D<T1>(n, params, kx, ky, beta, samples, LUT, sizeLUT,
-                            gridData_os);
+    gridding_forward_2D<T1>(n, params, kx, ky, beta, pSamples, LUT, sizeLUT,
+                            pGridData_os);
   } else {
-    gridding_forward_3D<T1>(n, params, kx, ky, kz, beta, samples, LUT, sizeLUT,
-                            gridData_os);
+    gridding_forward_3D<T1>(n, params, kx, ky, kz, beta, pSamples, LUT, sizeLUT,
+                            pGridData_os);
   }
-
+#pragma acc data update self(pSamples[0:2*n])
   for (int ii = 0; ii < n; ii++) {
-    outR_d[ii] = samples[ii].real();
-    outI_d[ii] = samples[ii].imag();
+    outR_d[ii] = pSamples[2*ii];
+    outI_d[ii] = pSamples[2*ii+1];
   }
 // deallocate samples
-#pragma acc exit data delete (                                                 \
-    pGridData_d[0 : 2 * imageNumElems],                                        \
-                pGridData_os[0 : 2 * gridNumElems],                            \
-                             pGridData_os_d[0 : 2 * gridNumElems],             \
-                                            pGridData[0 : 2 * imageNumElems])
+	std::cout << " about to exit data " << std::endl;
+#pragma acc exit data copyout(outR_d[0 : n],                       \
+	outI_d[0 : n]) delete (pGridData_d[0 : 2 * imageNumElems],     \
+    pGridData_os[0 : 2 * gridNumElems], pGridData_os_d[0 : 2 * gridNumElems],  \
+    pGridData[0 : 2 * imageNumElems], pSamples[0 : 2 * n], kx[0:n],ky[0:n],kz[0:n])
+
   delete[] samples;
   delete[] gridData;
   delete[] gridData_d;
@@ -1037,39 +1048,40 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 template int gridding_adjoint_2D<float>(unsigned int, parameters<float>, float,
                                         ReconstructionSample<float> *,
                                         const float *, const uword,
-                                        complex<float> *);
+                                        float *);
 template int gridding_adjoint_2D<double>(unsigned int, parameters<double>,
                                          double, ReconstructionSample<double> *,
                                          const double *, const uword,
-                                         complex<double> *);
+                                         double *);
 template int gridding_adjoint_3D<float>(unsigned int, parameters<float>, float,
                                         ReconstructionSample<float> *,
                                         const float *, const uword,
-                                        complex<float> *);
+                                        float *);
 template int gridding_adjoint_3D<double>(unsigned int, parameters<double>,
                                          double, ReconstructionSample<double> *,
                                          const double *, const uword,
-                                         complex<double> *);
+                                         double *);
+
 template int gridding_forward_2D<float>(unsigned int, parameters<float>,
                                         const float *, const float *,
-                                        float beta, complex<float> *,
+                                        float beta, float *,
                                         const float *, const uword,
-                                        complex<float> *);
+                                        float *);
 template int gridding_forward_2D<double>(unsigned int, parameters<double>,
                                          const double *, const double *,
-                                         double beta, complex<double> *,
+                                         double beta, double *,
                                          const double *, const uword,
-                                         complex<double> *);
+                                         double *);
 template int gridding_forward_3D<float>(unsigned int, parameters<float>,
                                         const float *, const float *,
                                         const float *, float beta,
-                                        complex<float> *, const float *,
-                                        const uword, complex<float> *);
+                                        float *, const float *,
+                                        const uword, float *);
 template int gridding_forward_3D<double>(unsigned int, parameters<double>,
                                          const double *, const double *,
                                          const double *, double beta,
-                                         complex<double> *, const double *,
-                                         const uword, complex<double> *);
+                                         double *, const double *,
+                                         const uword, double *);
 template void computeFH_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, const float *,
                                         const float *, int, int, int,

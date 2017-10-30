@@ -211,7 +211,8 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type>
 void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
-              void *stream) { // printf("Running 3d forward xform \n");
+              void *stream) {
+        // printf("Running 3d forward xform \n");
         cufftHandle plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 

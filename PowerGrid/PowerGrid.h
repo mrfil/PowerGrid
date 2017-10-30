@@ -34,7 +34,7 @@
 #include "ismrmrd/xml.h"
 #include "ismrmrd/dataset.h"
 #include "ismrmrd/version.h"
-
+#include "acqTracking.h"
 //namespace PowerGrid {
 #include "Robject.h"
 #include "TVPenalty.h"

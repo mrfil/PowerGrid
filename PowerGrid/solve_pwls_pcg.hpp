@@ -52,7 +52,6 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
   // Initialize projection
   cout << "Entering solve_pwls_pcg" << endl;
   Col<CxT1> Ax = A * xInitial;
-  savemat("Ax.mat","Ax",Ax);
   // cout << "Ax length = " << Ax.n_rows << endl;
   Col<CxT1> x = xInitial;
   CxT1 oldinprod = 0;
@@ -80,14 +79,17 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
     // Compute negative gradient
 
     ngrad = A / (W % (yi - Ax));
+	  savemat("Ax.mat","Ax",Ax);
+	  savemat("yi.mat", "yi", yi);
+	  savemat("ngrad.mat","ngrad",ngrad);
 
-    savemat("ngrad.mat","ngrad",ngrad);
     if (norm_grad<T1>(ngrad, yi, W) < 1e-10) {
       cout << "Terminating early due to zero gradient." << endl;
       return x;
     }
     pgrad = R.Gradient(x);
     ngrad = ngrad - pgrad;
+
     // Direction
     cngrad = conj(ngrad);
     newinprod = as_scalar(real(dot_double(cngrad, ngrad)));
@@ -114,10 +116,11 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
       cout << " Warning descent direction not negative" << endl;
       return x;
     }
+	  savemat("ddir.mat","ddir",ddir);
 
     // Step size in search direction
     Adir = A * ddir;
-	//savemat("adir.mat","Adir",Adir);
+	savemat("adir.mat","Adir",Adir);
     WAdir = W % Adir;
     // temp = conj(Adir).eval();
     temp = conj(Adir);
@@ -131,7 +134,7 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
       // from pwls_pcg1.m
       pdenom = R.Denom(ddir, x + step * ddir);
       denom = dAWAd + pdenom;
-	    cout << "denom = " << std::abs(denom) << endl;
+      cout << "denom = " << std::abs(denom) << endl;
       if (std::abs(denom) < 1e-20 || std::abs(denom) > 1e25) {
         if (norm(ngrad, 2) == 0) {
           cout << " Found exact solution" << endl;

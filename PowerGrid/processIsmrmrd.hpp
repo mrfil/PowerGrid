@@ -30,7 +30,7 @@ Developed by:
 
 using namespace arma;
 
-void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *acqTrack) {
+void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *&acqTrack) {
     std::cout << "trying to create an ISMRMD::Dataset object" << std::endl;
     d = new ISMRMRD::Dataset(inputDataFile.c_str(), "dataset", false);
     //std::cout << "address of the  ISMRMD::Dataset object = " << d << std::endl;
@@ -43,7 +43,15 @@ void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::I
     std::cout << "trying to deserialze the xml header from the string" << std::endl;
 
 	//Intitalize the acqTracking object to handle bookkeeping for the file
-	acqTrack = new acqTrack(d,hdr);
+	acqTrack = new acqTracking(d,hdr);
+
+}
+
+void closeISMRMRDData( ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *&acqTrack) {
+
+	//delete hdr;
+	delete acqTrack;
+	delete d;
 
 }
 
@@ -135,8 +143,8 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
 	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
 
-	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_0->maximum;
-	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
+	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
+	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum;
 
 	uword PMapSize   = imageSize*(NShotMax+1)*(NParMax+1);
 	uword startIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg;
@@ -180,8 +188,9 @@ arma::Col<T1> getISMRMRDCompleteSENSEMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	uword endIndex = SENSEMapSize*(NSlice+1) - 1;
 
 	std::cout << "SENSEMap slicing endIndex = " << endIndex << std::endl;
-
+	std::cout << "SENSEMap number of rows = " << SENSEMaps.n_rows << std::endl;
 	arma::Col<T1> SENSEMapOut = SENSEMaps.subvec(startIndex, endIndex);
+
 	return SENSEMapOut;
 }
 
@@ -220,9 +229,9 @@ arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 
 template<typename T1>
 void processISMRMRDInput(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr,
-                         arma::Col<T1> &FM, arma::Col<std::complex<T1>> &sen) {
+                         arma::Col<T1> &FM, arma::Col<std::complex<T1>> &sen, acqTracking *&acqTrack) {
     std::cout << "About to open ISMRMRD file for input" << std::endl;
-    openISMRMRDData(inputDataFile, d, hdr);
+	openISMRMRDData(inputDataFile, d, hdr, acqTrack);
     std::cout << "Opened ISMRMRD file for input " << std::endl;
     std::cout << "About to get the Field map" << std::endl;
     FM = getISMRMRDFieldMap<T1>(d);
@@ -304,75 +313,112 @@ void writeISMRMRDImageData(ISMRMRD::Dataset *d, Col<std::complex<T1>> &image, uw
 }
 
 template<typename T1>
-void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, uword NSlice, uword NSet, uword NRep, uword NAverage, Col<std::complex<T1>> &data,
-                               Col<T1> &kx, Col<T1> &ky, Col<T1> &kz, Col<T1> &tvec) {
+void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword NSlice, uword NRep, uword NAve, uword NEcho, uword NPhase, Col<std::complex<T1>> &data,
+                               Col<T1> &kx, Col<T1> &ky, Col<T1> &kz, Col<T1> &tvec)
+{
 
-    //Initialization
-    Mat<std::complex<T1>> dataTemp;
-    Mat<std::complex<T1>> acqTemp;
-    Col<T1> kxTemp, kyTemp, kzTemp, tvecTemp;
-    uword numAcq = d->getNumberOfAcquisitions();
-    bool firstData = true;
-    ISMRMRD::Acquisition acq;
-    std::cout << "Num of acquisitions in dataset = " << numAcq << std::endl;
+	//Initialization
+	Mat<std::complex<T1>> dataTemp, acqWork;
 
-    for (uword acqIndx = 0; acqIndx < numAcq; acqIndx++) {
-        std::cout << "Scanning through acquisition # " << acqIndx << std::endl;
-        // Scanning through the file.
-        d->readAcquisition(acqIndx, acq);
-        uword nro = acq.number_of_samples();
-        uword nc = acq.active_channels();
-        ISMRMRD::EncodingCounters encIdx = acq.idx();
+	Mat<T1> kxTemp, kyTemp, kzTemp, tvecTemp;
+	Mat<T1> kxWork, kyWork, kzWork, tvecWork;
+	uword numAcq = d->getNumberOfAcquisitions();
+	bool firstData = true;
+	ISMRMRD::Acquisition acq;
+	std::cout << "Num of acquisitions in dataset = " << numAcq << std::endl;
+	int acqIndx = -1;
+	//
+	//for (uword acqIndx = 0; acqIndx < numAcq; acqIndx++) {
+	for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
+		for (uword NShot = 0; NShot < acqTrack->NShotMax; NShot++) {
 
-        if ((encIdx.set == NSet) && (encIdx.repetition == NRep) && (encIdx.slice == NSlice) && (encIdx.average == NAverage)) {
-            std::cout << "Grabbing acq index #" << acqIndx << std::endl;
-            acqTemp.zeros(nro, nc);
-            kxTemp.set_size(nro);
-            kyTemp.set_size(nro);
-            kzTemp.set_size(nro);
-            tvecTemp.set_size(nro);
+			acqIndx = acqTrack->acqArray(NShot, NPar, NSlice, NRep, NAve, NEcho, NPhase);
+			if (acqIndx != -1) {
+				d->readAcquisition(acqIndx, acq);
+				uword nro = acq.number_of_samples();
+				uword nc = acq.active_channels();
+				ISMRMRD::EncodingCounters encIdx = acq.idx();
 
-            for (uword jj = 0; jj < nc; jj++) {
-                for (uword kk = 0; kk < nro; kk++) {
-                    acqTemp(kk, jj) = static_cast<std::complex<T1>>(acq.data(kk, jj));
-                }
-            }
-            std::cout << "Get Number of Trajectory entries = " << acq.getNumberOfTrajElements() << std::endl;
+				std::cout << "Grabbing acq index #" << acqIndx << std::endl;
+				acqWork.zeros(nro, nc);
+				kxWork.zeros(nro,1);
+				kyWork.zeros(nro,1);
+				kzWork.zeros(nro,1);
+				tvecWork.zeros(nro,1);
 
-            //Deal with trajectories
-            for (uword ii = 0; ii < nro; ii++) {
-                kxTemp(ii) = static_cast<T1>(acq.traj(0, ii));
-                kyTemp(ii) = static_cast<T1>(acq.traj(1, ii));
-                kzTemp(ii) = static_cast<T1>(acq.traj(2, ii));
-                tvecTemp(ii) = static_cast<T1>(acq.traj(3, ii));
-            }
+				for (uword jj = 0; jj<nc; jj++) {
+					for (uword kk = 0; kk<nro; kk++) {
+						acqWork(kk, jj) = static_cast<std::complex<T1>>(acq.data(kk, jj));
+					}
+				}
 
-            //Append Data points to vectors
-            if (firstData) {
-                firstData = false; //Sentinel
-                dataTemp = acqTemp;
-                kx = kxTemp;
-                ky = kyTemp;
-                kz = kzTemp;
-                tvec = tvecTemp;
-            } else {
-                dataTemp = join_vert(dataTemp, acqTemp);
-                kx = join_vert(kx, kxTemp);
-                ky = join_vert(ky, kyTemp);
-                kz = join_vert(kz, kzTemp);
-                tvec = join_vert(tvec, tvecTemp);
-            }
+				std::cout << "Get Number of Trajectory entries = " << acq.getNumberOfTrajElements() << std::endl;
 
-        }
-    }
+				int NSlice = encIdx.slice;
+				int NRep   = encIdx.repetition;
+				int NAvg   = encIdx.average;
+				int NEcho  = encIdx.contrast;
+				int NPhase = encIdx.phase;
+
+
+				std::cout << "NPar = "   << NPar   << std::endl;
+				std::cout << "NShot = "  << NShot  << std::endl;
+				std::cout << "NSlice = " << NSlice << std::endl;
+				std::cout << "NRep = "   << NRep   << std::endl;
+				std::cout << "NAvg = "   << NAvg   << std::endl;
+				std::cout << "NEcho = "  << NEcho  << std::endl;
+				std::cout << "NPhase = " << NPhase << std::endl;
+
+				//Deal with trajectories
+				for (uword ii = 0; ii<nro; ii++) {
+					kxWork(ii)   = static_cast<T1>(acq.traj(0, ii));
+					kyWork(ii)   = static_cast<T1>(acq.traj(1, ii));
+					kzWork(ii)   = static_cast<T1>(acq.traj(2, ii));
+					//std::cout << "kxWork(" << ii << ")= " << kxWork(ii) << std::endl;
+					tvecWork(ii) = static_cast<T1>(acq.traj(3, ii));
+				}
+
+				//Append Data points to vectors
+				if (firstData) {
+					firstData = false; //Sentinel
+					dataTemp = acqWork;
+					kxTemp   = kxWork;
+					kyTemp   = kyWork;
+					kzTemp   = kzWork;
+					tvecTemp = tvecWork;
+				} else {
+					std::cout << "Concatenating arrays" << std::endl;
+					dataTemp = join_cols(dataTemp, acqWork);
+					kxTemp   = join_cols(kxTemp, kxWork).eval();
+					for (int test = 0; test < kxTemp.n_rows; test++) {
+						std::cout << "kxTemp(" << test << ") = " << kxTemp(test,0) << std::endl;
+					}
+					kyTemp   = join_cols(kyTemp, kyWork).eval();
+					kzTemp   = join_cols(kzTemp, kzWork).eval();
+					tvecTemp = join_cols(tvecTemp, tvecWork).eval();
+				}
+
+			}
+		}
+	}
+
 
     //Vectorise coils from matrix to column vector
     data = vectorise(dataTemp);
-    savemat("kxOut.mat", "kx", kx);
-    savemat("kyOut.mat", "ky", ky);
+	kx   = vectorise(kxTemp);
+	ky   = vectorise(kyTemp);
+	kz   = vectorise(kzTemp);
+	tvec = vectorise(tvecTemp);
+
+	kx.save("kx.dat", raw_ascii);
+	ky.save("ky.dat", raw_ascii);
+	kz.save("kz.dat", raw_ascii);
+	tvec.save("tvec.dat", raw_ascii);
+    //savemat("kxOut.mat", "kx", kx);
+    //savemat("kyOut.mat", "ky", ky);
     //savemat("kzOut.mat", "kz", kz);
     //savemat("tvecOut.mat", "tvec", tvec);
-    //savemat("dataOut.mat", "dataOut", data);
+    savemat("dataOut.mat", "dataOut", data);
 
     return;
 }

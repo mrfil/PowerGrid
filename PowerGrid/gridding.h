@@ -34,6 +34,7 @@ Developed by:
 #include "accelmath.h"
 #include "cufft.h"
 #include "fftGPU.h"
+#include "fftCPU.h"
 #include "griddingSupport.h"
 #include "griddingTypes.h"
 #include "openacc.h"
@@ -66,27 +67,27 @@ template <typename T1>
 int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *__restrict gridData);
+                        T1 *__restrict gridData);
 // 3D adjoint gridding on CPU
 template <typename T1>
 int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *gridData);
+                        T1 *gridData);
 
 // 2D forward gridding on CPU
 template <typename T1>
 int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
-                        const T1 *ky, T1 beta, complex<T1> *__restrict sample,
+                        const T1 *ky, T1 beta, T1 *__restrict pSamples,
                         const T1 *LUT, const uword sizeLUT,
-                        complex<T1> *__restrict gridData);
+                        T1 *__restrict pGridData);
 
 // 3D forward gridding on CPU
 template <typename T1>
 int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                         const T1 *ky, const T1 *kz, T1 beta,
-                        complex<T1> *__restrict sample, const T1 *LUT,
-                        const uword sizeLUT, complex<T1> *__restrict gridData);
+                        T1 *__restrict pSamples, const T1 *LUT,
+                        const uword sizeLUT, T1 *__restrict pGridData);
 
 // Calculates the gridded adjoint transform
 template <typename T1>
@@ -113,41 +114,41 @@ extern template int gridding_adjoint_2D<float>(unsigned int, parameters<float>,
                                                float,
                                                ReconstructionSample<float> *,
                                                const float *, const uword,
-                                               complex<float> *);
+                                               float *);
 extern template int gridding_adjoint_2D<double>(unsigned int,
                                                 parameters<double>, double,
                                                 ReconstructionSample<double> *,
                                                 const double *, const uword,
-                                                complex<double> *);
+                                                double *);
 extern template int gridding_adjoint_3D<float>(unsigned int, parameters<float>,
                                                float,
                                                ReconstructionSample<float> *,
                                                const float *, const uword,
-                                               complex<float> *);
+                                               float *);
 extern template int gridding_adjoint_3D<double>(unsigned int,
                                                 parameters<double>, double,
                                                 ReconstructionSample<double> *,
                                                 const double *, const uword,
-                                                complex<double> *);
+                                                double *);
 extern template int gridding_forward_2D<float>(unsigned int, parameters<float>,
                                                const float *, const float *,
-                                               float beta, complex<float> *,
+                                               float beta, float *,
                                                const float *, const uword,
-                                               complex<float> *);
+                                               float *);
 extern template int
 gridding_forward_2D<double>(unsigned int, parameters<double>, const double *,
-                            const double *, double beta, complex<double> *,
-                            const double *, const uword, complex<double> *);
+                            const double *, double beta, double *,
+                            const double *, const uword, double *);
 extern template int gridding_forward_3D<float>(unsigned int, parameters<float>,
                                                const float *, const float *,
                                                const float *, float beta,
-                                               complex<float> *, const float *,
-                                               const uword, complex<float> *);
+                                               float *, const float *,
+                                               const uword, float *);
 extern template int
 gridding_forward_3D<double>(unsigned int, parameters<double>, const double *,
                             const double *, const double *, double beta,
-                            complex<double> *, const double *, const uword,
-                            complex<double> *);
+                            double *, const double *, const uword,
+                            double *);
 extern template void
 computeFH_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int,

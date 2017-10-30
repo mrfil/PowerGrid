@@ -4,10 +4,10 @@
 
 #include "acqTracking.h"
 
-acqTracking::acqTracking(ISMRMRD::Dataset &dataSet, ISMRMRD::IsmrmrdHeader &hdr) {
+acqTracking::acqTracking(ISMRMRD::Dataset *dataSet, ISMRMRD::IsmrmrdHeader &hdr) {
 
-
-	d = &dataSet;
+	std::cout << "Entering acqTracking constructor." << std::endl;
+	d = dataSet;
 
 	uword numAcq = d->getNumberOfAcquisitions();
 	bool firstData = true;
@@ -15,15 +15,15 @@ acqTracking::acqTracking(ISMRMRD::Dataset &dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 
 
 	// Get bound of acquisitions headers for initializing the matrix
-	int NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_0->maximum;
-	int NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
-	int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-	int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
-	int NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
-	int NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
-	int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
-	int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
-	int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
+	NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
+	NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
+	NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum + 1;
+	//int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum  + 1;
+	NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum + 1 ;
+	NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum + 1;
+	//int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum + 1;
+	NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum + 1;
+	NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum + 1;
 
 
 	int NShot, NPar, NSlice, NRep, NAvg, NEcho, NPhase;
@@ -35,13 +35,13 @@ acqTracking::acqTracking(ISMRMRD::Dataset &dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 	// Buuuuutttt, we're going to stick with it for now because I don't want to figure out another nice ND array solution.
 
 	std::vector<size_t> dims;
-	dims.push_back(NShotMax  + 1);
-	dims.push_back(NParMax   + 1);
-	dims.push_back(NSliceMax + 1);
-	dims.push_back(NRepMax   + 1);
-	dims.push_back(NAvgMax   + 1);
-	dims.push_back(NEchoMax  + 1);
-	dims.push_back(NPhaseMax + 1);
+	dims.push_back(NShotMax);
+	dims.push_back(NParMax);
+	dims.push_back(NSliceMax);
+	dims.push_back(NRepMax);
+	dims.push_back(NAvgMax);
+	dims.push_back(NEchoMax);
+	dims.push_back(NPhaseMax);
 	// Notice that we are skipping NSetMax and NSegMax because we have chosen to avoid those indexes as a lab.
 	// If ISMRMRD gives us more than 7 dimensions in NDArray we can put them in!
 
@@ -56,9 +56,28 @@ acqTracking::acqTracking(ISMRMRD::Dataset &dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 		std::cout << "Scanning through acquisition # " << acqIndx << std::endl;
 		// Scanning through the file.
 		d->readAcquisition(acqIndx, acq);
-		uword nro = acq.number_of_samples();
-		uword nc = acq.active_channels();
+		//uword nro = acq.number_of_samples();
+		//uword nc = acq.active_channels();
 		ISMRMRD::EncodingCounters encIdx = acq.idx();
+
+		NShot = encIdx.kspace_encode_step_1;
+		NPar = encIdx.kspace_encode_step_2;
+		NSlice = encIdx.slice;
+		NRep = encIdx.repetition;
+		NAvg = encIdx.average;
+		NEcho = encIdx.contrast;
+		NPhase = encIdx.phase;
+
+
+
+		std::cout << "Writing back to the NDArray" << std::endl;
+		std::cout << "NPar = "   << NPar << std::endl;
+		std::cout << "NShot = "  << NShot << std::endl;
+		std::cout << "NSlice = " << NSlice << std::endl;
+		std::cout << "NRep = "   << NRep << std::endl;
+		std::cout << "NAvg = "   << NAvg << std::endl;
+		std::cout << "NEcho = "  << NEcho << std::endl;
+		std::cout << "NPhase = " << NPhase << std::endl;
 
 		// Sort the indexes as we need to.
 		this->acqArray(NShot,NPar,NSlice,NRep,NAvg,NEcho,NPhase) = acqIndx;

@@ -102,7 +102,8 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/GdftRecon.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/GnufftRecon.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/DWIRecon.cpp
-		PowerGrid/acqTracking.cpp PowerGrid/acqTracking.h)
+
+)
 
 set(POWERGRID_TEST_GDFT
     ./PowerGrid/PowerGridGdft.cpp
@@ -126,6 +127,8 @@ endif(MPISupport)
 
 if (ISMRMRD)
 	set(POWERGRID_ISMRMRD
+			${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+			${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
 			./PowerGrid/PowerGridIsmrmrd.cpp
 			./PowerGrid/config.cxx
 	)
@@ -135,6 +138,8 @@ if (ISMRMRD)
 	target_link_libraries(PowerGridIsmrmrd ${LIBS})
 
 	set(POWERGRID_PCSENSE
+			${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+			${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
 			./PowerGrid/PowerGridPcSense.cpp
 			)
 	add_executable(PowerGridPcSense ${POWERGRID_PCSENSE} ${PG_FILES})
@@ -151,7 +156,8 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=tesla:cc35,cuda8.0 -pgf77libs -fpermissive")
+			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=tesla:cc35,cuda8.0 -pgf77libs -fpermissive")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive -pgf77libs")

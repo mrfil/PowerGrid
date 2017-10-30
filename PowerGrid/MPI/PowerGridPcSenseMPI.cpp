@@ -113,7 +113,8 @@ int main(int argc, char **argv) {
   arma::Col<float> PMap;
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
-  processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen);
+	acqTracking* acqTrack;
+	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
 
   //savemat("testFM.mat", "FM", FM);
   //savemat("testSen.mat", "sen", sen);
@@ -169,19 +170,18 @@ int main(int argc, char **argv) {
       std::cout << "About to loop through the counters and scan the file"
               << std::endl;
     }
-  uword NSet = 0; //Set is only used for arrayed ADCs
-  uword NSeg = 0;
-  for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
-    for (uword NSeg = 0; NSeg <= NSegMax; NSeg++) {
-      for (uword NRep = 0; NRep < NRepMax; NRep++) {
-        for( uword NAvg = 0; NAvg < 1; NAvg++) {
-          for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
-		  //for (uword NSet = 0; NSet < NSetMax + 1; NSet++) {
-		  for (uword NSlice = 0; NSlice <= NSliceMax; NSlice++) {
-              getCompleteISMRMRDAcqData<float>(d, NSlice, NSet, NRep, NAvg, data, kx, ky,
-                kz, tvec);
+	uword NSet = 0; //Set is only used for arrayed ADCs
+	uword NSeg = 0;
+	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
+		for (uword NEcho = 0; NEcho<=NEchoMax; NEcho++) {
+			for (uword NAvg = 0; NAvg<=NAvgMax; NAvg++) {
+				for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
+					for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
+								kz, tvec);
 
-              PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg, (uword)(Nx*Ny*Nz));
+						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
+								(uword) (Nx*Ny*Nz));
               if (world.rank() == 0) {
                 std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
                 std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
@@ -207,7 +207,7 @@ int main(int argc, char **argv) {
         }
       }
     }
-  }
+
   // Close ISMRMRD::Dataset
   delete d;
 

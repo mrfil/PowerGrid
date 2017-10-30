@@ -108,7 +108,7 @@ T1 kernel_value_LUT(T1 dist, const T1 *LUT, uword sizeLUT,
 }
 */
 template <typename T1>
-void deinterleave_data2d( /// NAIVE
+void deinterleave_data2d(
     T1 *__restrict pSrc, T1 *__restrict outR_d, T1 *__restrict outI_d,
     int imageX, int imageY) {
   int lIndex;
@@ -118,7 +118,7 @@ void deinterleave_data2d( /// NAIVE
   for (int X = 0; X < imageX; X++) {
     for (int Y = 0; Y < imageY; Y++) {
       lIndex = Y + X * imageY;
-      outR_d[lIndex] = pSrc[2 * lIndex];
+      outR_d[lIndex] = pSrc[2 * lIndex    ];
       outI_d[lIndex] = pSrc[2 * lIndex + 1];
     }
   }
@@ -136,7 +136,7 @@ void deinterleave_data3d(T1 *__restrict pSrc, T1 *__restrict outR_d,
     for (X = 0; X < imageX; X++) {
       for (Y = 0; Y < imageY; Y++) {
         lIndex = Y + X * imageY + Z * imageY * imageX;
-        outR_d[lIndex] = pSrc[2 * lIndex];
+        outR_d[lIndex] = pSrc[2 * lIndex    ];
         outI_d[lIndex] = pSrc[2 * lIndex + 1];
       }
     }
@@ -149,18 +149,23 @@ void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
 		int gridSizeY) {
 	// (gridSizeX,gridSizeY) is the size of 'src'
 
-T1 vectorLength= gridSizeX*gridSizeY;
-int common_index;
-#pragma acc parallel loop collapse(2)                                          \
-    independent present(pSrc[0 : 2 * gridSizeX *gridSizeY])                    \
-                            present(pDst[0 : 2 * gridSizeX * gridSizeY])
-	for (int dX = 0; dX < gridSizeX; dX++) {
+    T1 vectorLength= gridSizeX*gridSizeY;
+    //int common_index;
+#pragma acc parallel loop present(pSrc[0 : 2 * gridSizeX *gridSizeY])                    \
+       present(pDst[0 : 2 * gridSizeX * gridSizeY])
+  for (int dX = 0; dX < 2*gridSizeX*gridSizeY; dX++) {
+    pDst[ dX ] = pSrc[ dX ]/((T1)1.0);
+  }
+  /*
+  for (int dX = 0; dX < gridSizeX; dX++) {
 		for (int dY = 0; dY < gridSizeY; dY++) {
 			common_index = dX * gridSizeY + dY;
-			pDst[ 2 * common_index ]    = pSrc[ 2 * common_index ]/vectorLength;
+			pDst[ 2 * common_index    ] = pSrc[ 2 * common_index    ]/vectorLength;
 			pDst[ 2 * common_index + 1] = pSrc[ 2 * common_index + 1]/vectorLength;
 		}
 	}
+   */
+
 }
 
 // We oversample the FFT so now we need to crop
@@ -171,15 +176,17 @@ void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
 	//    assert( (!(gridSizeX%2) && !(gridSizeY%2) && !(gridSizeZ%2)) );
 	//    assert( (!(imageSizeX%2) && !(imageSizeY%2) && !(imageSizeZ%2)) );
 
-	T1 vectorLength;
+	T1 vectorLength = gridSizeX*gridSizeY*gridSizeZ;
 
-	vectorLength = gridSizeX*gridSizeY*gridSizeZ;
+	//int common_index;
 
-	int common_index;
-
-#pragma acc parallel loop collapse(3) independent present(                     \
+#pragma acc parallel loop present(                     \
     pSrc[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])                             \
         present(pDst[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])
+  for (int dX = 0; dX < 2*gridSizeX*gridSizeY*gridSizeZ; dX++) {
+    pDst[ dX ] = pSrc[ dX ]/((T1)1.0);
+  }
+/*
 	for (int dZ = 0; dZ < gridSizeZ; dZ++) {
 		for (int dX= 0; dX < gridSizeX; dX++) {
 			for (int dY = 0; dY < gridSizeY; dY++) {
@@ -191,11 +198,12 @@ void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
 
 				// dst[common_index_dst].real() = src[common_index_src].real();
 				// dst[common_index_dst].imag() = src[common_index_src].imag();
-				pDst[ 2 * common_index ] = pSrc[ 2 * common_index]/vectorLength;
+				pDst[ 2 * common_index    ] = pSrc[ 2 * common_index    ]/vectorLength;
 				pDst[ 2 * common_index + 1] = pSrc[ 2 * common_index + 1]/vectorLength;
 			}
 		}
 	}
+ */
 }
 
 // Deapodizes 2d data by FT of the Kasier-Bessel kernel

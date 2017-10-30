@@ -4,12 +4,15 @@
     include_directories(../../Support)
     include_directories(../)
     set(mpi_POWERGRID_PcSense
+            ${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+            ${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
             mpipcSENSE.cpp
             PowerGridPcSenseMPI.cpp
             )
 
     add_executable(PowerGridPcSenseMPI ${PG_FILES} ${mpi_POWERGRID_PcSense})
-
+    find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/)
+    set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
     set(mpiLIBS ${LIBS})
     set(mpiLIBS ${mpiLIBS} ${MPI_CXX_LIBRARIES})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
