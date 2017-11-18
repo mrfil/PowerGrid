@@ -22,48 +22,76 @@ RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 
 # Install PGI Compiler Community Edition (17.4)
 # Download a copy of PGI 17.4 Community Edition and place in the same directory as the Dockerfile
-COPY pgilinux-2017-174-x86_64.tar.gz /root
-RUN mkdir /root/pgi; \
-    tar xvf /root/pgilinux-2017-174-x86_64.tar.gz -C /root/pgi; 
-ENV PGI_SILENT true
-ENV PGI_ACCEPT_EULA accept
-ENV PGI_INSTALL_DIR /opt/pgi
-ENV PGI_INSTALL_NVIDIA true
-ENV PGI_INSTALL_AMD true
-ENV PGI_INSTALL_JAVA true
-ENV PGI_INSTALL_MPI true
-ENV PGI_MPI_GPU_SUPPORT true
-ENV PGI_INSTALL_MANAGED true
+#COPY pgilinux-2017-174-x86_64.tar.gz /root
+#RUN mkdir /root/pgi; \
+#    tar xvf /root/pgilinux-2017-174-x86_64.tar.gz -C /root/pgi;
+#ENV PGI_SILENT true
+#ENV PGI_ACCEPT_EULA accept
+#ENV PGI_INSTALL_DIR /opt/pgi
+#ENV PGI_INSTALL_NVIDIA true
+#ENV PGI_INSTALL_AMD true
+#ENV PGI_INSTALL_JAVA true
+#ENV PGI_INSTALL_MPI true
+#ENV PGI_MPI_GPU_SUPPORT true
+#ENV PGI_INSTALL_MANAGED true
 
-RUN /root/pgi/install
+#RUN /root/pgi/install
 
-RUN echo "# PGI Compiler Stuff\n" >> /root/.bashrc; \
-	echo "PGI=/opt/pgi; export PGI\n" >> /root/.bashrc; \
- 	echo "MANPATH=\$MANPATH:\$PGI/linux86-64/17.4/man; export MANPATH\n" >> /root/.bashrc; \
-	echo "PATH=\$PATH:\$PGI/linux86-64/17.4/bin\n" >> /root/.bashrc
+#RUN echo "# PGI Compiler Stuff\n" >> /root/.bashrc; \
+#	echo "PGI=/opt/pgi; export PGI\n" >> /root/.bashrc; \
+# 	echo "MANPATH=\$MANPATH:\$PGI/linux86-64/17.4/man; export MANPATH\n" >> /root/.bashrc; \
+#	echo "PATH=\$PATH:\$PGI/linux86-64/17.4/bin\n" >> /root/.bashrc
 
-ENV PGI /opt/pgi
-ENV PATH $PATH:$PGI/linux86-64/17.4/bin
+#ENV PGI /opt/pgi
+#ENV PATH $PATH:$PGI/linux86-64/17.4/bin
+
+RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
+    cd pgi-travis && \
+    ./install-pgi.sh --nvidia --managed --mpi --mpi-gpu && \
+    cd - && rm -rf pgi-travis
+
+ENV PGI_VERSION 17.10
+ENV PGI_INSTALL_DIR "/usr/local/pgi"
+ENV PGI_HOME "${PGI_INSTALL_DIR}"/linux86-64/"${PGI_VERSION}"
+ENV PGI_BIN_DIR "${PGI_HOME}"/bin
+ENV PGI_LIB_DIR "${PGI_HOME}"/lib
+ENV PGI_MAN_DIR "${PGI_HOME}"/man
+
+ENV PATH            "${PGI_BIN_DIR}:${PATH}"
+ENV LD_LIBRARY_PATH "${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
+ENV MANPATH         "${PGI_MAN_DIR}:${MANPATH}"
+
 
 # Install Armadillo
 
-RUN curl -O -J -L  https://sourceforge.net/projects/arma/files/armadillo-7.800.2.tar.xz/download; \
-	tar xvf armadillo-7.800.2.tar.xz; \
-	cd armadillo-7.800.2; \
+RUN curl -O -J -L  https://sourceforge.net/projects/arma/files/armadillo-8.200.2.tar.xz/download; \
+	tar xvf armadillo-8.200.2.tar.xz; \
+	cd armadillo-8.200.2; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \
 	cmake -DCMAKE_CXX_COMPILER=pgc++ ../; \
 	make; \
-	make install;
+	make install; \
+	ldconfig
 
 	# Install Latest CMake
 
-	RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
-		apt-get -y purge cmake; \
-		tar -xvf ./cmake-3.8.2-Linux-x86_64.tar.gz; \
-		cd ./cmake-3.8.2-Linux-x86_64; \
-		cp -r bin /usr/; \
-		cp -r doc /usr/share/; \
-		cp -r man /usr/share/; \
-		cp -r share /usr/;
+RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
+	apt-get -y purge cmake; \
+	tar -xvf ./cmake-3.8.2-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.8.2-Linux-x86_64; \
+	cp -r bin /usr/; \
+	cp -r doc /usr/share/; \git
+	cp -r man /usr/share/; \
+	cp -r share /usr/
+
+RUN git clone https://github.com/acerjanic/ismrmrd.git; \
+    cd ismrmrd; \
+    git fetch; \
+    git checkout matlab; \
+    mkdir ./build; \
+    cd build; \
+    cmake ../; \
+    make;  \
+    make install
