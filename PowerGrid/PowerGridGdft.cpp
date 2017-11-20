@@ -27,6 +27,8 @@
 #include "PowerGrid.h" //Project headers.
 #include <cstdlib>
 
+#include <cuda_runtime.h>
+
 using namespace arma; //Armdillo stuff is in the arma namespace
 using namespace std; //complex type comes from the STL
 //using namespace PowerGrid;

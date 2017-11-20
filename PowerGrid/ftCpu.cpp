@@ -104,7 +104,9 @@ void ftCpu(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata_i,
   tpi = 2 * MRI_PI;
 
 // NON-conjugate transpose of G
-#pragma acc kernels
+#pragma acc kernels copyin(kx[0:num_k], ky[0:num_k], kz[0:num_k],ix[0:num_i], \
+  iy[0:num_i], iz[0:num_i], FM[0:num_i], t[0:num_k], idata_r[0:num_i], idata_i[0:num_i]) \
+  copyout(kdata_r[0:num_k], kdata_i[0:num_k])
   {
 
 #pragma acc loop independent gang
@@ -166,7 +168,9 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
 #if 0 // USE_OPENMP // FIXME: We can choose either this or the inner loop.
 #pragma omp parallel for
 #endif
-#pragma acc kernels
+#pragma acc kernels copyin(kx[0:num_k], ky[0:num_k], kz[0:num_k],ix[0:num_i], \
+  iy[0:num_i], iz[0:num_i], FM[0:num_i], t[0:num_k], kdata_r[0:num_k], kdata_i[0:num_k]) \
+  copyout( idata_r[0:num_i], idata_i[0:num_i])
   {
 #pragma acc loop independent gang
     for (j = 0; j < num_i; j++) { // j is the pixel points in image-space
@@ -176,12 +180,13 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
       itraj_x_tpi = ix[j] * tpi;
       itraj_y_tpi = iy[j] * tpi;
       itraj_z_tpi = iz[j] * tpi;
-
+/*
 #if USE_OPENMP
 #pragma omp parallel for default(none) reduction(+ : sumr, sumi) private(      \
     expr, cosexpr, sinexpr) shared(j, kx, ky, kz, t, kzdeltaz, itraj_x_tpi,    \
                                    itraj_y_tpi, kziztpi, fm, kdata_r, kdata_i)
 #endif
+*/
       T1 myfmj = FM[j];
 #pragma acc loop vector(128)
       for (i = 0; i < num_k; i++) { // i is the time points in k-space

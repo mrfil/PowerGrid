@@ -79,9 +79,9 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
     // Compute negative gradient
 
     ngrad = A / (W % (yi - Ax));
-	  savemat("Ax.mat","Ax",Ax);
-	  savemat("yi.mat", "yi", yi);
-	  savemat("ngrad.mat","ngrad",ngrad);
+	  //savemat("Ax.mat","Ax",Ax);
+	  //savemat("yi.mat", "yi", yi);
+	  //savemat("ngrad.mat","ngrad",ngrad);
 
     if (norm_grad<T1>(ngrad, yi, W) < 1e-10) {
       cout << "Terminating early due to zero gradient." << endl;
@@ -120,7 +120,7 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
 
     // Step size in search direction
     Adir = A * ddir;
-	savemat("adir.mat","Adir",Adir);
+	//savemat("adir.mat","Adir",Adir);
     WAdir = W % Adir;
     // temp = conj(Adir).eval();
     temp = conj(Adir);

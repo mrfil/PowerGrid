@@ -82,7 +82,7 @@ RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
 	tar -xvf ./cmake-3.8.2-Linux-x86_64.tar.gz; \
 	cd ./cmake-3.8.2-Linux-x86_64; \
 	cp -r bin /usr/; \
-	cp -r doc /usr/share/; \git
+	cp -r doc /usr/share/; \
 	cp -r man /usr/share/; \
 	cp -r share /usr/
 

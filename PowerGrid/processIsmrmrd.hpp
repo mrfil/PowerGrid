@@ -156,6 +156,9 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	std::cout << "PMap slicing endIndex = " << endIndex << std::endl;
 
 	arma::Col<T1> pMapOut = pMaps.subvec(startIndex, endIndex);
+
+	pMapOut.save("PMaps.dat", raw_ascii);
+	pMapOut.zeros(); // DEBUGGING ZERO OUT PHASE MAPS!!!
 	return pMapOut;
 }
 
@@ -224,6 +227,9 @@ arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	std::cout << "FieldMap slicing endIndex = " << endIndex << std::endl;
 
 	arma::Col<T1> FieldMapOut = FieldMaps.subvec(startIndex, endIndex);
+
+	FieldMapOut.save("FieldMap.dat", raw_ascii);
+
 	return FieldMapOut;
 }
 
@@ -295,7 +301,12 @@ ISMRMRD::Acquisition getISMRMRDAcq(ISMRMRD::Dataset *d, uword Nacq) {
 template<typename T1>
 void writeISMRMRDImageData(ISMRMRD::Dataset *d, Col<std::complex<T1>> &image, uword Nx, uword Ny, uword Nz) {
     ISMRMRD::Image<std::complex<T1>> img_out(Nx, Ny, Nz, 1);
-    savemat("testImage.mat", "img", image);
+	//image.save("testImage.dat", raw_ascii);
+	Col<T1> realImage = real(image).eval();
+	Col<T1> imagImage = imag(image).eval();
+	realImage.save("testImageReal.dat", raw_ascii);
+	imagImage.save("testImageImag.dat", raw_ascii);
+
     for (int ii = 0; ii < Ny; ii++) {
         for (int jj = 0; jj < Nx; jj++) {
             for (int kk = 0; kk < Nz; kk++) {
@@ -390,9 +401,9 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 					std::cout << "Concatenating arrays" << std::endl;
 					dataTemp = join_cols(dataTemp, acqWork);
 					kxTemp   = join_cols(kxTemp, kxWork).eval();
-					for (int test = 0; test < kxTemp.n_rows; test++) {
-						std::cout << "kxTemp(" << test << ") = " << kxTemp(test,0) << std::endl;
-					}
+					//for (int test = 0; test < kxTemp.n_rows; test++) {
+					//	std::cout << "kxTemp(" << test << ") = " << kxTemp(test,0) << std::endl;
+					//}
 					kyTemp   = join_cols(kyTemp, kyWork).eval();
 					kzTemp   = join_cols(kzTemp, kzWork).eval();
 					tvecTemp = join_cols(tvecTemp, tvecWork).eval();

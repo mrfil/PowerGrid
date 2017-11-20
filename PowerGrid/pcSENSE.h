@@ -67,8 +67,8 @@ Col<T1> Iz;
 CxT1 i = CxT1(0., 1.);
 uword type = 1;   // 2 for min max time seg and 1 for Hanning
 uword L = 20;
-Gnufft<T1> **G = NULL;
- TimeSegmentation <T1, Gnufft<T1>> **AObj = NULL;
+Gdft<T1> **AObj = NULL;
+	//TimeSegmentation <T1, Gnufft<T1>> **AObj = NULL;
 
 // Class constructor
 pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny, uword nz,

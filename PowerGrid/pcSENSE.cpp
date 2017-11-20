@@ -27,10 +27,10 @@
 template <typename T1> pcSENSE<T1>::~pcSENSE() {
 
 	for (uword jj = 0; jj < Ns; jj++) {
-		delete G[jj];
+		//delete G[jj];
 		delete AObj[jj];
 	}
-	delete[] G;
+	//delete[] G;
 	delete[] AObj;
 
 }
@@ -83,20 +83,20 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
         Iy = vectorise(iy);
         Iz = vectorise(iz);
 
-        //AObj = new Gdft<T1> *[Ns];
-		G = new Gnufft<T1> *[Ns];
-		AObj = new TimeSegmentation <T1, Gnufft<T1>> *[Ns];
+        AObj = new Gdft<T1> *[Ns];
+		//G = new Gnufft<T1> *[Ns];
+		//AObj = new TimeSegmentation <T1, Gnufft<T1>> *[Ns];
 
         // Initialize the field correction and G objects we need for this
         // reconstruction
         for (uword jj = 0; jj < Ns; jj++) {
 
-                //AObj[jj] =
-                //        new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
-                //                     Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
-	            G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
-                AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
-                 vectorise(Tvec.col(jj)), (uword) Nd, (uword)(Nx * Ny * Nz), (uword) L, type, (uword) 1);
+                AObj[jj] =
+                        new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
+                                     Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
+	            //G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
+                //AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
+                // vectorise(Tvec.col(jj)), (uword) Nd, (uword)(Nx * Ny * Nz), (uword) L, type, (uword) 1);
         }
 }
 
@@ -134,7 +134,7 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
                 for (unsigned int ii = 0; ii < Nc; ii++) {
                         outData.col(jj + ii * Ns) =
                                 (*AObj[jj]) * (d % (SMap.col(ii) % exp(-i * (PMap.col(jj)))));
-                        std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
+                        //std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
                 }
                 // delete AObj;
                 // delete G;
@@ -169,7 +169,7 @@ Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
 
                         outData += conj(SMap.col(ii) % exp(-i * (PMap.col(jj)))) %
                                    ((*AObj[jj]) / inData.col(jj + ii * Ns));
-                        std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
+                        //std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
                 }
                 // delete AObj;
                 // delete G;

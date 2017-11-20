@@ -24,6 +24,8 @@
     Date        [12/2/2016]
 
 *****************************************************************************/
+#ifndef PowerGrid_griddingSupport_h
+#define PowerGrid_griddingSupport_h
 
 #ifdef _OPENACC
 #include "accelmath.h"
@@ -48,6 +50,10 @@ template <typename T1> T1 bessi0(T1 x);
 
 template <typename T1>
 void calculateLUT(T1 beta, T1 width, T1 *&LUT, uword &sizeLUT);
+
+#pragma acc routine seq
+template <typename T1>
+bool isnanPG(T1 x) {  return x != x; };
 
 #pragma acc routine seq
 template <typename T1>
@@ -263,3 +269,5 @@ normalize_fft3d<double>(double *__restrict pDst, double *__restrict pSrc,
 extern template void
 normalize_fft3d<float>(float *__restrict pDst, float *__restrict pSrc,
 		int gridSizeX, int gridSizeY, int gridSizeZ);
+
+#endif //PowerGrid_griddingSupport_h

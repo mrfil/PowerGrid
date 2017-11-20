@@ -154,7 +154,7 @@ void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
 #pragma acc parallel loop present(pSrc[0 : 2 * gridSizeX *gridSizeY])                    \
        present(pDst[0 : 2 * gridSizeX * gridSizeY])
   for (int dX = 0; dX < 2*gridSizeX*gridSizeY; dX++) {
-    pDst[ dX ] = pSrc[ dX ]/((T1)1.0);
+    pDst[ dX ] = pSrc[ dX ]/vectorLength;
   }
   /*
   for (int dX = 0; dX < gridSizeX; dX++) {
@@ -184,7 +184,7 @@ void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
     pSrc[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])                             \
         present(pDst[0 : 2 * gridSizeX *gridSizeY *gridSizeZ])
   for (int dX = 0; dX < 2*gridSizeX*gridSizeY*gridSizeZ; dX++) {
-    pDst[ dX ] = pSrc[ dX ]/((T1)1.0);
+    pDst[ dX ] = pSrc[ dX ]/vectorLength;
   }
 /*
 	for (int dZ = 0; dZ < gridSizeZ; dZ++) {
@@ -240,6 +240,7 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
   }
 #pragma acc parallel loop collapse(2) independent present(                     \
     pSrc[0 : 2 * imageX *imageY]) present(pDst[0 : 2 * imageX *imageY])
+    {
   for (X = 0; X < imageX; X++) {
     for (Y = 0; Y < imageY; Y++) {
 
@@ -270,7 +271,7 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
       gridKernel = common_exprX1 * common_exprY1;
 	    common_index = Y + X * imageY;
 
-      if (!isnan(gridKernel)) // Check for NaN
+      if (!isnanPG(gridKernel)) // Check for NaN
       {
 
         gridOS2 = gridOS * gridOS;
@@ -289,7 +290,7 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
     }
   }
 }
-
+}
 // Deapodizes 3d data by FT of the Kasier-Bessel kernel
 template <typename T1>
 void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
@@ -327,6 +328,7 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
 #pragma acc parallel loop collapse(3)                                          \
     independent present(pSrc[0 : 2 * imageX *imageY *imageZ])                  \
                             present(pDst[0 : 2 * imageX *imageY *imageZ])
+                            {
   for (Z = 0; Z < imageZ; Z++) {
     for (X = 0; X < imageX; X++) {
       for (Y = 0; Y < imageY; Y++) {
@@ -369,7 +371,7 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
         T1 gridKernel = common_exprX1 * common_exprY1 * common_exprZ1;
 	      int common_index = Z * imageY * imageX + X * imageY + Y;
 
-        if (!isnan(gridKernel)) // Checking for NaN
+        if (!isnanPG(gridKernel)) // Checking for NaN
         {
           gridOS3 = gridOS * gridOS * gridOS;
           // dst[common_index] =
@@ -386,6 +388,7 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
       }
     }
   }
+}
 }
 
 // We oversample the FFT by zeropadding so now we need to crop
@@ -497,7 +500,7 @@ void zero_pad2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageSizeX,
   {
 #pragma acc loop
     for (int jj = 0; jj < 2 * destSize; jj++) {
-      pDst[jj] = 0.0;
+      pDst[jj] = (T1)0.0;
     }
 
 #pragma acc loop collapse(2) independent
@@ -549,7 +552,7 @@ void zero_pad3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageSizeX,
   {
 #pragma acc loop
     for (int jj = 0; jj < 2 * destSize; jj++) {
-      pDst[jj] = 0.0;
+      pDst[jj] = (T1)0.0;
     }
 
 #pragma acc loop collapse(3) independent
@@ -584,10 +587,10 @@ void circshift2(T *__restrict pDst, const T *__restrict pSrc, int xdim,
   int ii, jj;
 
 #pragma acc parallel loop collapse(2) independent present(                     \
-    pSrc[0 : 2 * xdim *ydim]) present(pDst[0 : 2 * xdim *ydim])
+    pSrc[0 : 2 * xdim * ydim]) present(pDst[0 : 2 * xdim * ydim])
   for (int x = 0; x < xdim; x++) {
-    ii = (x + xshift) % xdim;
     for (int y = 0; y < ydim; y++) {
+	    ii = (x + xshift) % xdim;
       jj = (y + yshift) % ydim;
       // out[ii+jj*xdim] = in[x+y*xdim];
       pDst[2 * (ii + jj * xdim)] = pSrc[2 * (x + y * xdim)];
@@ -603,18 +606,18 @@ void circshift3(T *__restrict pDst, const T *__restrict pSrc, int xdim,
   int ii, jj, kk;
 
 #pragma acc parallel loop collapse(3) independent present(                     \
-    pSrc[0 : 2 * xdim *ydim *zdim]) present(pDst[0 : 2 * xdim *ydim *zdim])
+    pSrc[0 : 2 * xdim * ydim * zdim]) present(pDst[0 : 2 * xdim * ydim * zdim])
   for (int x = 0; x < xdim; x++) {
-    ii = (x + xshift) % xdim;
     for (int y = 0; y < ydim; y++) {
-      jj = (y + yshift) % ydim;
       for (int z = 0; z < zdim; z++) {
+	      jj = (y + yshift) % ydim;
+	      ii = (x + xshift) % xdim;
         kk = (z + zshift) % zdim;
         // out[jj+ii*ydim+kk*xdim*ydim] = in[y+x*ydim+z*xdim*ydim];
-        pDst[2 * (jj + ii * ydim + kk * xdim * ydim)] =
-            pSrc[2 * (y + x * ydim + z * xdim * ydim)];
-        pDst[2 * (jj + ii * ydim + kk * xdim * ydim) + 1] =
-            pSrc[2 * (y + x * ydim + z * xdim * ydim) + 1];
+        pDst[2 * (ii + jj * xdim + kk * xdim * ydim)] =
+            pSrc[2 * (x + y * xdim + z * xdim * ydim)];
+        pDst[2 * (ii + jj * xdim + kk * xdim * ydim) + 1] =
+            pSrc[2 * (x + y * xdim + z * xdim * ydim) + 1];
       }
     }
   }

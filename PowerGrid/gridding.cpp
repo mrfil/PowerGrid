@@ -59,8 +59,8 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
 
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT])                \
-    present(pGData[0 : gridNumElems * 2], sample[0:n])
+#pragma acc parallel loop gang vector pcopy(LUT[0 : sizeLUT])                \
+    pcopy(pGData[0 : gridNumElems * 2], sample[0:n]) copyin(params, params.gridSize[0:3])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -97,7 +97,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
               kernelWidth;
       }
 
-      if (isnan(kbX)) { // if kbX = NaN
+      if (isnanPG(kbX)) { // if kbX = NaN
         kbX = 0;
       }
 #pragma acc loop seq
@@ -120,7 +120,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
                 kernelWidth;
         }
 
-        if (isnan(kbY)) { // if kbY = NaN
+        if (isnanPG(kbY)) { // if kbY = NaN
           kbY = (T1)0.0;
         }
 
@@ -189,8 +189,8 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
   //pGData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT])                \
-    present(pGData[0 : gridNumElems * 2], sample[0:n])
+#pragma acc parallel loop gang vector pcopy(LUT[0:sizeLUT])                \
+    pcopy(pGData[0:gridNumElems*2], sample[0:n]) pcopyin(params, params.gridSize[0:3])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -324,8 +324,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   //pSamples = reinterpret_cast<T1 *>(sample);
   //pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],pSamples[0 : n * 2])\
-    present(pGridData[0 : gridNumElems * 2], kx[0:n],ky[0:n])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],pSamples[0:n*2])\
+    present(pGridData[0:gridNumElems*2], kx[0:n], ky[0:n])
   for (int i = 0; i < n; i++) {
 
     shiftedKx = (gridOS) * (kx[i] + ((T1)Nx) / (T1)2.0);
@@ -361,7 +361,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
               kernelWidth;
       }
 
-      if (isnan(kbX)) { // if kbX = NaN
+      if (isnanPG(kbX)) { // if kbX = NaN
         kbX = 0;
       }
 
@@ -385,7 +385,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
                 kernelWidth;
         }
 
-        if (isnan(kbY)) { // if kbY = NaN
+        if (isnanPG(kbY)) { // if kbY = NaN
           kbY = 0;
         }
 
@@ -480,7 +480,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 // float t0 = t[0];
 
 #pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],kx[0:n],ky[0:n],\
-    kz[0:n],pSamples[0 : n * 2],pGridData[0 : gridNumElems * 2])
+    kz[0:n],pSamples[0 : n * 2],pGridData[0 : gridNumElems * 2]) pcopyin(params.gridSize[0:3])
   for (int i = 0; i < n; i++) {
     // complex<T1> pt = sample[i];
 
@@ -526,7 +526,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
               kernelWidth;
       }
 
-      if (isnan(kbZ)) { // if kbZ = NaN
+      if (isnanPG(kbZ)) { // if kbZ = NaN
         kbZ = 0;
       }
 
@@ -550,7 +550,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                 kernelWidth;
         }
 
-        if (isnan(kbX)) { // if kbX = NaN
+        if (isnanPG(kbX)) { // if kbX = NaN
           kbX = 0;
         }
 
@@ -575,7 +575,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                   kernelWidth;
           }
 
-          if (isnan(kbY)) { // if kbY = NaN
+          if (isnanPG(kbY)) { // if kbY = NaN
             kbY = 0;
           }
 
@@ -715,10 +715,12 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
-#pragma acc enter data copyin(pGridData[0 : 2 * gridNumElems], samples[0:n]) \
-	pcreate( pGridData_d[0 : 2 * gridNumElems], pGridData_crop_d[0:2*imageNumElems],\
-	pGridData_crop_deAp[0 : 2 * imageNumElems], outR_d[0 : imageNumElems],    \
-	outI_d[0 : imageNumElems])
+
+#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n], LUT[0:sizeLUT], \
+	pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],                  \
+	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],                     \
+	outI_d[0:imageNumElems], params.gridSize[0:3])
+
   // Gridding with CPU - adjoint
   if (Nz == 1) {
     gridding_adjoint_2D<T1>(n, params, beta, samples, LUT, sizeLUT, pGridData);
@@ -740,27 +742,27 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 #ifdef _OPENACC // We're on GPU
 // Inside this region the device data pointer will be used for cuFFT
 
-//#pragma acc host_data use_device(pGridData_d)
-
+#pragma acc host_data use_device(pGridData_d)
+{
 
 
     // Query OpenACC for CUDA stream
-    //void *stream = acc_get_cuda_stream(acc_async_sync);
+    void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
-    #pragma acc update self(pGridData_d[0:2*gridNumElems])
+    //#pragma acc update self(pGridData_d[0:2*gridNumElems])
     if (Nz == 1) {
-        ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
-      //ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream);
+      //ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
+      ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream);
     } else {
-        ifft3dCPU(pGridData_, params.gridSize[0], params.gridSize[1],
-              params.gridSize[2]);
-      //ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
-      //          params.gridSize[2], stream);
+      //ifft3dCPU(pGridData_d, params.gridSize[0], params.gridSize[1],
+      //        params.gridSize[2]);
+      ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
+                params.gridSize[2], stream);
     }
 
 
-
+}
 
 #else // We're on CPU so we'll use FFTW
 
@@ -775,7 +777,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 #endif
 
 
-	#pragma acc update device(pGridData_d[0:2*gridNumElems])
+	//#pragma acc update device(pGridData_d[0:2*gridNumElems])
 	if (Nz == 1) {
 		normalize_fft2d<T1>(pGridData, pGridData_d, params.gridSize[0],
 				params.gridSize[1]);
@@ -784,7 +786,6 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 				params.gridSize[1], params.gridSize[2]);
 	}
 
-  // cout << "Got through the update device directive" << endl;
   if (Nz == 1) {
     fftshift2<T1>(pGridData_d, pGridData, params.gridSize[0],
                   params.gridSize[1]);
@@ -823,8 +824,8 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   }
 
 #pragma acc exit data copyout(outR_d[0 : imageNumElems],                        \
-    outI_d[0 : imageNumElems]) delete (pGridData_crop_d, pGridData_d, pGridData,\
-	pGridData_crop_deAp)
+    outI_d[0 : imageNumElems], pGridData_crop_d[0:2*imageNumElems], pGridData_d[0:2*gridNumElems], pGridData[0:2*gridNumElems],\
+	pGridData_crop_deAp[0:2*imageNumElems], samples[0:n])
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
   free(samples);
@@ -944,10 +945,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc enter data copyin(pGridData[0 : 2 * imageNumElems], kx[0 : n], ky[0:n],kz[0,n]) pcreate(        \
-    pGridData_d[0 : 2 * imageNumElems], pGridData_os[0 : 2 * gridNumElems],    \
-    pGridData_os_d[0 : 2 * gridNumElems]) create(pSamples[0 : 2 * n],           \
-	outR_d[0 : n],outI_d[0 : n] )
+#pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], LUT[0:sizeLUT], pSamples[0:2*n],        \
+    pGridData_d[0:2*imageNumElems], pGridData_os[0:2*gridNumElems],    \
+    pGridData_os_d[0:2*gridNumElems], params, params.gridSize[0:3])
 std::cout << " about to run deapodization " << std::endl;
   // deapodization
   if (Nz == 1) {
@@ -980,9 +980,6 @@ std::cout << " about to run deapodization " << std::endl;
                 // Inside this region the device data pointer will be used
 // cout << "about to reach openacc region in forward transform" << endl;
 
-//#pragma acc data copy(pGridData_os_d[0:2*gridNumElems])
-//{
-
 #pragma acc host_data use_device(pGridData_os_d)
   {
 
@@ -992,13 +989,16 @@ std::cout << " about to run deapodization " << std::endl;
     // Launch FFT on the GPU
     if (Nz == 1) {
       fft2dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1], stream);
+      //fft2dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1]);
+
     } else {
       fft3dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1],
                params.gridSize[2], stream);
+      //fft3dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1],
+      //params.gridSize[2]);
     }
 
   }
-
 #else // We're on CPU
   if (Nz == 1) {
     fft2dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1]);
@@ -1009,7 +1009,8 @@ std::cout << " about to run deapodization " << std::endl;
 #endif
   // ifftshift(gridData):
 	std::cout << " about to run ifftshift " << std::endl;
-  if (Nz == 1) {
+	//#pragma acc update device(pGridData_os_d[0:2*gridNumElems])
+	if (Nz == 1) {
     ifftshift2<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
                    params.gridSize[1]);
   } else {
@@ -1025,17 +1026,18 @@ std::cout << " about to run deapodization " << std::endl;
     gridding_forward_3D<T1>(n, params, kx, ky, kz, beta, pSamples, LUT, sizeLUT,
                             pGridData_os);
   }
-#pragma acc data update self(pSamples[0:2*n])
-  for (int ii = 0; ii < n; ii++) {
-    outR_d[ii] = pSamples[2*ii];
-    outI_d[ii] = pSamples[2*ii+1];
-  }
+
 // deallocate samples
 	std::cout << " about to exit data " << std::endl;
-#pragma acc exit data copyout(outR_d[0 : n],                       \
-	outI_d[0 : n]) delete (pGridData_d[0 : 2 * imageNumElems],     \
-    pGridData_os[0 : 2 * gridNumElems], pGridData_os_d[0 : 2 * gridNumElems],  \
-    pGridData[0 : 2 * imageNumElems], pSamples[0 : 2 * n], kx[0:n],ky[0:n],kz[0:n])
+
+#pragma acc exit data copyout(pSamples[0:2*n],pGridData_d[0:2*imageNumElems],     \
+    pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems],  \
+    pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n])
+
+	for (int ii = 0; ii < n; ii++) {
+		outR_d[ii] = pSamples[2*ii];
+		outI_d[ii] = pSamples[2*ii+1];
+	}
 
   delete[] samples;
   delete[] gridData;
