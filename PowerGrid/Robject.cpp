@@ -32,12 +32,13 @@
 // vectorize it before it is passed to QuadPenalty.
 // Custom Class Constructor
 template <typename T1>
-Robject<T1>::Robject(uword nx, uword ny, uword nz, T1 beta) {
+Robject<T1>::Robject(uword nx, uword ny, uword nz, T1 beta, uword dims2penalize) {
         // Set Class Memebers
         this->Nx = nx;
         this->Ny = ny;
         this->Nz = nz;
         this->Beta = beta;
+        this->Dims2Penalize = dims2penalize;
 }
 
 // Class Methods - Declared virtual so they can be implemented in the base
@@ -125,7 +126,7 @@ T1 Robject<T1>::Penalty(const Col<complex<T1> > &x) const {
         Col<complex<T1> > d = zeros<Col<complex<T1> > >(x.n_rows);
         T1 penal = 0;
         uword nd = 0;
-        if (this->Nz == 1) {
+        if ((this->Nz == 1) || (this->Dims2Penalize == 2)) {
                 nd = 2;
         } else {
                 nd = 3;
@@ -145,7 +146,7 @@ Col<complex<T1> > Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
         Col<complex<T1> > g = zeros<Col<complex<T1> > >(x.n_rows);
         Col<complex<T1> > d = zeros<Col<complex<T1> > >(x.n_rows);
         uword nd = 0;
-        if (this->Nz == 1) {
+        if ((this->Nz == 1) || (this->Dims2Penalize == 2)){
                 nd = 2;
         } else {
                 nd = 3;
@@ -171,7 +172,7 @@ complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
         complex<T1> temp;
         complex<T1> cxBeta = (this->Beta, 0);
         uword nd = 0;
-        if (this->Nz == 1) {
+        if ((this->Nz == 1) || (this->Dims2Penalize == 2)){
                 nd = 2;
         } else {
                 nd = 3;

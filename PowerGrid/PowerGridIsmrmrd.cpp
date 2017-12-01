@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
       rawDataNavFilePath;
   uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
   double beta = 0.0;
-
+  uword dims2penalize = 3;
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "produce help message")(
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
@@ -67,7 +67,9 @@ int main(int argc, char **argv) {
           ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
           ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
           ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
-          ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver");
+          ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver")
+          ("Dims2Penalize,B", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3).");
+
 
   po::variables_map vm;
 
@@ -191,7 +193,7 @@ int main(int argc, char **argv) {
 	                    //SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 	                    SENSE<float, Gnufft<float>> Sg(G, sen, kx.n_rows, Nx*Ny*Nz, nc);
 	                    //SENSE<float, Gdft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-	                    QuadPenalty<float> R(Nx, Ny, Nz, beta);
+	                    QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 	                    ImageTemp = reconSolve<float, SENSE<float, Gnufft<float>>,
 	                            QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
 	                            Ny, Nz, tvec, NIter);

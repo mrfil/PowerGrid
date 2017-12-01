@@ -30,12 +30,13 @@
 // vectorize it before it is passed to QuadPenalty.
 // Custom Class Constructor
 template <typename T1>
-QuadPenalty<T1>::QuadPenalty(uword nx, uword ny, uword nz, T1 beta) {
+QuadPenalty<T1>::QuadPenalty(uword nx, uword ny, uword nz, T1 beta, uword dims2penalize) {
         // Set Class Memebers
         this->Nx = nx;
         this->Ny = ny;
         this->Nz = nz;
         this->Beta = beta;
+        this->Dims2Penalize = dims2penalize;
 }
 
 // Class Methods

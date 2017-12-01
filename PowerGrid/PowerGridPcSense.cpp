@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 	std::string rawDataFilePath, outputImageFilePath;
 	uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
 	double beta = 0.0;
-
+	uword dims2penalize = 3;
 	po::options_description desc("Allowed options");
 	desc.add_options()("help,h", "produce help message")(
 			"inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
@@ -69,9 +69,9 @@ int main(int argc, char **argv)
 			("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
 			("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
 			("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
+			("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
 			("CGIterations,n", po::value<uword>(&NIter),
-					"Number of preconditioned conjugate gradient interations for main "
-							"solver");
+					"Number of preconditioned conjugate gradient interations for main solver");
 
 	po::variables_map vm;
 
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 						pcSENSE<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, SMap, FMap,
 								0-PMap);
 						//pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-						QuadPenalty<float> R(Nx, Ny, Nz, beta);
+						QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 
 						ImageTemp = reconSolve<float, pcSENSE<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
 								Nx,

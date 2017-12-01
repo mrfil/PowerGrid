@@ -46,11 +46,12 @@ public:
   T1 DeltaY;
   T1 DeltaZ;
   T1 Beta;
+  uword Dims2Penalize;
 
   // It was declared as type Mat<uword> and the 3D type was a cube. We need to
   // vectorize it before it is passed to QuadPenalty.
   // Custom Class Constructor
-  Robject(uword nx, uword ny, uword nz, T1 beta);
+  Robject(uword nx, uword ny, uword nz, T1 beta, uword dims2penalize = 3);
 
   // Class Methods - Declared virtual so they can be implemented in the base
   // classes. Also they are virtual so that if you try to call Robject, things

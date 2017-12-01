@@ -39,7 +39,7 @@ public:
   // It was declared as type Mat<uword> and the 3D type was a cube. We need to
   // vectorize it before it is passed to QuadPenalty.
   // Custom Class Constructor
-  TVPenalty(uword nx, uword ny, uword nz, T1 beta, T1 delta);
+  TVPenalty(uword nx, uword ny, uword nz, T1 beta, T1 delta, uword dims2penalize = 3);
 
   // Class Methods
 

@@ -29,13 +29,14 @@ Developed by:
 // vectorize it before it is passed to QuadPenalty.
 // Custom Class Constructor
 template <typename T1>
-TVPenalty<T1>::TVPenalty(uword nx, uword ny, uword nz, T1 beta, T1 delta) {
+TVPenalty<T1>::TVPenalty(uword nx, uword ny, uword nz, T1 beta, T1 delta, uword dims2penalize) {
   // Set Class Members
   this->Nx = nx;
   this->Ny = ny;
   this->Nz = nz;
   this->Beta = beta;
   this->Delta = delta;
+  this->Dims2Penalize = dims2penalize;
 }
 
 // Class Methods
