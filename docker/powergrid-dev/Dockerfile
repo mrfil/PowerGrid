@@ -1,15 +1,16 @@
 #FROM nvidia/cuda:7.5-devel-ubuntu16.04
 # Base NVIDIA Image
-FROM cuda-ssh:latest
+FROM nvidia/cuda:9.0-devel-ubuntu16.04
+#FROM cuda-ssh:latest
 # Offers X access via ssh for NVVP and PGProf
 # Run everything in /root
 WORKDIR /root
 
 # Patch error in /etc/sshd_conf
-RUN  echo 'AddressFamily inet' >> /etc/ssh/sshd_config
+# RUN  echo 'AddressFamily inet' >> /etc/ssh/sshd_config
 
 # Add needed packages
-RUN apt-get -y update && apt-get install -y g++ gcc curl libopenblas-dev libarpack2-dev nano cmake git xsdcxx libxerces-c-dev libmatio-dev libboost-all-dev libhdf5-dev libfftw3-dev
+RUN apt-get -y update && apt-get install -y g++ gcc curl libopenblas-dev libarpack2-dev nano wget cmake git xsdcxx libxerces-c-dev libmatio-dev libboost-all-dev libhdf5-dev libfftw3-dev
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \

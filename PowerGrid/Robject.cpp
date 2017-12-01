@@ -184,7 +184,7 @@ complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
                 temp = as_scalar(Cdir.t() * Cx);
                 penal += temp;
         }
-        // cout << "Beta = " << Beta << endl;
+
         return penal * cxBeta;
 }
 
