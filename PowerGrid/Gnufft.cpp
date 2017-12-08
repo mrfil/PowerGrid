@@ -85,8 +85,8 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 
   // cout << "Seperating real and imaginary data." << endl;
 
-  Col<T1> realData = real(d);
-  Col<T1> imagData = imag(d);
+  Col<T1> realData = real(d).eval();
+  Col<T1> imagData = imag(d).eval();
   // Now we grab the data out of armadillo with the memptr() function
   // This returns a pointer of the type of the elements of the
   // array/vector/matrix/cube (3d matrix)
@@ -156,8 +156,8 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
 
   uword dataLength = this->n2;
 
-  Col<T1> realData = real(d);
-  Col<T1> imagData = imag(d);
+  Col<T1> realData = real(d).eval();
+  Col<T1> imagData = imag(d).eval();
 
   T1 *realDataPtr = realData.memptr();
   T1 *imagDataPtr = imagData.memptr();
@@ -227,8 +227,8 @@ Col<complex<T1>> Gnufft<T1>::trimmedForwardOp(
   // std::endl;
   // cout << "Separating real and imaginary data." << endl;
 
-  Col<T1> realData = real(d);
-  Col<T1> imagData = imag(d);
+  Col<T1> realData = real(d).eval();
+  Col<T1> imagData = imag(d).eval();
 
   // Now we grab the data out of armadillo with the memptr() function
   // This returns a pointer of the type of the elements of the
@@ -302,8 +302,8 @@ Gnufft<T1>::trimmedAdjointOp(const Col<complex<T1>> &d,
   Col<T1> kyTrimmed = ky.elem(dataMaskTrimmed);
   Col<T1> kzTrimmed = kz.elem(dataMaskTrimmed);
 
-  Col<T1> realData = real(dTrimmed);
-  Col<T1> imagData = imag(dTrimmed);
+  Col<T1> realData = real(dTrimmed).eval();
+  Col<T1> imagData = imag(dTrimmed).eval();
 
   T1 *realDataPtr = realData.memptr();
   T1 *imagDataPtr = imagData.memptr();

@@ -59,8 +59,8 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
 
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector pcopy(LUT[0 : sizeLUT])                \
-    pcopy(pGData[0 : gridNumElems * 2], sample[0:n]) copyin(params, params.gridSize[0:3])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT], \
+  pGData[0 : gridNumElems * 2], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -189,8 +189,8 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
   //pGData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector pcopy(LUT[0:sizeLUT])                \
-    pcopy(pGData[0:gridNumElems*2], sample[0:n]) pcopyin(params, params.gridSize[0:3])
+#pragma acc parallel loop gang vector pcopy(LUT[0:sizeLUT],pGData[0:gridNumElems*2]) \
+    pcopyin(params, params.gridSize[0:3], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -324,8 +324,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   //pSamples = reinterpret_cast<T1 *>(sample);
   //pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],pSamples[0:n*2])\
-    present(pGridData[0:gridNumElems*2], kx[0:n], ky[0:n])
+#pragma acc parallel loop gang vector present(kx[0:n], ky[0:n], pSamples[0:n*2], \
+  LUT[0 : sizeLUT], pGridData[0:gridNumElems*2])
   for (int i = 0; i < n; i++) {
 
     shiftedKx = (gridOS) * (kx[i] + ((T1)Nx) / (T1)2.0);
@@ -479,8 +479,8 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 // Jiading GAI
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],kx[0:n],ky[0:n],\
-    kz[0:n],pSamples[0 : n * 2],pGridData[0 : gridNumElems * 2]) pcopyin(params.gridSize[0:3])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT], pGridData[0 : gridNumElems * 2], \
+  kx[0:n], ky[0:n], kz[0:n], pSamples[0 : n * 2])
   for (int i = 0; i < n; i++) {
     // complex<T1> pt = sample[i];
 
@@ -716,10 +716,10 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n], LUT[0:sizeLUT], \
-	pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],                  \
+#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n]) \
+	create(pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],                  \
 	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],                     \
-	outI_d[0:imageNumElems], params.gridSize[0:3])
+	outI_d[0:imageNumElems])
 
   // Gridding with CPU - adjoint
   if (Nz == 1) {
@@ -823,9 +823,10 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     deinterleave_data3d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny, Nz);
   }
 
-#pragma acc exit data copyout(outR_d[0 : imageNumElems],                        \
-    outI_d[0 : imageNumElems], pGridData_crop_d[0:2*imageNumElems], pGridData_d[0:2*gridNumElems], pGridData[0:2*gridNumElems],\
-	pGridData_crop_deAp[0:2*imageNumElems], samples[0:n])
+#pragma acc exit data copyout(outR_d[0 : imageNumElems],outI_d[0 : imageNumElems])  \
+    delete(pGridData_crop_d[0:2*imageNumElems], pGridData_d[0:2*gridNumElems], pGridData[0:2*gridNumElems],\
+	  pGridData_crop_deAp[0:2*imageNumElems], samples[0:n])
+
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
   free(samples);
@@ -945,10 +946,10 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], LUT[0:sizeLUT], pSamples[0:2*n],        \
-    pGridData_d[0:2*imageNumElems], pGridData_os[0:2*gridNumElems],    \
-    pGridData_os_d[0:2*gridNumElems], params, params.gridSize[0:3])
-std::cout << " about to run deapodization " << std::endl;
+#pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], \
+   LUT[0:sizeLUT], pSamples[0:2*n]) create(pGridData_d[0:2*imageNumElems],  \
+    pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems])
+
   // deapodization
   if (Nz == 1) {
     deapodization2d<T1>(pGridData_d, pGridData, Nx, Ny, kernelWidth, beta,
@@ -959,14 +960,13 @@ std::cout << " about to run deapodization " << std::endl;
   }
 
   // zero pad
-	std::cout << " about to run zero pad " << std::endl;
   if (Nz == 1) {
     zero_pad2d<T1>(pGridData_os, pGridData_d, Nx, Ny, params.gridOS);
   } else {
 
     zero_pad3d<T1>(pGridData_os, pGridData_d, Nx, Ny, Nz, params.gridOS);
   }
-	std::cout << " about to run fftshift " << std::endl;
+
   if (Nz == 1) {
     fftshift2<T1>(pGridData_os_d, pGridData_os, params.gridSize[0],
                   params.gridSize[1]);
@@ -1008,7 +1008,6 @@ std::cout << " about to run deapodization " << std::endl;
   }
 #endif
   // ifftshift(gridData):
-	std::cout << " about to run ifftshift " << std::endl;
 	//#pragma acc update device(pGridData_os_d[0:2*gridNumElems])
 	if (Nz == 1) {
     ifftshift2<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
@@ -1017,7 +1016,7 @@ std::cout << " about to run deapodization " << std::endl;
     ifftshift3<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
                    params.gridSize[1], params.gridSize[2]);
   }
-	std::cout << " about to run gridding " << std::endl;
+
   // Gridding with CPU - forward
   if (Nz == 1) {
     gridding_forward_2D<T1>(n, params, kx, ky, beta, pSamples, LUT, sizeLUT,
@@ -1028,9 +1027,8 @@ std::cout << " about to run deapodization " << std::endl;
   }
 
 // deallocate samples
-	std::cout << " about to exit data " << std::endl;
 
-#pragma acc exit data copyout(pSamples[0:2*n],pGridData_d[0:2*imageNumElems],     \
+#pragma acc exit data copyout(pSamples[0:2*n]) delete(pGridData_d[0:2*imageNumElems],     \
     pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems],  \
     pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n])
 
