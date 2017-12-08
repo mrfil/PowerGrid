@@ -97,7 +97,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT);
+                        const uword sizeLUT, void *stream);
 
 // Calculates the gridded forward fourier transform
 template <typename T1>
@@ -107,7 +107,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT);
+                        const uword sizeLUT, void *stream);
 
 // Explicit Instantiations
 extern template int gridding_adjoint_2D<float>(unsigned int, parameters<float>,
@@ -153,21 +153,21 @@ extern template void
 computeFH_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int,
                           float gridOS, float *, float *, const float,
-                          const float, const float *, const uword);
+                          const float, const float *, const uword, void *);
 extern template void
 computeFH_CPU_Grid<double>(int, const double *, const double *, const double *,
                            const double *, const double *, int, int, int,
                            double gridOS, double *, double *, const double,
-                           const double, const double *, const uword);
+                           const double, const double *, const uword, void *);
 extern template void
 computeFd_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int, float,
                           float *, float *, const float, const float,
-                          const float *, const uword);
+                          const float *, const uword, void *);
 extern template void
 computeFd_CPU_Grid<double>(int, const double *, const double *, const double *,
                            const double *, const double *, int, int, int,
                            double, double *, double *, const double,
-                           const double, const double *, const uword);
+                           const double, const double *, const uword, void *);
 
 #endif

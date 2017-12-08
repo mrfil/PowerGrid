@@ -479,8 +479,9 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 // Jiading GAI
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT], pGridData[0 : gridNumElems * 2], \
-  kx[0:n], ky[0:n], kz[0:n], pSamples[0 : n * 2])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT], \
+   pGridData[0 : gridNumElems * 2],kx[0:n], ky[0:n], kz[0:n],   \
+   pSamples[0 : n * 2])
   for (int i = 0; i < n; i++) {
     // complex<T1> pt = sample[i];
 
@@ -607,7 +608,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT) {
+                        const uword sizeLUT, void* stream) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -716,9 +717,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n]) \
-	create(pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],                  \
-	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],                     \
+#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n])      \
+	create(pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],  \
+	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],            \
 	outI_d[0:imageNumElems])
 
   // Gridding with CPU - adjoint
@@ -747,7 +748,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 
     // Query OpenACC for CUDA stream
-    void *stream = acc_get_cuda_stream(acc_async_sync);
+    //void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
     //#pragma acc update self(pGridData_d[0:2*gridNumElems])
@@ -842,7 +843,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT) {
+                        const uword sizeLUT, void* stream) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -984,7 +985,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   {
 
     // Query OpenACC for CUDA stream
-    void *stream = acc_get_cuda_stream(acc_async_sync);
+    //void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
     if (Nz == 1) {
@@ -1087,22 +1088,22 @@ template void computeFH_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, int, int, int,
                                         float gridOS, float *, float *,
                                         const float, const float, const float *,
-                                        const uword);
+                                        const uword, void *);
 template void computeFH_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int,
                                          double gridOS, double *, double *,
                                          const double, const double,
-                                         const double *, const uword);
+                                         const double *, const uword, void *);
 template void computeFd_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, const float *,
                                         const float *, int, int, int, float,
                                         float *, float *, const float,
                                         const float, const float *,
-                                        const uword);
+                                        const uword, void *);
 template void computeFd_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int, double,
                                          double *, double *, const double,
                                          const double, const double *,
-                                         const uword);
+                                         const uword, void *);

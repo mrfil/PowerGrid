@@ -56,7 +56,7 @@ Gnufft<T1>::Gnufft(
          std::sqrt((gridOS - 0.5) * (gridOS - 0.5) *
                        (kernelWidth * kernelWidth * 4.0) / (gridOS * gridOS) -
                    0.8);
-
+  stream = acc_get_cuda_stream(acc_async_sync);
   // Deal with the LUT
   // Generating Look-Up Table
   // cout << "Calculating look up table" << endl;
@@ -125,7 +125,8 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
   // cout << "About to call the forward gridding routine." << endl;
   computeFd_CPU_Grid<T1>(n2, kx.memptr(), ky.memptr(), kz.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT);
+                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
+                         stream);
 
   // To return data, we need to put our data back into Armadillo objects
   // We are telling the object how long it is because it will copy the data
@@ -180,7 +181,7 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   computeFH_CPU_Grid<T1>(dataLength, kx.memptr(), ky.memptr(), kz.memptr(),
                          realDataPtr, imagDataPtr, Nx, Ny, Nz, gridOS,
                          realXformedDataPtr, imagXformedDataPtr, kernelWidth,
-                         beta, LUT, sizeLUT);
+                         beta, LUT, sizeLUT, stream);
   /*
   iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
              realDataPtr, imagDataPtr, kx.memptr(),
@@ -259,7 +260,8 @@ Col<complex<T1>> Gnufft<T1>::trimmedForwardOp(
   computeFd_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed.memptr(),
                          kyTrimmed.memptr(), kzTrimmed.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT);
+                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
+                         stream);
 
   // To return data, we need to put our data back into Armadillo objects
   // We are telling the object how long it is because it will copy the data
@@ -326,7 +328,8 @@ Gnufft<T1>::trimmedAdjointOp(const Col<complex<T1>> &d,
   computeFH_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed.memptr(),
                          kyTrimmed.memptr(), kzTrimmed.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT);
+                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
+                         stream);
   /*
   iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
              realDataPtr, imagDataPtr, kx.memptr(),
