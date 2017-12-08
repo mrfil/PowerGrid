@@ -39,8 +39,9 @@
 // template parameter.
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type>
-void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
-        cufftHandle plan;
+void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
 
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
@@ -49,21 +50,25 @@ void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         }
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
-                     CUFFT_INVERSE);
+        */
+        if(cufftExecC2C(*plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
+                     CUFFT_INVERSE) != CUFFT_SUCCESS) {
+                       fprintf(stderr, "Cufft error: ExecC2C Failed\n");
+        };
 
         // Wait for operation to complete
         if (cudaDeviceSynchronize() != cudaSuccess){
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type>
-void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
-        cufftHandle plan;
+void fft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
         if (cufftPlan2d(&plan, nx, ny, CUFFT_C2C) != CUFFT_SUCCESS) {
@@ -71,21 +76,24 @@ void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         }
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
-                     CUFFT_FORWARD);
-
+        */
+        if(cufftExecC2C(*plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
+                     CUFFT_FORWARD) != CUFFT_SUCCESS) {
+                       fprintf(stderr, "Cufft error: ExecC2C Failed\n");
+        };
                              // Wait for operation to complete
         if (cudaDeviceSynchronize() != cudaSuccess){
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type>
-void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
-        cufftHandle plan;
+void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
         if (cufftPlan3d(&plan, nz, ny, nx, CUFFT_C2C) != CUFFT_SUCCESS) {
@@ -93,21 +101,25 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
         }
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
-                     CUFFT_INVERSE);
+        */
+        if(cufftExecC2C(*plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
+                     CUFFT_INVERSE) != CUFFT_SUCCESS) {
+                       fprintf(stderr, "Cufft error: ExecC2C Failed\n");
+        };
 
                              // Wait for operation to complete
         if (cudaDeviceSynchronize() != cudaSuccess){
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type>
-void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
-        cufftHandle plan;
+void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
         if (cufftPlan3d(&plan, nz, ny, nx, CUFFT_C2C) != CUFFT_SUCCESS) {
@@ -115,22 +127,25 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
         }
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        cufftExecC2C(plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
-                     CUFFT_FORWARD);
+        */
+        if(cufftExecC2C(*plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
+                     CUFFT_FORWARD) != CUFFT_SUCCESS) {
+                       fprintf(stderr, "Cufft error: ExecC2C Failed\n");
+        };
 
                              // Wait for operation to complete
         if (cudaDeviceSynchronize() != cudaSuccess){
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type>
-void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
-        // printf("Running 2d inverse xform \n");
-        cufftHandle plan;
+void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
 
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
@@ -139,7 +154,8 @@ void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         }
         // printf("Built plan \n");
         cufftSetStream(plan, (cudaStream_t)stream);
-        if (cufftExecZ2Z(plan, (cufftDoubleComplex *)d_data,
+        */
+        if (cufftExecZ2Z(*plan, (cufftDoubleComplex *)d_data,
                          (cufftDoubleComplex *)d_data,
                          CUFFT_INVERSE) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
@@ -150,14 +166,14 @@ void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type>
-void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
-        // printf("Running 2d forward xform \n");
-        cufftHandle plan;
+void fft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
 
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
@@ -167,7 +183,8 @@ void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
         // printf("Built plan \n");
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        if (cufftExecZ2Z(plan, (cufftDoubleComplex *)d_data,
+        */
+        if (cufftExecZ2Z(*plan, (cufftDoubleComplex *)d_data,
                          (cufftDoubleComplex *)d_data,
                          CUFFT_FORWARD) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
@@ -178,14 +195,15 @@ void fft2dGPU(T1 *d_data, int nx, int ny, void *stream) {
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type>
-void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
+void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *plan) {
+        /*
         // printf("Running 3d inverse xform \n");
-        cufftHandle plan;
+        cufftHandle *plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
         if (cufftPlan3d(&plan, nz, ny, nx, CUFFT_Z2Z) != CUFFT_SUCCESS) {
@@ -194,7 +212,8 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
         // printf("Built plan \n");
 
         cufftSetStream(plan, (cudaStream_t)stream);
-        if (cufftExecZ2Z(plan, (cufftDoubleComplex *)d_data,
+        */
+        if (cufftExecZ2Z(*plan, (cufftDoubleComplex *)d_data,
                          (cufftDoubleComplex *)d_data,
                          CUFFT_INVERSE) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
@@ -205,15 +224,15 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream) {
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type>
 void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
-              void *stream) {
-        // printf("Running 3d forward xform \n");
-        cufftHandle plan;
+              void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
         // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
 
         if (cufftPlan3d(&plan, nz, ny, nx, CUFFT_Z2Z) != CUFFT_SUCCESS) {
@@ -222,8 +241,8 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
         // printf("Built plan \n");
 
         cufftSetStream(plan, (cudaStream_t)stream);
-
-        if (cufftExecZ2Z(plan, (cufftDoubleComplex *)d_data,
+        */
+        if (cufftExecZ2Z(*plan, (cufftDoubleComplex *)d_data,
                          (cufftDoubleComplex *)d_data,
                          CUFFT_FORWARD) != CUFFT_SUCCESS) {
                 printf("CUFFT error: Plan execution failed\n");
@@ -234,20 +253,20 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
 
-        cufftDestroy(plan);
+        //cufftDestroy(plan);
 }
 
 // Explicit Instantiations
-template void ifft2dGPU<float>(float *, int, int, void *);
-template void ifft2dGPU<double>(double *, int, int, void *);
+template void ifft2dGPU<float>(float *, int, int, void *, cufftHandle *);
+template void ifft2dGPU<double>(double *, int, int, void *, cufftHandle *);
 
-template void fft2dGPU<float>(float *, int, int, void *);
-template void fft2dGPU<double>(double *, int, int, void *);
+template void fft2dGPU<float>(float *, int, int, void *, cufftHandle *);
+template void fft2dGPU<double>(double *, int, int, void *, cufftHandle *);
 
-template void ifft3dGPU<float>(float *, int, int, int, void *);
-template void ifft3dGPU<double>(double *, int, int, int, void *);
+template void ifft3dGPU<float>(float *, int, int, int, void *, cufftHandle *);
+template void ifft3dGPU<double>(double *, int, int, int, void *, cufftHandle *);
 
-template void fft3dGPU<float>(float *, int, int, int, void *);
-template void fft3dGPU<double>(double *, int, int, int, void *);
+template void fft3dGPU<float>(float *, int, int, int, void *, cufftHandle *);
+template void fft3dGPU<double>(double *, int, int, int, void *, cufftHandle *);
 
 #endif //_OPENACC

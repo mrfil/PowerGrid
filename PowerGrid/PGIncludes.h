@@ -40,6 +40,9 @@
 
 // Support Headers for making it easier to work with Armadillo and Matio.
 //#include "../Support/CeempleComplex.h"
+#ifdef _OPENACC
+#include "nvToolsExt.h"
+#endif
 
 #include "../Support/CeempleArmadillo.h"
 #include "../Support/CeempleMatio.h"

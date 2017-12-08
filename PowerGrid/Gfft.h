@@ -55,6 +55,8 @@ public:
   uword Nx = 0; // Size in x dimension
   uword Ny = 0; // Size in y dimension
   uword Nz = 0; // Size in z dimension
+  void *stream;
+  cufftHandle *plan;
 
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation

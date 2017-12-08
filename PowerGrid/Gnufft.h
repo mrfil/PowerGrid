@@ -74,7 +74,8 @@ public:
   uword sizeLUT = 0;
   T1 beta; // beta factor for gridding not the same as beta in regularization!
   T1 kernelWidth; // Kaiser Bessel Kernel Support
-  void *stream; 
+  void *stream;
+  cufftHandle *plan;
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation using gridding
   Col<CxT1> operator*(const Col<CxT1> &d) const;
