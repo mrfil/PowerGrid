@@ -224,7 +224,7 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 // Adjoint transform operation
 template <typename T1>
 Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
-  nvtxRangePushA("Gnufft::operator*");
+  nvtxRangePushA("Gnufft::operator/");
 
   // uword dataLength = n2;
   // Let's trim the operations to avoid data overhead and transfers
