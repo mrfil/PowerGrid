@@ -608,7 +608,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void* stream, cufftHandle *plan) {
+                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
+                        T1 *pGridData, T1 *pGridData_d) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -703,6 +705,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   // Have to set 'gridData' and 'sampleDensity' to zero.
   // Because they will be involved in accumulative operations
   // inside gridding functions.
+  /*
   complex<T1> *gridData = new complex<T1>[gridNumElems];
   complex<T1> *gridData_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_crop_d = new complex<T1>[imageNumElems];
@@ -711,7 +714,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
-
+  */
 #pragma acc enter data copyin( samples[0:n])      \
 	create(pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],  \
 	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],            \
@@ -827,12 +830,13 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 #pragma acc exit data copyout(outR_d[0 : imageNumElems],outI_d[0 : imageNumElems])  \
     delete(pGridData_crop_d[0:2*imageNumElems], pGridData_d[0:2*gridNumElems], pGridData[0:2*gridNumElems],\
 	  pGridData_crop_deAp[0:2*imageNumElems], samples[0:n])
-
+  /*
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
   free(samples);
   delete[] gridData;
   delete[] gridData_d;
+  */
   nvtxRangePop();
 }
 
@@ -844,7 +848,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void* stream, cufftHandle *plan) {
+                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
+                        T1 *pGridData_os_d) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -939,6 +945,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 
 	T1 *pSamples = reinterpret_cast<T1 *>(samples);
+/*
   complex<T1> *gridData = new complex<T1>[imageNumElems];
 	complex<T1> *gridData_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
@@ -947,11 +954,12 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os_d = reinterpret_cast<T1 *>(gridData_os_d);
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
+*/
   nvtxRangePop();
 
   for (int i = 0; i < imageNumElems; i++) {
-    gridData[i].real(dR[i]);
-    gridData[i].imag(dI[i]);
+    pGridData[2*i]     = dR[i];
+    pGridData[2*i + 1] = dI[i];
   }
 
 #pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], \
@@ -1047,10 +1055,12 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 	}
 
   delete[] samples;
+  /*
   delete[] gridData;
   delete[] gridData_d;
   delete[] gridData_os;
   delete[] gridData_os_d;
+  */
   nvtxRangePop();
 }
 
@@ -1097,22 +1107,26 @@ template void computeFH_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, int, int, int,
                                         float gridOS, float *, float *,
                                         const float, const float, const float *,
-                                        const uword, void *, cufftHandle *);
+                                        const uword, void *, cufftHandle *, float *,
+                                        float *, float *, float *);
 template void computeFH_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int,
                                          double gridOS, double *, double *,
                                          const double, const double,
-                                         const double *, const uword, void *, cufftHandle *);
+                                         const double *, const uword, void *, cufftHandle *,
+                                         double *, double *, double *, double *);
 template void computeFd_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, const float *,
                                         const float *, int, int, int, float,
                                         float *, float *, const float,
                                         const float, const float *,
-                                        const uword, void *, cufftHandle *);
+                                        const uword, void *, cufftHandle *,
+                                         float *, float *, float *, float *);
 template void computeFd_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int, double,
                                          double *, double *, const double,
                                          const double, const double *,
-                                         const uword, void *, cufftHandle *);
+                                         const uword, void *, cufftHandle *,
+                                          double *, double *, double *, double *);

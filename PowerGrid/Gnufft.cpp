@@ -50,24 +50,44 @@ Gnufft<T1>::Gnufft(
   ky = k2;
   kz = k3;
   gridOS = gridos;
+
+  imageNumElems = Nx * Ny;
+  gridNumElems = gridOS * Nx * gridOS * Ny;
+
+  if (Nz > 1) {
+    imageNumElems = imageNumElems * Nz;
+    gridNumElems = gridNumElems * gridOS * Nz;
+  }
+
   // Set Beta
   kernelWidth = 4.0;
   beta = MRI_PI *
          std::sqrt((gridOS - 0.5) * (gridOS - 0.5) *
                        (kernelWidth * kernelWidth * 4.0) / (gridOS * gridOS) -
                    0.8);
+
   stream = acc_get_cuda_stream(acc_async_sync);
-  cufftCreate(plan);
+  cufftCreate(&plan);
+
   if(Nz ==1) {
-    if (cufftPlan2d(plan, gridos*Nx, gridos*Ny, CUFFT_C2C) != CUFFT_SUCCESS) {
+    if (cufftPlan2d(&plan, gridOS*Nx, gridOS*Ny, CUFFT_C2C) != CUFFT_SUCCESS) {
             cout <<  "CUFFT error: Plan creation failed" << endl;
     }
   } else {
-    if (cufftPlan3d(plan, gridos*Nz, gridos*Ny, gridos*Nx, CUFFT_C2C) != CUFFT_SUCCESS) {
+    if (cufftPlan3d(&plan, gridOS*Nz, gridOS*Ny, gridOS*Nx, CUFFT_C2C) != CUFFT_SUCCESS) {
             cout << "CUFFT error: Plan creation failed" << endl;
           }
   }
-  cufftSetStream(*plan, (cudaStream_t)stream);
+  cufftSetStream(plan, (cudaStream_t)stream);
+
+  gridData = new complex<T1>[imageNumElems];
+	gridData_d = new complex<T1>[imageNumElems];
+  gridData_os = new complex<T1>[gridNumElems];
+  gridData_os_d = new complex<T1>[gridNumElems];
+  pGridData = reinterpret_cast<T1 *>(gridData);
+  pGridData_d = reinterpret_cast<T1 *>(gridData_d);
+  pGridData_os = reinterpret_cast<T1 *>(gridData_os);
+  pGridData_os_d = reinterpret_cast<T1 *>(gridData_os_d);
 
   // Deal with the LUT
   // Generating Look-Up Table
@@ -78,7 +98,13 @@ Gnufft<T1>::Gnufft(
 
 // Class destructor to free LUT
 template <typename T1> Gnufft<T1>::~Gnufft() {
-  cufftDestroy(*plan);
+  cufftDestroy(plan);
+
+  delete[] gridData;
+  delete[] gridData_d;
+  delete[] gridData_os;
+  delete[] gridData_os_d;
+
   if (LUT) {
 #pragma acc exit data delete (LUT)
     free(LUT);
@@ -137,10 +163,12 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
   */
   // T2 gridOS = 2.0;
   // cout << "About to call the forward gridding routine." << endl;
+  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   computeFd_CPU_Grid<T1>(n2, kx.memptr(), ky.memptr(), kz.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
                          imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
-                         stream, plan);
+                         stream, nPlan, pGridData, pGridData_d, pGridData_os,
+                         pGridData_os_d);
 
   // To return data, we need to put our data back into Armadillo objects
   // We are telling the object how long it is because it will copy the data
@@ -192,11 +220,12 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // realXformedDataPtr and imagXformedDataPtr and they are of type float*
 
   // T2 gridOS = 2.0;
-
+  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   computeFH_CPU_Grid<T1>(dataLength, kx.memptr(), ky.memptr(), kz.memptr(),
                          realDataPtr, imagDataPtr, Nx, Ny, Nz, gridOS,
                          realXformedDataPtr, imagXformedDataPtr, kernelWidth,
-                         beta, LUT, sizeLUT, stream, plan);
+                         beta, LUT, sizeLUT, stream, nPlan, pGridData,
+                         pGridData_d, pGridData_os, pGridData_os_d);
   /*
   iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
              realDataPtr, imagDataPtr, kx.memptr(),
@@ -272,11 +301,13 @@ Col<complex<T1>> Gnufft<T1>::trimmedForwardOp(
   // realXformedDataPtr and imagXformedDataPtr and they are of type float*
 
   // cout << "About to call the forward gridding routine." << endl;
+  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   computeFd_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed.memptr(),
                          kyTrimmed.memptr(), kzTrimmed.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
                          imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
-                         stream, plan);
+                         stream, nPlan, pGridData, pGridData_d, pGridData_os,
+                         pGridData_os_d);
 
   // To return data, we need to put our data back into Armadillo objects
   // We are telling the object how long it is because it will copy the data
@@ -339,12 +370,13 @@ Gnufft<T1>::trimmedAdjointOp(const Col<complex<T1>> &d,
   // realXformedDataPtr and imagXformedDataPtr and they are of type float*
 
   // T2 gridOS = 2.0;
-
+  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   computeFH_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed.memptr(),
                          kyTrimmed.memptr(), kzTrimmed.memptr(), realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
                          imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
-                         stream, plan);
+                         stream, nPlan, pGridData, pGridData_d, pGridData_os,
+                         pGridData_os_d);
   /*
   iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
              realDataPtr, imagDataPtr, kx.memptr(),

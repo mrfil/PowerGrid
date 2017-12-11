@@ -75,7 +75,13 @@ public:
   T1 beta; // beta factor for gridding not the same as beta in regularization!
   T1 kernelWidth; // Kaiser Bessel Kernel Support
   void *stream;
-  cufftHandle *plan;
+  cufftHandle plan;
+
+  uword imageNumElems;
+  uword gridNumElems;
+
+  T1 *pGridData, *pGridData_d, *pGridData_os, *pGridData_os_d;
+  complex<T1> *gridData, *gridData_d, *gridData_os, *gridData_os_d;
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation using gridding
   Col<CxT1> operator*(const Col<CxT1> &d) const;
