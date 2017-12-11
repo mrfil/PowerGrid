@@ -111,7 +111,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
                         const uword sizeLUT, void *stream, cufftHandle *plan,
                         T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
-                        T1 *pGridData_os_d);
+                        T1 *pGridData_os_d, T1 *pSamples);
 
 // Explicit Instantiations
 extern template int gridding_adjoint_2D<float>(unsigned int, parameters<float>,
@@ -170,12 +170,12 @@ computeFd_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int, float,
                           float *, float *, const float, const float,
                           const float *, const uword, void *, cufftHandle *,
-                          float *, float *, float *, float *);
+                          float *, float *, float *, float *, float *);
 extern template void
 computeFd_CPU_Grid<double>(int, const double *, const double *, const double *,
                            const double *, const double *, int, int, int,
                            double, double *, double *, const double,
                            const double, const double *, const uword, void *, cufftHandle *,
-                           double *, double *, double *, double *);
+                           double *, double *, double *, double *, double *);
 
 #endif
