@@ -644,7 +644,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
-  complex<T1> *gridData_d;
+
 
   ReconstructionSample<T1> *samples; // Input Data
   // allocate samples
@@ -698,13 +698,13 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
-  complex<T1> *gridData = new complex<T1>[gridNumElems];
+
 
   // Have to set 'gridData' and 'sampleDensity' to zero.
   // Because they will be involved in accumulative operations
   // inside gridding functions.
-
-  gridData_d = new complex<T1>[gridNumElems];
+  complex<T1> *gridData = new complex<T1>[gridNumElems];
+  complex<T1> *gridData_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_crop_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_crop_deAp = new complex<T1>[imageNumElems];
   T1 *pGridData_crop_d = reinterpret_cast<T1 *>(gridData_crop_d);
@@ -932,18 +932,14 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
   nvtxRangePushA("Allocate and intialize memory");
   // allocate gridData
-  complex<T1> *gridData = new complex<T1>[imageNumElems];
 
   // Have to set 'gridData'
   // Because they will be involved in accumulative operations
   // inside gridding functions.
-  for (int i = 0; i < imageNumElems; i++) {
-    gridData[i].real(dR[i]);
-    gridData[i].imag(dI[i]);
-  }
+
 
 	T1 *pSamples = reinterpret_cast<T1 *>(samples);
-
+  complex<T1> *gridData = new complex<T1>[imageNumElems];
 	complex<T1> *gridData_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_os = new complex<T1>[gridNumElems];
@@ -952,9 +948,16 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
   nvtxRangePop();
+
+  for (int i = 0; i < imageNumElems; i++) {
+    gridData[i].real(dR[i]);
+    gridData[i].imag(dI[i]);
+  }
+
 #pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], \
    LUT[0:sizeLUT], pSamples[0:2*n]) create(pGridData_d[0:2*imageNumElems],  \
     pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems])
+
 
   // deapodization
   if (Nz == 1) {
