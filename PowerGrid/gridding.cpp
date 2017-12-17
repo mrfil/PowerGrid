@@ -59,8 +59,8 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
 
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector pcopy(LUT[0 : sizeLUT])                \
-    pcopy(pGData[0 : gridNumElems * 2], sample[0:n]) copyin(params, params.gridSize[0:3])
+#pragma acc parallel loop independent gang vector present(LUT[0 : sizeLUT], \
+  pGData[0 : gridNumElems * 2], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -77,7 +77,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
     NyH = (int)(MIN((gridOS * (T1)Ny - (T1)1.0),
                     FLOOR(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
 
-#pragma acc loop independent seq
+#pragma acc loop seq
     for (nx = NxL; nx <= NxH; ++nx) {
       int k0;
       distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
@@ -189,8 +189,8 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
   //pGData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector pcopy(LUT[0:sizeLUT])                \
-    pcopy(pGData[0:gridNumElems*2], sample[0:n]) pcopyin(params, params.gridSize[0:3])
+#pragma acc parallel loop gang vector pcopy(LUT[0:sizeLUT],pGData[0:gridNumElems*2]) \
+    pcopyin(params, params.gridSize[0:3], sample[0:n])
   for (int i = 0; i < n; i++) {
     ReconstructionSample<T1> pt = sample[i];
 
@@ -324,8 +324,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   //pSamples = reinterpret_cast<T1 *>(sample);
   //pGridData = reinterpret_cast<T1 *>(gridData);
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],pSamples[0:n*2])\
-    present(pGridData[0:gridNumElems*2], kx[0:n], ky[0:n])
+#pragma acc parallel loop gang vector present(kx[0:n], ky[0:n], pSamples[0:n*2], \
+  LUT[0 : sizeLUT], pGridData[0:gridNumElems*2])
   for (int i = 0; i < n; i++) {
 
     shiftedKx = (gridOS) * (kx[i] + ((T1)Nx) / (T1)2.0);
@@ -400,10 +400,10 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
 // gridData[idx].x += (w*pt.real*atm);
 // gridData[idx].y += (w*pt.imag*atm);
 
-#pragma acc atomic update
+//#pragma acc atomic update
         pSamples[2 * i] += w * pGridData[2 * idx];
 
-#pragma acc atomic update
+//#pragma acc atomic update
         pSamples[2 * i + 1] += w * pGridData[2 * idx + 1];
 
         // sample[i].real(sample[i].real()+w*gridData[idx].real());
@@ -479,8 +479,9 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 // Jiading GAI
 // float t0 = t[0];
 
-#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT],kx[0:n],ky[0:n],\
-    kz[0:n],pSamples[0 : n * 2],pGridData[0 : gridNumElems * 2]) pcopyin(params.gridSize[0:3])
+#pragma acc parallel loop gang vector present(LUT[0 : sizeLUT], \
+   pGridData[0 : gridNumElems * 2],kx[0:n], ky[0:n], kz[0:n],   \
+   pSamples[0 : n * 2])
   for (int i = 0; i < n; i++) {
     // complex<T1> pt = sample[i];
 
@@ -505,7 +506,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
     NzH = (int)(MIN((gridOS * (T1)Nz - (T1)1.0),
                     FLOOR(shiftedKz + kernelWidth * ((T1)gridOS) / (T1)2.0)));
 
-#pragma acc loop independent seq
+#pragma acc loop seq
     for (nz = NzL; nz <= NzH; ++nz) {
       int k0;
       distZ = ABS(shiftedKz - ((T1)nz)) / (gridOS);
@@ -607,7 +608,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT) {
+                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
+                        T1 *pGridData, T1 *pGridData_d) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -623,7 +626,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                                              (gridOS * gridOS) - 0.8
                                              );
   */
-
+  nvtxRangePushA("computeFH_CPU_Grid");
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -643,7 +646,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
-  complex<T1> *gridData_d;
+
 
   ReconstructionSample<T1> *samples; // Input Data
   // allocate samples
@@ -657,8 +660,8 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   unsigned int n = params.numSamples;
   //
   for (int i = 0; i < params.numSamples; i++) {
-    if (ABS(kx[i]) > (Nx / (T1)2.0) || ABS(ky[i]) > (Ny / (T1)2.0) ||
-        ABS(kz[i]) > (Nz / (T1)2.0)) {
+    if (ABS(kx[i]) > (Nx / (T1)2.0 + .1) || ABS(ky[i]) > (Ny / (T1)2.0 + .1) ||
+        ABS(kz[i]) > (Nz / (T1)2.0 + .1)) {
 
       printf("\nError:k-space trajectory out of range [-N/2,N/2]:\n      "
              "gridding requires that k-space should be contained within the "
@@ -697,30 +700,29 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
-  complex<T1> *gridData = new complex<T1>[gridNumElems];
+
 
   // Have to set 'gridData' and 'sampleDensity' to zero.
   // Because they will be involved in accumulative operations
   // inside gridding functions.
-  //#pragma acc parallel loop
-  for (int i = 0; i < gridNumElems; i++) {
-    gridData[i].real((T1)0.0);
-    gridData[i].imag((T1)0.0);
-    // sampleDensity[i] = (T1)0.0;
-  }
-  gridData_d = new complex<T1>[gridNumElems];
+  /*
+  complex<T1> *gridData = new complex<T1>[gridNumElems];
+  complex<T1> *gridData_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_crop_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_crop_deAp = new complex<T1>[imageNumElems];
   T1 *pGridData_crop_d = reinterpret_cast<T1 *>(gridData_crop_d);
   T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
+  */
+#pragma acc enter data copyin( samples[0:n])      \
+	create(outI_d[0:imageNumElems], outR_d[0:imageNumElems])
 
-#pragma acc enter data copyin(pGridData[0:2*gridNumElems], samples[0:n], LUT[0:sizeLUT], \
-	pGridData_d[0:2*gridNumElems], pGridData_crop_d[0:2*imageNumElems],                  \
-	pGridData_crop_deAp[0:2*imageNumElems], outR_d[0:imageNumElems],                     \
-	outI_d[0:imageNumElems], params.gridSize[0:3])
-
+  #pragma acc parallel loop
+  for (int i = 0; i < gridNumElems; i++) {
+    pGridData[2 * i ]     = (T1)0.0;
+    pGridData[2 * i + 1 ] = (T1)0.0;
+  }
   // Gridding with CPU - adjoint
   if (Nz == 1) {
     gridding_adjoint_2D<T1>(n, params, beta, samples, LUT, sizeLUT, pGridData);
@@ -747,18 +749,18 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 
     // Query OpenACC for CUDA stream
-    void *stream = acc_get_cuda_stream(acc_async_sync);
+    //void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
     //#pragma acc update self(pGridData_d[0:2*gridNumElems])
     if (Nz == 1) {
       //ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
-      ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream);
+      ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream, plan);
     } else {
       //ifft3dCPU(pGridData_d, params.gridSize[0], params.gridSize[1],
       //        params.gridSize[2]);
       ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
-                params.gridSize[2], stream);
+                params.gridSize[2], stream, plan);
     }
 
 
@@ -823,14 +825,16 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     deinterleave_data3d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny, Nz);
   }
 
-#pragma acc exit data copyout(outR_d[0 : imageNumElems],                        \
-    outI_d[0 : imageNumElems], pGridData_crop_d[0:2*imageNumElems], pGridData_d[0:2*gridNumElems], pGridData[0:2*gridNumElems],\
-	pGridData_crop_deAp[0:2*imageNumElems], samples[0:n])
+#pragma acc exit data copyout(outR_d[0 : imageNumElems],outI_d[0 : imageNumElems])  \
+    delete(samples[0:n])
+  /*
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
   free(samples);
   delete[] gridData;
   delete[] gridData_d;
+  */
+  nvtxRangePop();
 }
 
 // Calculates the gridded forward fourier transform
@@ -841,7 +845,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT) {
+                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
+                        T1 *pGridData_os_d, T1 *pSamples) {
 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
@@ -860,6 +866,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   0.8
   );i
   */
+  nvtxRangePushA("computeFd_CPU_Grid");
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -879,31 +886,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
-  complex<T1> *samples = new complex<T1>[params.numSamples];
-
-  if (samples == NULL) {
-    printf("ERROR: Unable to allocate memory for input data\n");
-    exit(1);
-  }
+  //complex<T1> *samples = new complex<T1>[params.numSamples];
 
   unsigned int n = params.numSamples;
-  //
-  for (int i = 0; i < params.numSamples; i++) {
-    if (ABS(kx[i]) > (Nx / (T1)2.0) || ABS(ky[i]) > (Ny / (T1)2.0) ||
-        ABS(kz[i]) > (Nz / (T1)2.0)) {
-
-      printf("\nError:k-space trajectory out of range [-N/2,N/2]:\n      "
-             "gridding requires that k-space should be contained within the "
-             "window -N/2 to N/2.\n");
-      cout << "kx = " << kx[i] << " ky = " << ky[i] << " kz = " << kz[i]
-           << " i = " << i << endl;
-      exit(1);
-    } else {
-
-      samples[i].real((T1)0.0);
-      samples[i].imag((T1)0.0);
-    }
-  }
 
   ///*
   // grid_size in xy-axis has to be divisible-by-two:
@@ -924,19 +909,16 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
-
+  nvtxRangePushA("Allocate and intialize memory");
   // allocate gridData
-  complex<T1> *gridData = new complex<T1>[imageNumElems];
-  // Have to set 'gridData' to zero.
+
+  // Have to set 'gridData'
   // Because they will be involved in accumulative operations
   // inside gridding functions.
-  for (int i = 0; i < imageNumElems; i++) {
-    gridData[i].real(dR[i]);
-    gridData[i].imag(dI[i]);
-  }
 
+/*
 	T1 *pSamples = reinterpret_cast<T1 *>(samples);
-
+  complex<T1> *gridData = new complex<T1>[imageNumElems];
 	complex<T1> *gridData_d = new complex<T1>[imageNumElems];
   complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
   complex<T1> *gridData_os = new complex<T1>[gridNumElems];
@@ -944,11 +926,22 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os_d = reinterpret_cast<T1 *>(gridData_os_d);
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
+*/
+  nvtxRangePop();
 
-#pragma acc enter data copyin(pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n], LUT[0:sizeLUT], pSamples[0:2*n],        \
-    pGridData_d[0:2*imageNumElems], pGridData_os[0:2*gridNumElems],    \
-    pGridData_os_d[0:2*gridNumElems], params, params.gridSize[0:3])
-std::cout << " about to run deapodization " << std::endl;
+  for (int i = 0; i < imageNumElems; i++) {
+    pGridData[2*i]     = dR[i];
+    pGridData[2*i + 1] = dI[i];
+  }
+
+#pragma acc update device(pGridData[0:2*imageNumElems])
+
+
+#pragma acc parallel loop present(pSamples[0:2*n])
+  for (int ii = 0; ii < 2*n; ii++) {
+    pSamples[ii] = (T1)0.0;
+  }
+
   // deapodization
   if (Nz == 1) {
     deapodization2d<T1>(pGridData_d, pGridData, Nx, Ny, kernelWidth, beta,
@@ -959,14 +952,13 @@ std::cout << " about to run deapodization " << std::endl;
   }
 
   // zero pad
-	std::cout << " about to run zero pad " << std::endl;
   if (Nz == 1) {
     zero_pad2d<T1>(pGridData_os, pGridData_d, Nx, Ny, params.gridOS);
   } else {
 
     zero_pad3d<T1>(pGridData_os, pGridData_d, Nx, Ny, Nz, params.gridOS);
   }
-	std::cout << " about to run fftshift " << std::endl;
+
   if (Nz == 1) {
     fftshift2<T1>(pGridData_os_d, pGridData_os, params.gridSize[0],
                   params.gridSize[1]);
@@ -984,16 +976,16 @@ std::cout << " about to run deapodization " << std::endl;
   {
 
     // Query OpenACC for CUDA stream
-    void *stream = acc_get_cuda_stream(acc_async_sync);
+    //void *stream = acc_get_cuda_stream(acc_async_sync);
 
     // Launch FFT on the GPU
     if (Nz == 1) {
-      fft2dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1], stream);
+      fft2dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1], stream, plan);
       //fft2dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1]);
 
     } else {
       fft3dGPU(pGridData_os_d, params.gridSize[0], params.gridSize[1],
-               params.gridSize[2], stream);
+               params.gridSize[2], stream, plan);
       //fft3dCPU(pGridData_os_d, params.gridSize[0], params.gridSize[1],
       //params.gridSize[2]);
     }
@@ -1008,7 +1000,6 @@ std::cout << " about to run deapodization " << std::endl;
   }
 #endif
   // ifftshift(gridData):
-	std::cout << " about to run ifftshift " << std::endl;
 	//#pragma acc update device(pGridData_os_d[0:2*gridNumElems])
 	if (Nz == 1) {
     ifftshift2<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
@@ -1017,7 +1008,7 @@ std::cout << " about to run deapodization " << std::endl;
     ifftshift3<T1>(pGridData_os, pGridData_os_d, params.gridSize[0],
                    params.gridSize[1], params.gridSize[2]);
   }
-	std::cout << " about to run gridding " << std::endl;
+
   // Gridding with CPU - forward
   if (Nz == 1) {
     gridding_forward_2D<T1>(n, params, kx, ky, beta, pSamples, LUT, sizeLUT,
@@ -1028,22 +1019,21 @@ std::cout << " about to run deapodization " << std::endl;
   }
 
 // deallocate samples
-	std::cout << " about to exit data " << std::endl;
 
-#pragma acc exit data copyout(pSamples[0:2*n],pGridData_d[0:2*imageNumElems],     \
-    pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems],  \
-    pGridData[0:2*imageNumElems], kx[0:n], ky[0:n], kz[0:n])
+#pragma acc update host(pSamples[0:2*n])
 
 	for (int ii = 0; ii < n; ii++) {
 		outR_d[ii] = pSamples[2*ii];
 		outI_d[ii] = pSamples[2*ii+1];
 	}
-
+/*
   delete[] samples;
   delete[] gridData;
   delete[] gridData_d;
   delete[] gridData_os;
   delete[] gridData_os_d;
+  */
+  nvtxRangePop();
 }
 
 // Explicit Instantiations
@@ -1089,22 +1079,26 @@ template void computeFH_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, int, int, int,
                                         float gridOS, float *, float *,
                                         const float, const float, const float *,
-                                        const uword);
+                                        const uword, void *, cufftHandle *, float *,
+                                        float *, float *, float *);
 template void computeFH_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int,
                                          double gridOS, double *, double *,
                                          const double, const double,
-                                         const double *, const uword);
+                                         const double *, const uword, void *, cufftHandle *,
+                                         double *, double *, double *, double *);
 template void computeFd_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, const float *,
                                         const float *, int, int, int, float,
                                         float *, float *, const float,
                                         const float, const float *,
-                                        const uword);
+                                        const uword, void *, cufftHandle *,
+                                         float *, float *, float *, float *, float *);
 template void computeFd_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int, double,
                                          double *, double *, const double,
                                          const double, const double *,
-                                         const uword);
+                                         const uword, void *, cufftHandle *,
+                                          double *, double *, double *, double *, double *);

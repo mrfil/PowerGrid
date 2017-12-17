@@ -33,6 +33,19 @@ template <typename T1> Gfft<T1>::Gfft(uword ix, uword iy, uword iz) {
   Nx = ix;
   Ny = iy;
   Nz = iz;
+
+  stream = acc_get_cuda_stream(acc_async_sync);
+  cufftCreate(plan);
+  if(Nz ==1) {
+    if (cufftPlan2d(plan, Nx, Ny, CUFFT_C2C) != CUFFT_SUCCESS) {
+            cout <<  "CUFFT error: Plan creation failed" << endl;
+    }
+  } else {
+    if (cufftPlan3d(plan, Nz, Ny, Nx, CUFFT_C2C) != CUFFT_SUCCESS) {
+            cout << "CUFFT error: Plan creation failed" << endl;
+          }
+  cufftSetStream(*plan, (cudaStream_t)stream);
+  }
 }
 
 // Overloaded methods for forward and adjoint transform
@@ -85,18 +98,18 @@ Col<complex<T1>> Gfft<T1>::operator*(const Col<complex<T1>> &d) const {
 #pragma acc host_data use_device(pGridData_d, pGridData)
     {
       // Query OpenACC for CUDA stream
-      void *stream = acc_get_cuda_stream(acc_async_sync);
+      //void *stream = acc_get_cuda_stream(acc_async_sync);
 
       // Launch FFT on the GPU
       if (Nz == 1) {
         fftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-        fft2dGPU<T1>(pGridData_d, Nx, Ny, stream);
+        fft2dGPU<T1>(pGridData_d, Nx, Ny, stream, plan);
         fftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
         deinterleave_data2d<T1>(pGridData, realXformedDataPtr,
                                 imagXformedDataPtr, Nx, Ny);
       } else {
         fftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-        fft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream);
+        fft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream, plan);
         fftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
         deinterleave_data3d<T1>(pGridData, realXformedDataPtr,
                                 imagXformedDataPtr, Nx, Ny, Nz);
@@ -176,18 +189,18 @@ Col<complex<T1>> Gfft<T1>::operator/(const Col<complex<T1>> &d) const {
 #pragma acc host_data use_device(pGridData_d, pGridData)
     {
       // Query OpenACC for CUDA stream
-      void *stream = acc_get_cuda_stream(acc_async_sync);
+      //void *stream = acc_get_cuda_stream(acc_async_sync);
 
       // Launch FFT on the GPU
       if (Nz == 1) {
         ifftshift2<T1>(pGridData_d, pGridData, Nx, Ny);
-        ifft2dGPU<T1>(pGridData_d, Nx, Ny, stream);
+        ifft2dGPU<T1>(pGridData_d, Nx, Ny, stream, plan);
         ifftshift2<T1>(pGridData, pGridData_d, Nx, Ny);
         deinterleave_data2d<T1>(pGridData, realXformedDataPtr,
                                 imagXformedDataPtr, Nx, Ny);
       } else {
         ifftshift3<T1>(pGridData_d, pGridData, Nx, Ny, Nz);
-        ifft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream);
+        ifft3dGPU<T1>(pGridData_d, Nx, Ny, Nz, stream, plan);
         ifftshift3<T1>(pGridData, pGridData_d, Nx, Ny, Nz);
         deinterleave_data3d<T1>(pGridData, realXformedDataPtr,
                                 imagXformedDataPtr, Nx, Ny, Nz);

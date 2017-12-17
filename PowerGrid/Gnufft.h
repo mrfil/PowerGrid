@@ -62,9 +62,7 @@ public:
   uword Ny = 0;
   uword Nz = 0;
 
-  Col<T1> kx; // k-space coordinates
-  Col<T1> ky;
-  Col<T1> kz;
+  T1 *kx, *ky, *kz; // kspace coordinates
   Col<T1> ix; // image space coordinates
   Col<T1> iy;
   Col<T1> iz;
@@ -74,19 +72,30 @@ public:
   uword sizeLUT = 0;
   T1 beta; // beta factor for gridding not the same as beta in regularization!
   T1 kernelWidth; // Kaiser Bessel Kernel Support
+  void *stream;
+  cufftHandle plan;
+
+  uword imageNumElems;
+  uword gridNumElems;
+
+  T1 *pGridData, *pGridData_d, *pGridData_os, *pGridData_os_d;
+  T1 *pSamples;
+  complex<T1> *gridData, *gridData_d, *gridData_os, *gridData_os_d;
+  complex<T1> *samples;
 
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation using gridding
   Col<CxT1> operator*(const Col<CxT1> &d) const;
   // Adjoint transform operation
   Col<CxT1> operator/(const Col<CxT1> &d) const;
-
+/*
   Col<CxT1> trimmedForwardOp(const Col<CxT1> &d,
                              const Col<CxT1> &tempInterp) const;
 
   // Adjoint transform operation
   Col<CxT1> trimmedAdjointOp(const Col<CxT1> &d,
                              const Col<CxT1> &tempInterp) const;
+                             */
 };
 
 // Explicit Instantiation

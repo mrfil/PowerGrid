@@ -61,6 +61,8 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
   if (L == 1) {
     tau = 0;
     AA.ones();
+    Wo.ones(n2, L);
+    WoH.ones(n2, L);
   } else {
     Mat<complex<T1>> tempAA(NOneShot, L);
     if (type == 1) { // Hanning interpolator
@@ -77,6 +79,16 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         }
       }
       AA = repmat(tempAA, Nshots, 1);
+      Wo.set_size(n2, L);
+      WoH.set_size(n2, L);
+      for (unsigned int ii = 0; ii < L; ii++) {
+        Wo.col(ii) =
+            exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
+        WoH.col(ii) =
+            exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
+      }
+      Wo.save("Wo.dat",raw_ascii);
+      WoH.save("WoH.dat",raw_ascii);
     } else if (type == 2) { // Min-max interpolator: Exact LS interpolator
 
       cout << "Min Max time segmentation" << endl;
@@ -142,7 +154,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
       AA = repmat(tempAA, Nshots, 1);
     }
   }
-  //savemat("aamat.mat", "AA", vectorise(AA));
+  // savemat("aamat.mat", "AA", vectorise(AA));
   cout << "Exiting class constructor." << endl;
 }
 
@@ -158,22 +170,24 @@ operator*(const Col<complex<T1>> &d) const {
   // output is the size of the kspace data
   Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n1);
   // cout << "OutData size = " << this->n1 << endl;
-  Col<complex<T1>> Wo;
-  uvec dataMaskTrimmed;
+  //Col<complex<T1>> Wo;
+  Col<complex<T1>> temp;
+  //uvec dataMaskTrimmed;
   // loop through time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
     // cout << "Entering time segmentation loop" << endl;
     // apply a phase to each time segment
-    Wo = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
+    //Wo = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
 
     // perform multiplication by the object and sum up the time segments
-    outData += (this->AA.col(ii)) % (*G * (Wo % d));
+    temp = (this->Wo.col(ii)) % d;
+    outData += (this->AA.col(ii)) % (*G * temp);
 
-    //dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
+    // dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
     // std::cout << "Length dataMaskTrimmed = " << dataMaskTrimmed.n_rows <<
     // std::endl;
 
-    //outData +=
+    // outData +=
     //    (this->AA.col(ii)) % ((*G).trimmedForwardOp(Wo % d,
     //    this->AA.col(ii)));
   }
@@ -183,19 +197,15 @@ template <typename T1, typename Tobj>
 Col<complex<T1>> TimeSegmentation<T1, Tobj>::
 operator/(const Col<complex<T1>> &d) const {
   Tobj *G = this->obj;
+
   // output is the size of the image
   Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
-  Col<complex<T1>> Wo;
+
   // loop through the time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
 
-    // create the phase map for the Lth time segment
-    Wo = exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
-
     // perform adjoint operation by the object and sum up the time segments
-    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
-    //outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
-    outData += Wo % ((*G) / (AA.col(ii) % d));
+    outData += WoH.col(ii) % ((*G) / (AA.col(ii) % d));
   }
 
   return outData;

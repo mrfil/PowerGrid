@@ -58,7 +58,8 @@ public:
                     // relative to the echo time (in seconds)
   Mat<CxT1> AA;     // interpolator coefficients for the different time segments
   CxT1 i = CxT1(0., 1.);
-
+  Mat<CxT1> Wo;
+  Mat<CxT1> WoH;
   // Class constructor
   TimeSegmentation(Tobj &G, Col<T1> map_in, Col<T1> timeVec_in, uword a,
                    uword b, uword c, uword interptype = 1, uword shots = 1);
