@@ -197,18 +197,14 @@ template <typename T1, typename Tobj>
 Col<complex<T1>> TimeSegmentation<T1, Tobj>::
 operator/(const Col<complex<T1>> &d) const {
   Tobj *G = this->obj;
+
   // output is the size of the image
   Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
-  // Col<complex<T1>> Wo;
+
   // loop through the time segments
   for (unsigned int ii = 0; ii < this->L; ii++) {
 
-    // create the phase map for the Lth time segment
-    // Wo = exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
-
     // perform adjoint operation by the object and sum up the time segments
-    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
-    // outData += Wo % ((*G).trimmedAdjointOp((AA.col(ii) % d), AA.col(ii)));
     outData += WoH.col(ii) % ((*G) / (AA.col(ii) % d));
   }
 

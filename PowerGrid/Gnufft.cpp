@@ -64,8 +64,8 @@ Gnufft<T1>::Gnufft(
   kz = new T1[n2];
 
   for (int i = 0; i < n2; i++) {
-    if (abs(k1(i)) > (Nx / (T1)2.0) || abs(k2(i)) > (Ny / (T1)2.0) ||
-        abs(k3(i)) > (Nz / (T1)2.0)) {
+    if (abs(k1(i)) > (Nx / (T1)2.0 + .1) || abs(k2(i)) > (Ny / (T1)2.0 + .1) ||
+        abs(k3(i)) > (Nz / (T1)2.0 + .1)) {
 
       cout << "Error:k-space trajectory out of range [-N/2,N/2]:\n      "
             << "gridding requires that k-space should be contained within the "
