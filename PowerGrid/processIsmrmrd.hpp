@@ -157,8 +157,6 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 
 	arma::Col<T1> pMapOut = pMaps.subvec(startIndex, endIndex);
 
-	pMapOut.save("PMaps.dat", raw_ascii);
-	pMapOut.zeros(); // DEBUGGING ZERO OUT PHASE MAPS!!!
 	return pMapOut;
 }
 
