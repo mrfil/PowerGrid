@@ -135,16 +135,16 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	ISMRMRD::IsmrmrdHeader hdr;
 	ISMRMRD::deserialize(xml.c_str(), hdr);
 
-	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-	uword NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
-	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
-	uword NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
-	uword NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
-	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
-	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
+	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum + 1;
+	uword NSetMax   = hdr.encoding[0].encodingLimits.set->maximum + 1;
+	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum + 1;
+	uword NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum + 1;
+	uword NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum + 1;
+	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum  + 1;
+	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum  + 1;
 
-	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
-	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum;
+	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
+	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
 
 	uword PMapSize   = imageSize*(NShotMax+1)*(NParMax+1);
 	uword startIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg;
