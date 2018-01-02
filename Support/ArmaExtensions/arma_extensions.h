@@ -31,6 +31,7 @@ namespace arma {
 #include "op_circshift_bones.hpp"
 #include "fn_circshift.hpp"
 #include "op_circshift_meat.hpp"
+//#include "permute.hpp"
 }
 
 #endif // POWERGRID_ARMA_EXTENSIONS_H

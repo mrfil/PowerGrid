@@ -29,6 +29,7 @@ Developed by:
 #include "PowerGrid.h"
 
 using namespace arma;
+typedef std::tuple<std::size_t,std::size_t,std::size_t> D3tuple;
 
 void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *&acqTrack) {
     std::cout << "trying to create an ISMRMD::Dataset object" << std::endl;
@@ -146,7 +147,7 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
 	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
 
-	uword PMapSize   = imageSize*(NShotMax+1)*(NParMax+1);
+	uword PMapSize   = imageSize*(NShotMax)*(NParMax);
 	uword startIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg;
 
 	std::cout << "PMap slicing startIndex = " << startIndex << std::endl;
@@ -154,6 +155,8 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	uword endIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg + PMapSize - 1;
 
 	std::cout << "PMap slicing endIndex = " << endIndex << std::endl;
+  std::cout << "pMaps length = " << pMaps.n_rows << std::endl;
+  std::cout << "PMapSize length = " << PMapSize << std::endl;
 
 	arma::Col<T1> pMapOut = pMaps.subvec(startIndex, endIndex);
 
@@ -327,33 +330,55 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 {
 
 	//Initialization
-	Mat<std::complex<T1>> dataTemp, acqWork;
-
-	Mat<T1> kxTemp, kyTemp, kzTemp, tvecTemp;
+	Mat<std::complex<T1>> acqWork;
+  Cube<std::complex<T1>> dataWork;
 	Mat<T1> kxWork, kyWork, kzWork, tvecWork;
-	uword numAcq = d->getNumberOfAcquisitions();
+	uword numAcqTotal = d->getNumberOfAcquisitions();
 	bool firstData = true;
 	ISMRMRD::Acquisition acq;
-	std::cout << "Num of acquisitions in dataset = " << numAcq << std::endl;
+	std::cout << "Num of acquisitions in dataset = " << numAcqTotal << std::endl;
 	int acqIndx = -1;
-	//
+	int numAcqs = 0;
+  uword nro = -1, nc = -1;;
 	//for (uword acqIndx = 0; acqIndx < numAcq; acqIndx++) {
+  for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
+		for (uword NShot = 0; NShot < acqTrack->NShotMax; NShot++) {
+
+			acqIndx = acqTrack->acqArray(NShot, NPar, NSlice, NRep, NAve, NEcho, NPhase);
+      if (acqIndx != -1) {
+        numAcqs++;
+        if(firstData) {
+          d->readAcquisition(acqIndx, acq);
+          nro = acq.number_of_samples();
+          nc = acq.active_channels();
+          std::cout << "Nro = " << nro << std::endl;
+          std::cout << "Nc = " << nc << std::endl;
+          firstData = false;
+        }
+      }
+    }
+  }
+
+  // Preallocating storage for all of the data and trajectories.
+  dataWork.zeros(nro,nc,numAcqTotal);
+  kxWork.zeros(nro,numAcqTotal);
+  kyWork.zeros(nro,numAcqTotal);
+  kzWork.zeros(nro,numAcqTotal);
+  tvecWork.zeros(nro,numAcqTotal);
+  acqWork.zeros(nro,nc);
+  uword curAcq = 0;
 	for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
 		for (uword NShot = 0; NShot < acqTrack->NShotMax; NShot++) {
 
 			acqIndx = acqTrack->acqArray(NShot, NPar, NSlice, NRep, NAve, NEcho, NPhase);
 			if (acqIndx != -1) {
 				d->readAcquisition(acqIndx, acq);
-				uword nro = acq.number_of_samples();
-				uword nc = acq.active_channels();
+				nro = acq.number_of_samples();
+				nc = acq.active_channels();
+
 				ISMRMRD::EncodingCounters encIdx = acq.idx();
 
 				std::cout << "Grabbing acq index #" << acqIndx << std::endl;
-				acqWork.zeros(nro, nc);
-				kxWork.zeros(nro,1);
-				kyWork.zeros(nro,1);
-				kzWork.zeros(nro,1);
-				tvecWork.zeros(nro,1);
 
 				for (uword jj = 0; jj<nc; jj++) {
 					for (uword kk = 0; kk<nro; kk++) {
@@ -361,14 +386,11 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 					}
 				}
 
-				std::cout << "Get Number of Trajectory entries = " << acq.getNumberOfTrajElements() << std::endl;
-
 				int NSlice = encIdx.slice;
 				int NRep   = encIdx.repetition;
 				int NAvg   = encIdx.average;
 				int NEcho  = encIdx.contrast;
 				int NPhase = encIdx.phase;
-
 
 				std::cout << "NPar = "   << NPar   << std::endl;
 				std::cout << "NShot = "  << NShot  << std::endl;
@@ -380,56 +402,38 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 
 				//Deal with trajectories
 				for (uword ii = 0; ii<nro; ii++) {
-					kxWork(ii)   = static_cast<T1>(acq.traj(0, ii));
-					kyWork(ii)   = static_cast<T1>(acq.traj(1, ii));
-					kzWork(ii)   = static_cast<T1>(acq.traj(2, ii));
-					//std::cout << "kxWork(" << ii << ")= " << kxWork(ii) << std::endl;
-					tvecWork(ii) = static_cast<T1>(acq.traj(3, ii));
+					kxWork(ii,curAcq)   = static_cast<T1>(acq.traj(0, ii));
+					kyWork(ii,curAcq)   = static_cast<T1>(acq.traj(1, ii));
+					kzWork(ii,curAcq)   = static_cast<T1>(acq.traj(2, ii));
+					tvecWork(ii,curAcq) = static_cast<T1>(acq.traj(3, ii));
 				}
 
-				//Append Data points to vectors
-				if (firstData) {
-					firstData = false; //Sentinel
-					dataTemp = acqWork;
-					kxTemp   = kxWork;
-					kyTemp   = kyWork;
-					kzTemp   = kzWork;
-					tvecTemp = tvecWork;
-				} else {
-					std::cout << "Concatenating arrays" << std::endl;
-					dataTemp = join_cols(dataTemp, acqWork);
-					kxTemp   = join_cols(kxTemp, kxWork).eval();
-					//for (int test = 0; test < kxTemp.n_rows; test++) {
-					//	std::cout << "kxTemp(" << test << ") = " << kxTemp(test,0) << std::endl;
-					//}
-					kyTemp   = join_cols(kyTemp, kyWork).eval();
-					kzTemp   = join_cols(kzTemp, kzWork).eval();
-					tvecTemp = join_cols(tvecTemp, tvecWork).eval();
-				}
+				dataWork.slice(curAcq) = acqWork;
+
+        curAcq++;
+
 
 			}
 		}
 	}
 
+  // Need to permute the dataWork.
+  dataWork = permute(dataWork,D3tuple(1,3,2));
 
-    //Vectorise coils from matrix to column vector
-    data = vectorise(dataTemp);
-	kx   = vectorise(kxTemp);
-	ky   = vectorise(kyTemp);
-	kz   = vectorise(kzTemp);
-	tvec = vectorise(tvecTemp);
-
+  //Vectorise coils from matrix to column vector
+  data = vectorise(dataWork);
+	kx   = vectorise(kxWork);
+	ky   = vectorise(kyWork);
+	kz   = vectorise(kzWork);
+	tvec = vectorise(tvecWork);
+  /*
 	kx.save("kx.dat", raw_ascii);
 	ky.save("ky.dat", raw_ascii);
 	kz.save("kz.dat", raw_ascii);
 	tvec.save("tvec.dat", raw_ascii);
-    //savemat("kxOut.mat", "kx", kx);
-    //savemat("kyOut.mat", "ky", ky);
-    //savemat("kzOut.mat", "kz", kz);
-    //savemat("tvecOut.mat", "tvec", tvec);
-    savemat("dataOut.mat", "dataOut", data);
+  */
 
-    return;
+  return;
 }
 
 #endif //POWERGRID_PROCESSISMRMRD_HPP

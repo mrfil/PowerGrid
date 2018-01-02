@@ -827,10 +827,11 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
 #pragma acc exit data copyout(outR_d[0 : imageNumElems],outI_d[0 : imageNumElems])  \
     delete(samples[0:n])
+    free(samples);
   /*
   delete[] gridData_crop_d;
   delete[] gridData_crop_deAp;
-  free(samples);
+
   delete[] gridData;
   delete[] gridData_d;
   */

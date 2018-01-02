@@ -30,6 +30,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include "../Support/ArmaExtensions/permute.hpp"
 
 #ifdef PowerGridMPI
 #include "../Support/ArmaExtensions/arma_extensions.h"

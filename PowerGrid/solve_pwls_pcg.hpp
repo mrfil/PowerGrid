@@ -31,8 +31,8 @@ Developed by:
 using namespace arma;
 
 template <typename T1>
-inline complex<T1> dot_double(const Col<complex<T1>> &A,
-                              const Col<complex<T1>> &B) {
+inline complex<T1> dot_double(const Col<complex<T1>>& A,
+                              const Col<complex<T1>>& B) {
   complex<T1> sumReturn = accu(A % B);
   return sumReturn;
 }
@@ -66,7 +66,6 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
   Col<CxT1> ngrad;
   Col<CxT1> pgrad;
   CxT1 pdot;
-  Col<CxT1> cngrad;
   Col<CxT1> WAdir;
   Col<CxT1> proj;
   Col<CxT1> stepIntermediate;
@@ -79,21 +78,17 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
     // Compute negative gradient
 
     ngrad = A / (W % (yi - Ax));
-	  //savemat("Ax.mat","Ax",Ax);
-	  //savemat("yi.mat", "yi", yi);
-	  //savemat("ngrad.mat","ngrad",ngrad);
 
     if (norm_grad<T1>(ngrad, yi, W) < 1e-10) {
       cout << "Terminating early due to zero gradient." << endl;
       return x;
     }
-    pgrad = R.Gradient(x);
-    ngrad = ngrad - pgrad;
+    //pgrad = R.Gradient(x);
+    ngrad = ngrad - R.Gradient(x);
 
     // Direction
-    cngrad = conj(ngrad);
-    newinprod = as_scalar(real(dot_double(cngrad, ngrad)));
-
+    //newinprod = real(as_scalar(dot_double(conj(ngrad).eval(), ngrad)));
+    newinprod = real(cdot(ngrad,ngrad));
     if (ii == 0) {
       ddir = ngrad;
 
@@ -109,22 +104,24 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
 
     Col<CxT1> oldgrad = ngrad;
     oldinprod = newinprod;
-    Col<CxT1> temp = conj(ddir);
+    //Col<CxT1> temp = conj(ddir);
 
     // Check if descent direction
-    if (as_scalar(real(dot_double(temp, ngrad))) < 0) {
+    //if (real(as_scalar(dot_double(conj(ddir).eval(), ngrad))) < 0) {
+    if (real(cdot(ddir, ngrad)) < 0) {
       cout << " Warning descent direction not negative" << endl;
       return x;
     }
-	  savemat("ddir.mat","ddir",ddir);
+	  //savemat("ddir.mat","ddir",ddir);
 
     // Step size in search direction
     Adir = A * ddir;
-	//savemat("adir.mat","Adir",Adir);
+	  //savemat("adir.mat","Adir",Adir);
     WAdir = W % Adir;
     // temp = conj(Adir).eval();
-    temp = conj(Adir);
-    dAWAd = as_scalar(real(dot_double(temp, WAdir)));
+    // temp = conj(Adir);
+    //dAWAd = as_scalar(real(dot_double(conj(Adir).eval(), WAdir)));
+    dAWAd = real(cdot(Adir, WAdir));
     proj = Adir.t() * (W % (yi - Ax));
     dAWr = conv_to<T1>::from(real(proj));
     step = 0.0;
@@ -147,8 +144,9 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
 
       pgrad = R.Gradient(x + step * ddir);
 
-      temp = conj(ddir);
-      pdot = as_scalar(real(dot_double(temp, pgrad)));
+      //temp = conj(ddir);
+      //pdot = real(as_scalar(dot_double(conj(ddir).eval(), pgrad)));
+      pdot = real(cdot(ddir, pgrad));
 
       stepIntermediate = (-dAWr + step * dAWAd + pdot) / denom;
       step = step - as_scalar(stepIntermediate);
