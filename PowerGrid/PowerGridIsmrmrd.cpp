@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
           ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
           ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
           ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver")
-          ("Dims2Penalize,B", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3).");
+          ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3).");
 
 
   po::variables_map vm;
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
   d->readAcquisition(0, acq);
   uword nro = acq.number_of_samples();
   uword nc = acq.active_channels();
-  
+
   Col<float> ix, iy, iz;
   initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
   Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
