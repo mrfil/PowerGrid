@@ -102,7 +102,7 @@ int GdftRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword nite
 
     cout << "Iniitalizing QuadPenalty" << endl;
     QuadPenalty < T1 > R(Nx, Ny, Nz, beta);
-    cout << "QuadPenalty setup successfull" << endl;
+    cout << "QuadPenalty setup successful" << endl;
 
     //uword niter = 10;
     Col<CxT1> xinit(Nx*Ny*Nz); // initial estimate of x
@@ -110,7 +110,7 @@ int GdftRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword nite
     Col < T1 > W;
     W.ones(nro * nc);
 
-    cout << "Runing pwls with Gnufft" << endl;
+    cout << "Running pwls with Gnufft" << endl;
     Col<CxT1> test_pwls;
     test_pwls = solve_pwls_pcg<T1,SENSE<T1, Gdft<T1>>,QuadPenalty<T1>>(xinit, Sd, W, data, R, niter);
     savemat(testPath+"test_pwls.mat","img",test_pwls);

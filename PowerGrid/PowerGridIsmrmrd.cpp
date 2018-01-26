@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 			("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
 			("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
 			("CGIterations,n", po::value<uword>(&NIter),
-			 "Number of preconditioned conjugate gradient interations for main solver");
+			 "Number of preconditioned conjugate gradient iterations for main solver");
 
 
 	po::variables_map vm;

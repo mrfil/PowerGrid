@@ -24,7 +24,7 @@ project("PowerGrid" CXX)
 
 
 option(OPENACC "Enable OpenACC support" OFF)
-option(ISMRMRD "Enable ISMRMRD Suppport" OFF)
+option(ISMRMRD "Enable ISMRMRD Support" OFF)
 option(MPI "Enable MPI Support" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")

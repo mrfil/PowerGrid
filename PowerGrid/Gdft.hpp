@@ -14,7 +14,7 @@ Developed by:
     File Name   [Gdft.hpp]
 
     Synopsis    [Object that represents a non-uniform field corrected discrete
-                    Fourier tranform.]
+                    Fourier transform.]
 
     Description [Forward transforms are denoted by G*data and adjoint transforms
                     are denoted by G/data. See documentation for more

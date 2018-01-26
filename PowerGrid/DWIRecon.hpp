@@ -97,7 +97,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
 
     cout << "Iniitalizing QuadPenalty" << endl;
     QuadPenalty < T1 > R(Nx, Ny, Nz, 0.0);
-    cout << "QuadPenalty setup successfull" << endl;
+    cout << "QuadPenalty setup successful" << endl;
 
     //uword niter = 10;
     Col < CxT1 > xinit(Nx * Ny * Nz); // initial estimate of x
@@ -107,7 +107,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //W=1.0;
     W.ones(nro * nc);
 
-    cout << "Runing pwls with Gnufft" << endl;
+    cout << "Running pwls with Gnufft" << endl;
     Col < CxT1 > test_DWI_img;
     test_DWI_img = solve_pwls_pcg<T1, pcSENSE<T1>, QuadPenalty<T1 >>(xinit, S_DWI, W, data, R, niter);
     savemat(testPath + "test_DWICGMC.mat", "img", test_DWI_img);
@@ -182,7 +182,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //TVPenalty<T1>R(Nx,Ny,Nz,100000000.0,.000001);
     //TVPenalty<T1>R(Nx,Ny,Nz,0.0,.01);
     QuadPenalty < T1 > R(Nx, Ny, Nz, 0.0);
-    cout << "QuadPenalty setup successfull" << endl;
+    cout << "QuadPenalty setup successful" << endl;
 
     //uword niter = 10;
     Col < CxT1 > xinit(Nx * Ny * Nz); // initial estimate of x
@@ -192,7 +192,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //W=1.0;
     W.ones(nro * nc);
 
-    cout << "Runing pwls with Gnufft" << endl;
+    cout << "Running pwls with Gnufft" << endl;
     Col < CxT1 > test_DWI_img;
     test_DWI_img = solve_pwls_pcg < T1, mpipcSENSE<T1>, QuadPenalty < T1 >> (xinit, S_DWI, W, data, R, niter);
     if (world.rank() == 0) {
@@ -280,7 +280,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //TVPenalty<T1>R(Nx,Ny,Nz,100000000.0,.000001);
     //TVPenalty<T1>R(Nx,Ny,Nz,0.0,.01);
     QuadPenalty<T1> R(Nx, Ny, Nz, 0.0);
-    cout << "QuadPenalty setup successfull" << endl;
+    cout << "QuadPenalty setup successful" << endl;
 
     //uword niter = 10;
     Col <CxT1> xinit(Nx * Ny * Nz); // initial estimate of x
@@ -290,7 +290,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //W=1.0;
     W.ones(nro * nc);
 
-    cout << "Runing pwls with Gnufft" << endl;
+    cout << "Running pwls with Gnufft" << endl;
     Col <CxT1> test_DWI_img;
     test_DWI_img = solve_pwls_pcg<T1, mpipcSENSE<T1>, QuadPenalty<T1 >>(xinit, S_DWI, W, data, R, niter);
     savemat(testPath + "PGout_" + std::to_string(nimage) + "_" + std::to_string(nslab) + "_" + std::to_string(nphase) + ".mat", "img", test_DWI_img);
@@ -379,7 +379,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //TVPenalty<T1>R(Nx,Ny,Nz,100000000.0,.000001);
     //TVPenalty<T1>R(Nx,Ny,Nz,0.0,.01);
     QuadPenalty<T1> R(Nx, Ny, Nz, 0.0);
-    cout << "QuadPenalty setup successfull" << endl;
+    cout << "QuadPenalty setup successful" << endl;
 
     //uword niter = 10;
     Col <CxT1> xinit(Nx * Ny * Nz); // initial estimate of x
@@ -389,7 +389,7 @@ int DWIRecon(string dataPath, uword Nx, uword Ny, uword Nz, uword L, uword niter
     //W=1.0;
     W.ones(nro * nc);
 
-    cout << "Runing pwls with Gnufft" << endl;
+    cout << "Running pwls with Gnufft" << endl;
     Col <CxT1> test_DWI_img;
     test_DWI_img = solve_pwls_pcg<T1, pcSENSE<T1>, QuadPenalty<T1 >>(xinit, S_DWI, W, data, R, niter);
     savemat(testPath + "PGout_" + std::to_string(nimage) + "_" + std::to_string(nslab) + "_" + std::to_string(nphase) +

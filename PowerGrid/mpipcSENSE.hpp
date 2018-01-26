@@ -201,7 +201,7 @@ public:
         if (world->rank() == 0) {
             std::vector <Mat<CxT1>> OutDataGather(world->size());
             // Collect all the data into OutDataGather an std::vector collective
-            //std::cout << "Rank #: " << world->rank() << " reached foward xform gather" << std::endl;
+            //std::cout << "Rank #: " << world->rank() << " reached forward xform gather" << std::endl;
             bmpi::gather < Mat < CxT1 >> (*world, tempOutData, OutDataGather, 0);
             //std::cout << "Rank #: " << world->rank() << " passed forward xform gather" << std::endl;
             for(uword jj = 0; jj < world->size(); jj++) {
@@ -217,12 +217,12 @@ public:
             }
 
         } else {
-            std::cout << "Rank #: " << world->rank() << " reached foward xform gather" << std::endl;
+            std::cout << "Rank #: " << world->rank() << " reached forward xform gather" << std::endl;
             bmpi::gather < Mat < CxT1 >> (*world, tempOutData, 0);
         }
-        std::cout << "Rank #: " << world->rank() << " reached foward xform broadcast" << std::endl;
+        std::cout << "Rank #: " << world->rank() << " reached forward xform broadcast" << std::endl;
         bmpi::broadcast(*world, outData, 0);
-        std::cout << "Rank #: " << world->rank() << " passed foward xform broadcast" << std::endl;
+        std::cout << "Rank #: " << world->rank() << " passed forward xform broadcast" << std::endl;
 
         //equivalent to returning col(output) in MATLAB with IRT
         return vectorise(outData);
