@@ -16,7 +16,7 @@ Developed by:
     Synopsis    [Object that represents a non-uniform discrete Fourier
                     transform implemented via a a CPU and GPU accelerated
                     gridding implementation of the non-uniform Fast Fourier
-                    Tranform (NUFFT).]
+                    Transform (NUFFT).]
 
     Description [Forward transforms are denoted by G*data and adjoint transforms
                     are denoted by G/data. See documentation for more
@@ -110,7 +110,7 @@ public:
         //This is just specifying size assuming things are the same size, change as necessary
         //uword dataLength = d.n_rows;
 
-        //cout << "Seperating real and imaginary data." << endl;
+        //cout << "Separating real and imaginary data." << endl;
 
         Col<T1> realData = real(d);
         Col<T1> imagData = imag(d);
