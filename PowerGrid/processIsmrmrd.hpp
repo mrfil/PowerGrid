@@ -360,11 +360,11 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
   }
 
   // Preallocating storage for all of the data and trajectories.
-  dataWork.zeros(nro,nc,numAcqTotal);
-  kxWork.zeros(nro,numAcqTotal);
-  kyWork.zeros(nro,numAcqTotal);
-  kzWork.zeros(nro,numAcqTotal);
-  tvecWork.zeros(nro,numAcqTotal);
+  dataWork.zeros(nro,nc,numAcqs);
+  kxWork.zeros(nro,numAcqs);
+  kyWork.zeros(nro,numAcqs);
+  kzWork.zeros(nro,numAcqs);
+  tvecWork.zeros(nro,numAcqs);
   acqWork.zeros(nro,nc);
   uword curAcq = 0;
 	for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
