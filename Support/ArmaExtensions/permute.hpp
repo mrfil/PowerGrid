@@ -8,7 +8,6 @@
 #include <vector>
 
 using namespace arma;
-
 typedef std::tuple<std::size_t,std::size_t,std::size_t> D3tuple;
 
 template <typename T>
