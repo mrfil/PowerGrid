@@ -29,6 +29,7 @@ Developed by:
 // //Project headers.
 #include "PowerGrid.h"
 #include "processIsmrmrd.hpp"
+#include "processNIFTI.hpp"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -169,6 +170,9 @@ int main(int argc, char **argv) {
 
   std::cout << "About to loop through the counters and scan the file"
             << std::endl;
+
+  std::string baseFilename = "SENSE";
+  std::string filename;
   uword NSet = 0; //Set is only used for arrayed ADCs
   uword NSeg = 0;
 	for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
@@ -176,6 +180,11 @@ int main(int argc, char **argv) {
             for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
                 for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
                     for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+
+                      filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) +
+          								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
+          								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
+
 	                    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
 	                    senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, Nx*Ny*Nz);
@@ -200,7 +209,8 @@ int main(int argc, char **argv) {
 	                    //ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
 			            //        QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
 			            //        Ny, Nz, tvec, NIter);
-	                    writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+	                  //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+                    writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
                     }
 
                 }
