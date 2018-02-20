@@ -53,7 +53,7 @@ void calculateLUT(T1 beta, T1 width, T1 *&LUT, uword &sizeLUT);
 
 #pragma acc routine seq
 template <typename T1>
-bool isnanPG(T1 x) {  return x != x; };
+inline bool isnanPG(T1 x) {  return x != x; };
 
 #pragma acc routine seq
 template <typename T1>
