@@ -49,6 +49,7 @@ template <typename T1>
 Col<complex<T1> > Robject<T1>::Cd(const Col<complex<T1> > &d, uword dim) const {
 
         Col<complex<T1> > out(Nx * Ny * Nz);
+        out.zeros();
         uword ll, jj, kk;
         switch (dim) {
         case (uword)0:
@@ -83,7 +84,7 @@ template <typename T1>
 Col<complex<T1> > Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const {
 
         Col<complex<T1> > out(Nx * Ny * Nz);
-
+        out.zeros();
         uword ll, jj, kk;
         switch (dim) {
         case (uword)0:
