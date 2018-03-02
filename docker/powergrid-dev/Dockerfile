@@ -10,7 +10,25 @@ WORKDIR /root
 # RUN  echo 'AddressFamily inet' >> /etc/ssh/sshd_config
 
 # Add needed packages
-RUN apt-get -y update && apt-get install -y g++ gcc curl libopenblas-dev libarpack2-dev nano wget cmake git xsdcxx libxerces-c-dev libmatio-dev libboost-all-dev libhdf5-dev libfftw3-dev
+RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
+																					libarpack2-dev nano wget cmake git \
+																					xsdcxx libxerces-c-dev libmatio-dev \
+																					libhdf5-dev \
+																					libfftw3-dev libmpich-dev;
+
+# Set MPI library to MPICH2. Needed for Shifter to transparently patch MPI for Cray libraries
+RUN update-alternatives --set mpi /usr/include/mpich;
+
+# Install custom compile of boost for mpi.
+RUN wget -O ~/boost_1_64_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2' --max-redirect=100\
+ && tar xjf ~/boost_1_64_0.tar.bz2 \
+ && cd ~/boost_1_64_0/ \
+ && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
+ && cp ~/boost_1_64_0/tools/build/example/user-config.jam ~/boost_1_64_0/tools/build/src/user-config.jam \
+ && echo "using mpi ;" >> ~/boost_1_64_0/tools/build/src/user-config.jam
+
+RUN cd ~/boost_1_64_0 && ./b2 -j 4 toolset=gcc install || true
+
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
@@ -65,9 +83,9 @@ ENV MANPATH         "${PGI_MAN_DIR}:${MANPATH}"
 
 # Install Armadillo
 
-RUN curl -O -J -L  https://sourceforge.net/projects/arma/files/armadillo-8.200.2.tar.xz/download; \
-	tar xvf armadillo-8.200.2.tar.xz; \
-	cd armadillo-8.200.2; \
+RUN git clone https://github.com/conradsnicta/armadillo-code; \
+	cd armadillo-code; \
+	git checkout 8.200.x; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \
@@ -76,7 +94,7 @@ RUN curl -O -J -L  https://sourceforge.net/projects/arma/files/armadillo-8.200.2
 	make install; \
 	ldconfig
 
-	# Install Latest CMake
+# Install Latest CMake
 
 RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
