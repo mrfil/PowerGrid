@@ -20,14 +20,14 @@ RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 RUN update-alternatives --set mpi /usr/include/mpich;
 
 # Install custom compile of boost for mpi.
-RUN wget -O ~/boost_1_64_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2' --max-redirect=100\
- && tar xjf ~/boost_1_64_0.tar.bz2 \
- && cd ~/boost_1_64_0/ \
+RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
+ && tar xjf ~/boost_1_66_0.tar.bz2 \
+ && cd ~/boost_1_66_0/ \
  && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
- && cp ~/boost_1_64_0/tools/build/example/user-config.jam ~/boost_1_64_0/tools/build/src/user-config.jam \
- && echo "using mpi ;" >> ~/boost_1_64_0/tools/build/src/user-config.jam
+ && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
+ && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
 
-RUN cd ~/boost_1_64_0 && ./b2 -j 4 toolset=gcc install || true
+RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
 
 
 # Install SuperLU5
