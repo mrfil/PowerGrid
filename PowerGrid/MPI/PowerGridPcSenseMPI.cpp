@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
   //required for boost::mpi to work.
   mpi::environment env(argc, argv, true);
   mpi::communicator world;
+  
+  std::cout << "I am rank #: " << world.rank() << std::endl;
 
   std::string rawDataFilePath, outputImageFilePath;
   uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
@@ -120,8 +122,6 @@ int main(int argc, char **argv) {
 	acqTracking* acqTrack;
 	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
 
-  //savemat("testFM.mat", "FM", FM);
-  //savemat("testSen.mat", "sen", sen);
   if (world.rank() == 0) {
     std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
     std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
 			for (uword NAvg = 0; NAvg<=NAvgMax; NAvg++) {
 				for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
 					for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+            
             filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) +
 								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
 								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);

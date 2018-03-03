@@ -46,10 +46,12 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
   Nc = nc;
   Ns = ShotPhaseMap.n_elem / Ni;
   Nd = kx.n_elem / Ns;
-  std::cout << "Nd = " << Nd << std::endl;
-  std::cout << "Ns = " << Ns << std::endl;
-  std::cout << "Nc = " << Nc << std::endl;
-  std::cout << "Ni = " << Ni << std::endl;
+  if (world->rank() == 0) {
+    std::cout << "Nd = " << Nd << std::endl;
+    std::cout << "Ns = " << Ns << std::endl;
+    std::cout << "Nc = " << Nc << std::endl;
+    std::cout << "Ni = " << Ni << std::endl;
+  }
   SMap = reshape(SENSEmap, Ni, Nc);
   PMap = reshape(ShotPhaseMap, Ni, Ns);
   FMap = FieldMap;
