@@ -14,10 +14,14 @@ RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 																					libarpack2-dev nano wget cmake git \
 																					xsdcxx libxerces-c-dev libmatio-dev \
 																					libhdf5-dev \
-																					libfftw3-dev libmpich-dev;
+																					libfftw3-dev && apt-get clean all;
 
 # Set MPI library to MPICH2. Needed for Shifter to transparently patch MPI for Cray libraries
-RUN update-alternatives --set mpi /usr/include/mpich;
+#RUN update-alternatives --set mpi /usr/include/mpich;
+
+# Instal MPICH 3.2 using example from NERSC
+RUN cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
+	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
 
 # Install custom compile of boost for mpi.
 RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
