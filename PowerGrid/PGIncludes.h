@@ -26,17 +26,19 @@
 #ifndef PGINCLUDES_H
 #define PGINCLUDES_H
 
-#include <armadillo>
 #include <cmath>
 #include <iostream>
 #include <string>
-#include "../Support/ArmaExtensions/permute.hpp"
 
 #ifdef PowerGridMPI
 #include "../Support/ArmaExtensions/arma_extensions.h"
 #include <boost/mpi.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/environment.hpp>
+#include "../Support/ArmaExtensions/permute.hpp"
+#else
+#include <armadillo>
+#include "../Support/ArmaExtensions/permute.hpp"
 #endif // PowerGridMPI
 
 // Support Headers for making it easier to work with Armadillo and Matio.

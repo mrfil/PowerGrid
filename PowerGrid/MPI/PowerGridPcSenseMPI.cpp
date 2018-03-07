@@ -38,14 +38,14 @@ Developed by:
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
-namespace mpi = boost::mpi;
+namespace bmpi = boost::mpi;
 
 //using namespace PowerGrid;
 
 int main(int argc, char **argv) {
   //required for boost::mpi to work.
-  mpi::environment env(argc, argv, true);
-  mpi::communicator world;
+  bmpi::environment env(argc, argv, true);
+  bmpi::communicator world;
   
   std::cout << "I am rank #: " << world.rank() << std::endl;
 
@@ -174,10 +174,15 @@ int main(int argc, char **argv) {
       std::cout << "About to loop through the counters and scan the file"
               << std::endl;
     }
+  
     std::string baseFilename = "pcSENSE";
   	std::string filename;
-
-	uword NSet = 0; //Set is only used for arrayed ADCs
+    uword dataNrows;
+    uword dataNcols;
+    uword PMapNrows;
+    uword kxNrows;
+	
+  uword NSet = 0; //Set is only used for arrayed ADCs
 	uword NSeg = 0;
 	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
 		for (uword NEcho = 0; NEcho<=NEchoMax; NEcho++) {
@@ -189,15 +194,15 @@ int main(int argc, char **argv) {
 								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
 								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
 
-						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
-								kz, tvec);
-
-						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
-								(uword) (Nx*Ny*Nz));
-						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, (uword) (Nx*Ny*Nz));
-						FMap = getISMRMRDCompleteFieldMap<float>(d, NSlice, (uword) (Nx*Ny*Nz));
-
               if (world.rank() == 0) {
+						    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
+								  kz, tvec);
+
+						    PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
+								  (uword) (Nx*Ny*Nz));
+						    SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, (uword) (Nx*Ny*Nz));
+						    FMap = getISMRMRDCompleteFieldMap<float>(d, NSlice, (uword) (Nx*Ny*Nz));
+
                 std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
                 std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
                 std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
@@ -205,7 +210,45 @@ int main(int argc, char **argv) {
                 std::cout << "Number of rows in data = " << data.n_rows << std::endl;
                 std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
+                dataNrows = data.n_rows;
+                dataNcols = data.n_cols;
+                PMapNrows = PMap.n_rows;
+                kxNrows = kx.n_rows;
+                
+                bmpi::broadcast(world,dataNrows,0);
+                bmpi::broadcast(world,dataNcols,0); 
+                bmpi::broadcast(world,PMapNrows,0);
+                bmpi::broadcast(world,kxNrows,0);  
+
+              } else { // Let's make sure that the armadillo objects are initialized 
+              // properly for later usage with boost::mpi
+                
+                bmpi::broadcast(world,dataNrows,0);
+                bmpi::broadcast(world,dataNcols,0); 
+                bmpi::broadcast(world,PMapNrows,0); 
+                bmpi::broadcast(world,kxNrows,0);  
+
+                PMap.zeros(PMapNrows);
+                SMap.zeros(Nx*Ny*Nz*nc);
+                FMap.zeros(Nx*Ny*Nz);
+                data.zeros(dataNrows,dataNcols);
+                tvec.zeros(kxNrows);
+                kx.zeros(kxNrows);
+                ky.zeros(kxNrows);
+                kz.zeros(kxNrows);
+
               }
+
+              //Let's avoid hammering the parallel file system by reading from every process.
+              bmpi::broadcast(world,data,0);
+              bmpi::broadcast(world,PMap,0);
+              bmpi::broadcast(world,SMap,0);
+              bmpi::broadcast(world,FMap,0);
+              bmpi::broadcast(world,kx,0);
+              bmpi::broadcast(world,ky,0);
+              bmpi::broadcast(world,kz,0);
+              bmpi::broadcast(world,tvec,0);
+              
               //Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
               // iy, iz);
               //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
