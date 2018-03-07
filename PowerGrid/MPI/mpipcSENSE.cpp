@@ -26,7 +26,7 @@ Developed by:
 
 template <typename T1> mpipcSENSE<T1>::~mpipcSENSE() {
 
-  for (uword jj = 0; jj < (*taskList)[world->rank()].size(); jj++) {
+  for (uword jj = 0; jj < (*taskList)[pWorld->rank()].size(); jj++) {
     delete AObj[jj];
   }
   std::cout << "Deleted Objects in AObj array" << std::endl;
@@ -42,11 +42,14 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
                            Col<complex<T1>> SENSEmap, Col<T1> FieldMap,
                            Col<T1> ShotPhaseMap, bmpi::environment &en,
                            bmpi::communicator &wor) {
+  pEnv = &en;
+  pWorld = &wor;
   Ni = nx * ny * nz;
   Nc = nc;
   Ns = ShotPhaseMap.n_elem / Ni;
   Nd = kx.n_elem / Ns;
-  if (world->rank() == 0) {
+
+  if (pWorld->rank() == 0) {
     std::cout << "Nd = " << Nd << std::endl;
     std::cout << "Ns = " << Ns << std::endl;
     std::cout << "Nc = " << Nc << std::endl;
@@ -62,8 +65,7 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
   Ny = ny;
   Nz = nz;
   Tvec = reshape(t, Nd, Ns);
-  env = &en;
-  world = &wor;
+ 
 
   Cube<T1> ix;
   ix.zeros(Nx, Ny, Nz);
@@ -93,8 +95,8 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
   // This gives us the rank (index) of the process in the collective MPI
   // space.
   // The process will only calculate shot jj of the acquisition.
-  uword ShotRank = world->rank();
-  uword numShots = Ns / world->size();
+  uword ShotRank = pWorld->rank();
+  uword numShots = Ns / pWorld->size();
 
   shotList.resize(Ns * Nc);
   coilList.resize(Ns * Nc);
@@ -112,25 +114,25 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
   // Start by creating a 2D vector (vector of vectors) to hold the MPI rank ->
   // task mapping
   vector<uword> init(0);
-  taskList = new std::vector<std::vector<uword>>(world->size(), init);
+  taskList = new std::vector<std::vector<uword>>(pWorld->size(), init);
   uword remaining = Ns * Nc;
   uword process = 0;
   for (uword task = 0; task < Ns * Nc; task++) {
     (*taskList)[process].push_back(task);
     process++;
-    if (process == world->size()) {
+    if (process == pWorld->size()) {
       process = 0;
     }
   }
 
-  AObj = new Gdft<T1> *[(*taskList)[world->rank()].size()];
+  AObj = new Gdft<T1> *[(*taskList)[pWorld->rank()].size()];
   uword taskIndex;
   uword coilIndex;
   uword shotIndex;
   // Initialize the field correction and G objects we need for this
   // reconstruction
-  for (uword jj = 0; jj < (*taskList)[world->rank()].size(); jj++) {
-    taskIndex = (*taskList)[world->rank()].at(jj);
+  for (uword jj = 0; jj < (*taskList)[pWorld->rank()].size(); jj++) {
+    taskIndex = (*taskList)[pWorld->rank()].at(jj);
     shotIndex = shotList(taskIndex);
     AObj[jj] = new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(shotIndex),
                             Ky.col(shotIndex), Kz.col(shotIndex), Ix, Iy, Iz,
@@ -145,22 +147,22 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
 // directly rather return another vector of type T1
 template <typename T1>
 Col<complex<T1>> mpipcSENSE<T1>::operator*(const Col<complex<T1>> &d) const {
-  // uword ShotRank = world->rank();
+  // uword ShotRank = pWorld->rank();
   Mat<complex<T1>> outData = zeros<Mat<complex<T1>>>(Nd, Ns * Nc);
   Mat<complex<T1>> tempOutData =
-      zeros<Mat<complex<T1>>>(Nd, (*taskList)[world->rank()].size());
+      zeros<Mat<complex<T1>>>(Nd, (*taskList)[pWorld->rank()].size());
   Mat<complex<T1>> tempOutData2 =
-      zeros<Mat<complex<T1>>>(Nd, (*taskList)[world->rank()].size());
+      zeros<Mat<complex<T1>>>(Nd, (*taskList)[pWorld->rank()].size());
   uword taskIndex;
   uword coilIndex;
   uword shotIndex;
   // Shot loop. Each shot has it's own kspace trajectory
   // for (unsigned int jj = 0; jj < Ns; jj++) {
-  std::cout << "Task Number = " << (*taskList)[world->rank()].size()
+  std::cout << "Task Number = " << (*taskList)[pWorld->rank()].size()
             << std::endl;
   // Coil loop. Each coil exists for each shot, so we need to work with these.
-  for (uword jj = 0; jj < (*taskList)[world->rank()].size(); jj++) {
-    taskIndex = (*taskList)[world->rank()].at(jj);
+  for (uword jj = 0; jj < (*taskList)[pWorld->rank()].size(); jj++) {
+    taskIndex = (*taskList)[pWorld->rank()].at(jj);
     shotIndex = shotList(taskIndex);
     coilIndex = coilList(taskIndex);
     tempOutData.col(jj) =
@@ -170,15 +172,15 @@ Col<complex<T1>> mpipcSENSE<T1>::operator*(const Col<complex<T1>> &d) const {
 
   //}
   // Now let's do some MPI stuff here.
-  if (world->rank() == 0) {
-    std::vector<Mat<complex<T1>>> OutDataGather(world->size());
+  if (pWorld->rank() == 0) {
+    std::vector<Mat<complex<T1>>> OutDataGather(pWorld->size());
     // Collect all the data into OutDataGather an std::vector collective
-    // std::cout << "Rank #: " << world->rank() << " reached foward xform
+    // std::cout << "Rank #: " << pWorld->rank() << " reached foward xform
     // gather" << std::endl;
-    bmpi::gather<Mat<complex<T1>>>(*world, tempOutData, OutDataGather, 0);
-    // std::cout << "Rank #: " << world->rank() << " passed forward xform
+    bmpi::gather<Mat<complex<T1>>>(*pWorld, tempOutData, OutDataGather, 0);
+    // std::cout << "Rank #: " << pWorld->rank() << " passed forward xform
     // gather" << std::endl;
-    for (uword jj = 0; jj < world->size(); jj++) {
+    for (uword jj = 0; jj < pWorld->size(); jj++) {
       // std::cout << "About to access element #" << jj << " in gathered data"
       // << std::endl;
       // std::cout << "Size of returned stl::vector<> = " <<
@@ -193,14 +195,14 @@ Col<complex<T1>> mpipcSENSE<T1>::operator*(const Col<complex<T1>> &d) const {
     }
 
   } else {
-    std::cout << "Rank #: " << world->rank() << " reached foward xform gather"
+    std::cout << "Rank #: " << pWorld->rank() << " reached foward xform gather"
               << std::endl;
-    bmpi::gather<Mat<complex<T1>>>(*world, tempOutData, 0);
+    bmpi::gather<Mat<complex<T1>>>(*pWorld, tempOutData, 0);
   }
-  std::cout << "Rank #: " << world->rank() << " reached foward xform broadcast"
+  std::cout << "Rank #: " << pWorld->rank() << " reached foward xform broadcast"
             << std::endl;
-  bmpi::broadcast(*world, outData, 0);
-  std::cout << "Rank #: " << world->rank() << " passed foward xform broadcast"
+  bmpi::broadcast(*pWorld, outData, 0);
+  std::cout << "Rank #: " << pWorld->rank() << " passed foward xform broadcast"
             << std::endl;
 
   // equivalent to returning col(output) in MATLAB with IRT
@@ -211,7 +213,7 @@ Col<complex<T1>> mpipcSENSE<T1>::operator*(const Col<complex<T1>> &d) const {
 // coil data by the SENSE map.
 template <typename T1>
 Col<complex<T1>> mpipcSENSE<T1>::operator/(const Col<complex<T1>> &d) const {
-  // uword ShotRank = world->rank();
+  // uword ShotRank = pWorld->rank();
   Mat<complex<T1>> inData = reshape(d, Nd, Ns * Nc);
   uword taskIndex;
   uword coilIndex;
@@ -221,8 +223,8 @@ Col<complex<T1>> mpipcSENSE<T1>::operator/(const Col<complex<T1>> &d) const {
   // Shot Loop. Each shot has it's own k-space trajectory
   // for (unsigned int jj = 0; jj < Ns; jj++) {
   // Coil Loop - for each shot we have a full set of coil data.
-  for (uword jj = 0; jj < (*taskList)[world->rank()].size(); jj++) {
-    taskIndex = (*taskList)[world->rank()].at(jj);
+  for (uword jj = 0; jj < (*taskList)[pWorld->rank()].size(); jj++) {
+    taskIndex = (*taskList)[pWorld->rank()].at(jj);
     shotIndex = shotList(taskIndex);
     coilIndex = coilList(taskIndex);
     outData += conj(SMap.col(coilIndex) % exp(-i * (PMap.col(shotIndex)))) %
@@ -231,25 +233,25 @@ Col<complex<T1>> mpipcSENSE<T1>::operator/(const Col<complex<T1>> &d) const {
     // std::endl;
   }
 
-  if (world->rank() == 0) {
+  if (pWorld->rank() == 0) {
     std::vector<Col<complex<T1>>> OutDataGather;
     // Collect all the data into OutDataGather an std::vector collective
-    bmpi::gather<Col<complex<T1>>>(*world, outData, OutDataGather, 0);
+    bmpi::gather<Col<complex<T1>>>(*pWorld, outData, OutDataGather, 0);
     outData.zeros(Ni);
-    for (uword jj = 0; jj < world->size(); jj++) {
+    for (uword jj = 0; jj < pWorld->size(); jj++) {
       // Skip the zeroth rank because that is the outData we started with on
       // this processor.
       // Now we will manually reduce the data by adding across the elements.
       outData += OutDataGather.at(jj);
     }
   } else {
-    bmpi::gather<Col<complex<T1>>>(*world, outData, 0);
+    bmpi::gather<Col<complex<T1>>>(*pWorld, outData, 0);
   }
   // Broadcast will send the data to all machines if the rank==0 and receive
   // the broadcasted data from rank=0 to
   // all other machines in the communicator, overwriting the outData value
   // already there.
-  bmpi::broadcast<Col<complex<T1>>>(*world, outData, 0);
+  bmpi::broadcast<Col<complex<T1>>>(*pWorld, outData, 0);
   // equivalent to returning col(output) in MATLAB with IRT
   return vectorise(outData);
 }

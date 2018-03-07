@@ -72,8 +72,8 @@ uword L = 20;
 Gdft<T1> **AObj = NULL;
 // TimeSegmentation <T1, Gnufft<T1>> **AObj = NULL;
 // MPI Stuff
-bmpi::environment *env;
-bmpi::communicator *world;
+bmpi::environment *pEnv;
+bmpi::communicator *pWorld;
 Col<uword> shotList;
 Col<uword> coilList;
 std::vector<std::vector<uword> > *taskList;
