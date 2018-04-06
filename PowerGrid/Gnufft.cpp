@@ -64,15 +64,15 @@ Gnufft<T1>::Gnufft(
   kz = new T1[n2];
 
   for (int i = 0; i < n2; i++) {
-    if (abs(k1(i)) > (Nx / (T1)2.0 + .1) || abs(k2(i)) > (Ny / (T1)2.0 + .1) ||
-        abs(k3(i)) > (Nz / (T1)2.0 + .1)) {
+    if (abs(k1(i)) > (Nx / (T1)2.0 - .1) || abs(k2(i)) > (Ny / (T1)2.0 - .1) ||
+        abs(k3(i)) > (Nz / (T1)2.0 - .1)) {
 
       cout << "Error:k-space trajectory out of range [-N/2,N/2]:\n      "
             << "gridding requires that k-space should be contained within the "
             << "window -N/2 to N/2" << endl;
       cout << "kx = " << k1(i) << " ky = " << k2(i)<< " kz = " << k3(i)
            << " i = " << i << endl;
-      exit(1);
+      //exit(1);
     } else {
       kx[i] = k1(i);
       ky[i] = k2(i);
