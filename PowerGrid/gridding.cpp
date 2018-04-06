@@ -660,27 +660,17 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   unsigned int n = params.numSamples;
   //
   for (int i = 0; i < params.numSamples; i++) {
-    if (ABS(kx[i]) > (Nx / (T1)2.0 + .1) || ABS(ky[i]) > (Ny / (T1)2.0 + .1) ||
-        ABS(kz[i]) > (Nz / (T1)2.0 + .1)) {
 
-      printf("\nError:k-space trajectory out of range [-N/2,N/2]:\n      "
-             "gridding requires that k-space should be contained within the "
-             "window -N/2 to N/2.\n");
-      cout << "kx = " << kx[i] << " ky = " << ky[i] << " kz = " << kz[i]
-           << " i = " << i << endl;
-      //exit(1);
-    } else {
+    samples[i].kX = kx[i];
+    samples[i].kY = ky[i];
+    samples[i].kZ = kz[i];
 
-      samples[i].kX = kx[i];
-      samples[i].kY = ky[i];
-      samples[i].kZ = kz[i];
+    samples[i].real = dR[i];
+    samples[i].imag = dI[i];
 
-      samples[i].real = dR[i];
-      samples[i].imag = dI[i];
+    samples[i].sdc = (T1)1.0;
+    // samples[i].t = t[i];
 
-      samples[i].sdc = (T1)1.0;
-      // samples[i].t = t[i];
-    }
   }
   // grid_size in xy-axis has to be divisible-by-two:
   //       (required by the cropImageRegion)
