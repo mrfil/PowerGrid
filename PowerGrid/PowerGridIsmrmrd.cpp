@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
       fieldMapFilePath, precisionString, TimeSegmentationInterp,
       rawDataNavFilePath;
   uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
+  //uword ;
   double beta = 0.0;
   uword dims2penalize = 3;
   po::options_description desc("Allowed options");
@@ -173,8 +174,8 @@ int main(int argc, char **argv) {
 
   std::string baseFilename = "SENSE";
   std::string filename;
-  uword NSet = 0; //Set is only used for arrayed ADCs
-  uword NSeg = 0;
+  //uword NSet = 0; //Set is only used for arrayed ADCs
+  //uword NSeg = 0;
 	for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
 		for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
             for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {

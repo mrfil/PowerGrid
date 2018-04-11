@@ -11,7 +11,7 @@ using namespace arma;
 typedef std::tuple<std::size_t,std::size_t,std::size_t> D3tuple;
 
 template <typename T>
-inline u32_vec shape (const Cube<T>& x)
+inline Col<uword> shape (const Cube<T>& x)
 {
     return { x.n_rows, x.n_cols, x.n_slices };
 }
@@ -22,7 +22,7 @@ static Cube<T> permute (Cube<T>& cube, const D3tuple& order)
     uword idx2 = std::get<1>(order);
     uword idx3 = std::get<2>(order);
 
-    u32_vec dimension = shape(cube);
+    Col<uword> dimension = shape(cube);
 
     uword rows = dimension(idx1 - 1);
     uword cols = dimension(idx2 - 1);

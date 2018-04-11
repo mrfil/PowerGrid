@@ -115,7 +115,7 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
   // task mapping
   vector<uword> init(0);
   taskList = new std::vector<std::vector<uword>>(pWorld->size(), init);
-  uword remaining = Ns * Nc;
+  //uword remaining = Ns * Nc;
   uword process = 0;
   for (uword task = 0; task < Ns * Nc; task++) {
     (*taskList)[process].push_back(task);
@@ -127,7 +127,7 @@ mpipcSENSE<T1>::mpipcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
 
   AObj = new Gdft<T1> *[(*taskList)[pWorld->rank()].size()];
   uword taskIndex;
-  uword coilIndex;
+  //uword coilIndex;
   uword shotIndex;
   // Initialize the field correction and G objects we need for this
   // reconstruction

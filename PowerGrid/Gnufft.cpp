@@ -86,10 +86,9 @@ Gnufft<T1>::Gnufft(
          std::sqrt((gridOS - 0.5) * (gridOS - 0.5) *
                        (kernelWidth * kernelWidth * 4.0) / (gridOS * gridOS) -
                    0.8);
-
+  #ifdef _OPENACC
   stream = acc_get_cuda_stream(acc_async_sync);
   cufftCreate(&plan);
-
   if(Nz ==1) {
     if (cufftPlan2d(&plan, gridOS*Nx, gridOS*Ny, CUFFT_C2C) != CUFFT_SUCCESS) {
             cout <<  "CUFFT error: Plan creation failed" << endl;
@@ -100,6 +99,7 @@ Gnufft<T1>::Gnufft(
           }
   }
   cufftSetStream(plan, (cudaStream_t)stream);
+  #endif
 
   gridData = new complex<T1>[imageNumElems];
 	gridData_d = new complex<T1>[imageNumElems];
@@ -122,8 +122,9 @@ Gnufft<T1>::Gnufft(
 
 // Class destructor to free LUT
 template <typename T1> Gnufft<T1>::~Gnufft() {
-  cufftDestroy(plan);
-
+  #ifdef _OPENACC
+    cufftDestroy(plan);
+  #endif
   #pragma acc exit data delete(pGridData[0:2*imageNumElems], \
    pGridData_d[0:2*imageNumElems], pGridData_os[0:2*gridNumElems], \
    pGridData_os_d[0:2*gridNumElems], kx[0:n2], ky[0:n2], kz[0:n2], \
@@ -150,7 +151,9 @@ template <typename T1>
 Col<complex<T1>> Gnufft<T1>::
 operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 {
-  nvtxRangePushA("Gnufft::operator*");
+  #ifdef USE_NVTX
+    nvtxRangePushA("Gnufft::operator*");
+  #endif
   // cout << "Entering forward operator overload in Ggrid." << endl;
   // This is just specifying size assuming things are the same size, change as
   // necessary
@@ -196,7 +199,11 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
   */
   // T2 gridOS = 2.0;
   // cout << "About to call the forward gridding routine." << endl;
-  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
+  #ifdef _OPENACC
+    cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
+  #else
+    void* nPlan = NULL;
+  #endif
   computeFd_CPU_Grid<T1>(n2, kx, ky, kz, realDataPtr,
                          imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
                          imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
@@ -216,7 +223,9 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
   Col<complex<T1>> XformedData(this->n2);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
-  nvtxRangePop();
+  #ifdef USE_NVTX
+    nvtxRangePop();
+  #endif
   return conv_to<Col<complex<T1>>>::from(
       XformedData); // Return a vector of type T1
 }
@@ -224,8 +233,9 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 // Adjoint transform operation
 template <typename T1>
 Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
-  nvtxRangePushA("Gnufft::operator/");
-
+  #ifdef USE_NVTX
+    nvtxRangePushA("Gnufft::operator/");
+  #endif
   // uword dataLength = n2;
   // Let's trim the operations to avoid data overhead and transfers
   // Basically if we know that the data points are zero, they have no impact
@@ -253,7 +263,11 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // realXformedDataPtr and imagXformedDataPtr and they are of type float*
 
   // T2 gridOS = 2.0;
+  #ifdef _OPENACC
   cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
+  #else
+  void *nPlan = NULL;
+  #endif
   computeFH_CPU_Grid<T1>(dataLength, kx, ky, kz,
                          realDataPtr, imagDataPtr, Nx, Ny, Nz, gridOS,
                          realXformedDataPtr, imagXformedDataPtr, kernelWidth,
@@ -280,7 +294,9 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   XformedData.set_imag(imagXformedData);
   // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
   // savemat("/shared/mrfil-data/data/PowerGridTest/64_64_16_4coils/ggrid.mat","img",XformedData);
-  nvtxRangePop();
+  #ifdef USE_NVTX
+    nvtxRangePop();
+    #endif
   return conv_to<Col<complex<T1>>>::from(
       XformedData); // Return a vector of type T1
 }

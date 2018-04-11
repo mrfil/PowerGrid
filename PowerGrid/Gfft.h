@@ -30,13 +30,11 @@ Developed by:
 #define __PowerGrid__Gfft__h
 
 #ifdef _OPENACC // GPU Version
-
 #include "cufft.h"
 #include "fftGPU.h"
 #include "gridding.h"
 #include "openacc.h"
 #else // CPU Version
-
 #include "fftCPU.h"
 #include "gridding.h"
 #endif
@@ -55,8 +53,10 @@ public:
   uword Nx = 0; // Size in x dimension
   uword Ny = 0; // Size in y dimension
   uword Nz = 0; // Size in z dimension
-  void *stream;
-  cufftHandle *plan;
+  #ifdef _OPENACC
+    void *stream;
+    cufftHandle *plan;
+  #endif
 
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation

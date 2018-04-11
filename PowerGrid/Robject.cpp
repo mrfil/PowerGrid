@@ -171,7 +171,7 @@ complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
         Col<complex<T1> > Cx = zeros<Col<complex<T1> > >(ddir.n_rows);
         complex<T1> penal = 0;
         complex<T1> temp;
-        complex<T1> cxBeta = (this->Beta, 0);
+        complex<T1> cxBeta(this->Beta, 0);
         uword nd = 0;
         if ((this->Nz == 1) || (this->Dims2Penalize == 2)){
                 nd = 2;

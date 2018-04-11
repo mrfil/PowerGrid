@@ -70,7 +70,7 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
   Col<CxT1> proj;
   Col<CxT1> stepIntermediate;
   CxT1 step;
-  CxT1 rdenom;
+  //CxT1 rdenom;
   CxT1 newinprod;
 
   cout << "Entering solve_pwls_pcg iteration loop" << endl;

@@ -73,7 +73,12 @@ public:
   T1 beta; // beta factor for gridding not the same as beta in regularization!
   T1 kernelWidth; // Kaiser Bessel Kernel Support
   void *stream;
-  cufftHandle plan;
+  
+  #ifdef _OPENACC
+    cufftHandle plan;
+  #else
+    void* plan;
+  #endif
 
   uword imageNumElems;
   uword gridNumElems;
