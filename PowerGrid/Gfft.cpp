@@ -33,7 +33,7 @@ template <typename T1> Gfft<T1>::Gfft(uword ix, uword iy, uword iz) {
   Nx = ix;
   Ny = iy;
   Nz = iz;
-
+  #ifdef _OPENACC
   stream = acc_get_cuda_stream(acc_async_sync);
   cufftCreate(plan);
   if(Nz ==1) {
@@ -46,6 +46,7 @@ template <typename T1> Gfft<T1>::Gfft(uword ix, uword iy, uword iz) {
           }
   cufftSetStream(*plan, (cudaStream_t)stream);
   }
+  #endif
 }
 
 // Overloaded methods for forward and adjoint transform

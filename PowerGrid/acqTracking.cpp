@@ -10,7 +10,7 @@ acqTracking::acqTracking(ISMRMRD::Dataset *dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 	d = dataSet;
 
 	uword numAcq = d->getNumberOfAcquisitions();
-	bool firstData = true;
+	//bool firstData = true;
 	ISMRMRD::Acquisition acq;
 
 

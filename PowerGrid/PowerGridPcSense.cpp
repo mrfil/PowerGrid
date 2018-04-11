@@ -42,7 +42,8 @@ namespace po = boost::program_options;
 int main(int argc, char **argv)
 {
 	std::string rawDataFilePath, outputImageFilePath;
-	uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
+	uword Nx, Ny, Nz, NShots = 1, NIter = 10;
+	//uword type, L = 0;
 	double beta = 0.0;
 	uword dims2penalize = 3;
 	po::options_description desc("Allowed options");

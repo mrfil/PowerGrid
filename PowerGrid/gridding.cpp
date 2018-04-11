@@ -68,19 +68,19 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
     shiftedKy = (gridOS) * (pt.kY + ((T1)Ny) / (T1)2.0);
 
     NxL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
-    NxH = (int)(MIN((gridOS * (T1)Nx - (T1)1.0),
-                    FLOOR(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
+    NxH = (int)(std::min((gridOS * (T1)Nx - (T1)1.0),
+                    std::floor(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
 
     NyL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
-    NyH = (int)(MIN((gridOS * (T1)Ny - (T1)1.0),
-                    FLOOR(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
+    NyH = (int)(std::min((gridOS * (T1)Ny - (T1)1.0),
+                    std::floor(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
 
 #pragma acc loop seq
     for (nx = NxL; nx <= NxH; ++nx) {
       int k0;
-      distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+      distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
       // Working around issue with PGI 16.10 and OpenACC and kernel_value_LUT
       if (params.useLUT) {
         k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -91,7 +91,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
           kbX = LUT[k0];
         // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
       } else {
-        kbX = bessi0(beta * SQRT((T1)1.0 -
+        kbX = bessi0(beta * std::sqrt((T1)1.0 -
                                  ((T1)2.0 * distX / kernelWidth) *
                                      ((T1)2.0 * distX / kernelWidth))) /
               kernelWidth;
@@ -102,7 +102,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
       }
 #pragma acc loop seq
       for (ny = NyL; ny <= NyH; ++ny) {
-        distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
+        distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
         if (params.useLUT) {
 
           k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -114,7 +114,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
             kbY = LUT[k0];
 
         } else {
-          kbY = bessi0(beta * SQRT((T1)1.0 -
+          kbY = bessi0(beta * std::sqrt((T1)1.0 -
                                    ((T1)2.0 * distY / kernelWidth) *
                                        ((T1)2.0 * distY / kernelWidth))) /
                 kernelWidth;
@@ -199,23 +199,23 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
     shiftedKz = (gridOS) * (pt.kZ + ((T1)Nz) / (T1)2.0);
 
     NxL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
-    NxH = (int)(MIN((gridOS * (T1)Nx - (T1)1.0),
-                    FLOOR(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
+    NxH = (int)(std::min((gridOS * (T1)Nx - (T1)1.0),
+                    std::floor(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
 
     NyL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
-    NyH = (int)(MIN((gridOS * (T1)Ny - (T1)1.0),
-                    FLOOR(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
+    NyH = (int)(std::min((gridOS * (T1)Ny - (T1)1.0),
+                    std::floor(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
 
     NzL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKz - kernelWidth * (gridOS) / (T1)2.0)));
-    NzH = (int)(MIN((gridOS * (T1)Nz - (T1)1.0),
-                    FLOOR(shiftedKz + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKz - kernelWidth * (gridOS) / (T1)2.0)));
+    NzH = (int)(std::min((gridOS * (T1)Nz - (T1)1.0),
+                    std::floor(shiftedKz + kernelWidth * (gridOS) / (T1)2.0)));
 #pragma acc loop independent seq
     for (nz = NzL; nz <= NzH; ++nz) {
       int k0;
-      distZ = ABS(shiftedKz - ((T1)nz)) / (gridOS);
+      distZ = std::abs(shiftedKz - ((T1)nz)) / (gridOS);
 
       if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
@@ -226,7 +226,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
         else
           kbZ = LUT[k0];
       } else {
-        kbZ = bessi0(beta * SQRT((T1)1.0 -
+        kbZ = bessi0(beta * std::sqrt((T1)1.0 -
                                  ((T1)2.0 * distZ / kernelWidth) *
                                      ((T1)2.0 * distZ / kernelWidth))) /
               kernelWidth;
@@ -234,7 +234,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
 #pragma acc loop seq
       for (nx = NxL; nx <= NxH; ++nx) {
-        distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+        distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
         if (params.useLUT) {
           //                    kbX = kernel_value_LUT(distX, LUT, sizeLUT,
           //                    kernelWidth);
@@ -245,7 +245,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
           else
             kbX = LUT[k0];
         } else {
-          kbX = bessi0(beta * SQRT((T1)1.0 -
+          kbX = bessi0(beta * std::sqrt((T1)1.0 -
                                    ((T1)2.0 * distX / kernelWidth) *
                                        ((T1)2.0 * distX / kernelWidth))) /
                 kernelWidth;
@@ -253,7 +253,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
 
 #pragma acc loop seq
         for (ny = NyL; ny <= NyH; ++ny) {
-          distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
+          distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
           if (params.useLUT) {
             //                      kbY = kernel_value_LUT(distY, LUT,sizeLUT,
             //                      kernelWidth);
@@ -264,7 +264,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
             else
               kbY = LUT[k0];
           } else {
-            kbY = bessi0(beta * SQRT((T1)1.0 -
+            kbY = bessi0(beta * std::sqrt((T1)1.0 -
                                      ((T1)2.0 * distY / kernelWidth) *
                                          ((T1)2.0 * distY / kernelWidth))) /
                   kernelWidth;
@@ -332,19 +332,19 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
     shiftedKy = (gridOS) * (ky[i] + ((T1)Ny) / (T1)2.0);
 
     NxL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
-    NxH = (int)(MIN((gridOS * (T1)Nx - (T1)1.0),
-                    FLOOR(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
+    NxH = (int)(std::min((gridOS * (T1)Nx - (T1)1.0),
+                    std::floor(shiftedKx + kernelWidth * (gridOS) / (T1)2.0)));
 
     NyL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
-    NyH = (int)(MIN((gridOS * (T1)Ny - (T1)1.0),
-                    FLOOR(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
+    NyH = (int)(std::min((gridOS * (T1)Ny - (T1)1.0),
+                    std::floor(shiftedKy + kernelWidth * (gridOS) / (T1)2.0)));
 
 #pragma acc loop independent seq
     for (nx = NxL; nx <= NxH; ++nx) {
       int k0;
-      distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+      distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
       if (params.useLUT) {
 
         k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -355,7 +355,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
           kbX = LUT[k0];
 
       } else {
-        kbX = bessi0(beta * SQRT((T1)1.0 -
+        kbX = bessi0(beta * std::sqrt((T1)1.0 -
                                  ((T1)2.0 * distX / kernelWidth) *
                                      ((T1)2.0 * distX / kernelWidth))) /
               kernelWidth;
@@ -367,7 +367,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
 
 #pragma acc loop seq
       for (ny = NyL; ny <= NyH; ++ny) {
-        distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
+        distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
         if (params.useLUT) {
           // kbY = kernel_value_LUT(distY, LUT, sizeLUT, kernelWidth);
 
@@ -379,7 +379,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
             kbY = LUT[k0];
 
         } else {
-          kbY = bessi0(beta * SQRT((T1)1.0 -
+          kbY = bessi0(beta * std::sqrt((T1)1.0 -
                                    ((T1)2.0 * distY / kernelWidth) *
                                        ((T1)2.0 * distY / kernelWidth))) /
                 kernelWidth;
@@ -493,23 +493,23 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
     shiftedKz = (gridOS) * (kz[i] + ((T1)Nz) / (T1)2.0);
 
     NxL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
-    NxH = (int)(MIN((gridOS * (T1)Nx - (T1)1.0),
-                    FLOOR(shiftedKx + kernelWidth * ((T1)gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKx - kernelWidth * (gridOS) / (T1)2.0)));
+    NxH = (int)(std::min((gridOS * (T1)Nx - (T1)1.0),
+                    std::floor(shiftedKx + kernelWidth * ((T1)gridOS) / (T1)2.0)));
 
     NyL =
-        (int)(MAX((T1)0.0, CEIL(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
-    NyH = (int)(MIN((gridOS * (T1)Ny - (T1)1.0),
-                    FLOOR(shiftedKy + kernelWidth * ((T1)gridOS) / (T1)2.0)));
+        (int)(std::max((T1)0.0, std::ceil(shiftedKy - kernelWidth * (gridOS) / (T1)2.0)));
+    NyH = (int)(std::min((gridOS * (T1)Ny - (T1)1.0),
+                    std::floor(shiftedKy + kernelWidth * ((T1)gridOS) / (T1)2.0)));
 
-    NzL = (int)(MAX((T1)0.0, CEIL(shiftedKz - kernelWidth * (gridOS) / 2.0f)));
-    NzH = (int)(MIN((gridOS * (T1)Nz - (T1)1.0),
-                    FLOOR(shiftedKz + kernelWidth * ((T1)gridOS) / (T1)2.0)));
+    NzL = (int)(std::max((T1)0.0, std::ceil(shiftedKz - kernelWidth * (gridOS) / 2.0f)));
+    NzH = (int)(std::min((gridOS * (T1)Nz - (T1)1.0),
+                    std::floor(shiftedKz + kernelWidth * ((T1)gridOS) / (T1)2.0)));
 
 #pragma acc loop seq
     for (nz = NzL; nz <= NzH; ++nz) {
       int k0;
-      distZ = ABS(shiftedKz - ((T1)nz)) / (gridOS);
+      distZ = std::abs(shiftedKz - ((T1)nz)) / (gridOS);
 
       if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
@@ -521,7 +521,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
           kbZ = LUT[k0];
 
       } else {
-        kbZ = bessi0(beta * SQRT((T1)1.0 -
+        kbZ = bessi0(beta * std::sqrt((T1)1.0 -
                                  ((T1)2.0 * distZ / kernelWidth) *
                                      ((T1)2.0 * distZ / kernelWidth))) /
               kernelWidth;
@@ -533,7 +533,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 
 #pragma acc loop seq
       for (nx = NxL; nx <= NxH; ++nx) {
-        distX = ABS(shiftedKx - ((T1)nx)) / (gridOS);
+        distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
 
         if (params.useLUT) {
           // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
@@ -545,7 +545,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
             kbX = LUT[k0];
 
         } else {
-          kbX = bessi0(beta * SQRT((T1)1.0 -
+          kbX = bessi0(beta * std::sqrt((T1)1.0 -
                                    ((T1)2.0 * distX / kernelWidth) *
                                        ((T1)2.0 * distX / kernelWidth))) /
                 kernelWidth;
@@ -557,7 +557,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 
 #pragma acc loop seq
         for (ny = NyL; ny <= NyH; ++ny) {
-          distY = ABS(shiftedKy - ((T1)ny)) / (gridOS);
+          distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
 
           if (params.useLUT) {
             // kbY = kernel_value_LUT(distY, LUT, sizeLUT, kernelWidth);
@@ -570,7 +570,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
               kbY = LUT[k0];
 
           } else {
-            kbY = bessi0(beta * SQRT(1.0 -
+            kbY = bessi0(beta * std::sqrt(1.0 -
                                      (2.0 * distY / kernelWidth) *
                                          (2.0 * distY / kernelWidth))) /
                   kernelWidth;
@@ -608,7 +608,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        const uword sizeLUT, void* stream, CFTHandle *plan,
                         T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
                         T1 *pGridData, T1 *pGridData_d) {
 
@@ -626,7 +626,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                                              (gridOS * gridOS) - 0.8
                                              );
   */
-  nvtxRangePushA("computeFH_CPU_Grid");
+  #ifdef USE_NVTX
+    nvtxRangePushA("computeFH_CPU_Grid");
+  #endif
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -637,13 +639,13 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.imageSize[0] = Nx; // gridSize is gridOS times larger than imageSize.
   params.imageSize[1] = Ny;
   params.imageSize[2] = Nz;
-  params.gridSize[0] = CEIL(gridOS * (T1)Nx);
-  params.gridSize[1] = CEIL(gridOS * (T1)Ny);
+  params.gridSize[0] = std::ceil(gridOS * (T1)Nx);
+  params.gridSize[1] = std::ceil(gridOS * (T1)Ny);
   if (params.gridSize[0] % 2) // 3D case, gridOS is adjusted on the z dimension:
     params.gridSize[0] += 1;  // That why we need to make sure here that the xy
   if (params.gridSize[1] % 2) // dimensions have even sizes.
     params.gridSize[1] += 1;
-  params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
+  params.gridSize[2] = (Nz == 1) ? Nz : (std::ceil(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
 
@@ -678,10 +680,10 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   //       (required by the function gridding_GPU_3D(.))
   if (1 == Nz) {
     // round grid size (xy-axis) to the next divisible-by-two.
-    gridOS = (T1)2.0 * CEIL((gridOS * (T1)Nx) / (T1)2.0) / (T1)Nx;
+    gridOS = (T1)2.0 * std::ceil((gridOS * (T1)Nx) / (T1)2.0) / (T1)Nx;
   } else {
     // round grid size (z-axis) to the next divisible-by-four.
-    gridOS = (T1)4.0 * CEIL((gridOS * (T1)Nz) / (T1)4.0) / (T1)Nz;
+    gridOS = (T1)4.0 * std::ceil((gridOS * (T1)Nz) / (T1)4.0) / (T1)Nz;
   }
 
   int gridNumElems =
@@ -825,7 +827,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   delete[] gridData;
   delete[] gridData_d;
   */
-  nvtxRangePop();
+  #ifdef USE_NVTX
+    nvtxRangePop();
+  #endif
 }
 
 // Calculates the gridded forward fourier transform
@@ -836,7 +840,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void* stream, cufftHandle *plan,
+                        const uword sizeLUT, void* stream, CFTHandle *plan,
                         T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
                         T1 *pGridData_os_d, T1 *pSamples) {
 
@@ -857,7 +861,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   0.8
   );i
   */
-  nvtxRangePushA("computeFd_CPU_Grid");
+  #ifdef USE_NVTX
+    nvtxRangePushA("computeFd_CPU_Grid");
+  #endif
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -868,13 +874,13 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.imageSize[0] = Nx; // gridSize is gridOS times larger than imageSize.
   params.imageSize[1] = Ny;
   params.imageSize[2] = Nz;
-  params.gridSize[0] = CEIL(gridOS * (T1)Nx);
-  params.gridSize[1] = CEIL(gridOS * (T1)Ny);
+  params.gridSize[0] = std::ceil(gridOS * (T1)Nx);
+  params.gridSize[1] = std::ceil(gridOS * (T1)Ny);
   if (params.gridSize[0] % 2) // 3D case, gridOS is adjusted on the z dimension:
     params.gridSize[0] += 1;  // That why we need to make sure here that the xy
   if (params.gridSize[1] % 2) // dimensions have even sizes.
     params.gridSize[1] += 1;
-  params.gridSize[2] = (Nz == 1) ? Nz : (CEIL(gridOS * (T1)Nz)); // 2D or 3D
+  params.gridSize[2] = (Nz == 1) ? Nz : (std::ceil(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
   //complex<T1> *samples = new complex<T1>[params.numSamples];
@@ -889,10 +895,10 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 
   if (1 == Nz) {
     // round grid size (xy-axis) to the next divisible-by-two.
-    gridOS = (T1)2.0 * CEIL((gridOS * (T1)Nx) / (T1)2.0) / (T1)Nx;
+    gridOS = (T1)2.0 * std::ceil((gridOS * (T1)Nx) / (T1)2.0) / (T1)Nx;
   } else {
     // round grid size (z-axis) to the next divisible-by-four.
-    gridOS = (T1)4.0 * CEIL((gridOS * (T1)Nz) / (T1)4.0) / (T1)Nz;
+    gridOS = (T1)4.0 * std::ceil((gridOS * (T1)Nz) / (T1)4.0) / (T1)Nz;
   }
   //
 
@@ -900,7 +906,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
-  nvtxRangePushA("Allocate and intialize memory");
+  #ifdef USE_NVTX
+    nvtxRangePushA("Allocate and intialize memory");
+  #endif
   // allocate gridData
 
   // Have to set 'gridData'
@@ -918,7 +926,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 */
+#ifdef USE_NVTX
   nvtxRangePop();
+#endif
 
   for (int i = 0; i < imageNumElems; i++) {
     pGridData[2*i]     = dR[i];
@@ -1024,7 +1034,9 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   delete[] gridData_os;
   delete[] gridData_os_d;
   */
-  nvtxRangePop();
+  #ifdef USE_NVTX
+    nvtxRangePop();
+  #endif
 }
 
 // Explicit Instantiations
@@ -1070,26 +1082,26 @@ template void computeFH_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, int, int, int,
                                         float gridOS, float *, float *,
                                         const float, const float, const float *,
-                                        const uword, void *, cufftHandle *, float *,
+                                        const uword, void *, CFTHandle *, float *,
                                         float *, float *, float *);
 template void computeFH_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int,
                                          double gridOS, double *, double *,
                                          const double, const double,
-                                         const double *, const uword, void *, cufftHandle *,
+                                         const double *, const uword, void *, CFTHandle *,
                                          double *, double *, double *, double *);
 template void computeFd_CPU_Grid<float>(int, const float *, const float *,
                                         const float *, const float *,
                                         const float *, int, int, int, float,
                                         float *, float *, const float,
                                         const float, const float *,
-                                        const uword, void *, cufftHandle *,
+                                        const uword, void *, CFTHandle *,
                                          float *, float *, float *, float *, float *);
 template void computeFd_CPU_Grid<double>(int, const double *, const double *,
                                          const double *, const double *,
                                          const double *, int, int, int, double,
                                          double *, double *, const double,
                                          const double, const double *,
-                                         const uword, void *, cufftHandle *,
+                                         const uword, void *, CFTHandle *,
                                           double *, double *, double *, double *, double *);

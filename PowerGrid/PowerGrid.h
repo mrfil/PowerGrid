@@ -61,10 +61,6 @@
 #include "MPI/mpipcSENSE.h"
 #endif // PowerGridMPI
 
-#include "DWIRecon.h"
-#include "GdftRecon.h"
-#include "GnufftRecon.h"
-
 //}
 
 #endif

@@ -256,16 +256,16 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
 
       if (common_exprX >= 0)
         common_exprX1 =
-            (SIN(std::sqrt(common_exprX)) / std::sqrt(common_exprX));
+            (std::sin(std::sqrt(common_exprX)) / std::sqrt(common_exprX));
       else
-        common_exprX1 = (SINH(std::sqrt((T1)-1.0 * common_exprX)) /
+        common_exprX1 = (std::sinh(std::sqrt((T1)-1.0 * common_exprX)) /
                          std::sqrt((T1)-1.0 * common_exprX));
 
       if (common_exprY >= 0)
         common_exprY1 =
-            (SIN(std::sqrt(common_exprY)) / std::sqrt(common_exprY));
+            (std::sin(std::sqrt(common_exprY)) / std::sqrt(common_exprY));
       else
-        common_exprY1 = (SINH(std::sqrt((T1)-1.0 * common_exprY)) /
+        common_exprY1 = (std::sinh(std::sqrt((T1)-1.0 * common_exprY)) /
                          std::sqrt((T1)-1.0 * common_exprY));
 
       gridKernel = common_exprX1 * common_exprY1;
@@ -349,23 +349,23 @@ void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
 
         if (common_exprX >= 0)
           common_exprX1 =
-              (SIN(std::sqrt(common_exprX)) / std::sqrt(common_exprX));
+              (std::sin(std::sqrt(common_exprX)) / std::sqrt(common_exprX));
         else
-          common_exprX1 = (SINH(std::sqrt(-1.0 * common_exprX)) /
+          common_exprX1 = (std::sinh(std::sqrt(-1.0 * common_exprX)) /
                            std::sqrt(-1.0 * common_exprX));
 
         if (common_exprY >= 0)
           common_exprY1 =
-              (SIN(std::sqrt(common_exprY)) / std::sqrt(common_exprY));
+              (std::sin(std::sqrt(common_exprY)) / std::sqrt(common_exprY));
         else
-          common_exprY1 = (SINH(std::sqrt(-1.0 * common_exprY)) /
+          common_exprY1 = (std::sinh(std::sqrt(-1.0 * common_exprY)) /
                            std::sqrt(-1.0 * common_exprY));
 
         if (common_exprZ >= 0)
           common_exprZ1 =
-              (SIN(std::sqrt(common_exprZ)) / std::sqrt(common_exprZ));
+              (std::sin(std::sqrt(common_exprZ)) / std::sqrt(common_exprZ));
         else
-          common_exprZ1 = (SINH(std::sqrt(-1.0 * common_exprZ)) /
+          common_exprZ1 = (std::sinh(std::sqrt(-1.0 * common_exprZ)) /
                            std::sqrt(-1.0 * common_exprZ));
 
         T1 gridKernel = common_exprX1 * common_exprY1 * common_exprZ1;

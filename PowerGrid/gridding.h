@@ -31,33 +31,18 @@ Developed by:
 #include <cstdlib>
 
 #ifdef _OPENACC // GPU Version
-#include "accelmath.h"
-#include "cufft.h"
-#include "fftGPU.h"
-#include "fftCPU.h"
-#include "griddingSupport.h"
-#include "griddingTypes.h"
-#include "openacc.h"
-
-#define MIN(a, b) std::min(a, b)
-#define MAX(a, b) std::max(a, b)
-#define SQRT(a) std::sqrt(a)
-#define CEIL(a) std::ceil(a)
-#define FLOOR(a) std::floor(a)
-#define ABS(a) std::abs(a)
-
+    #include "cufft.h"
+    #include "fftGPU.h"
+    #include "fftCPU.h"
+    #include "griddingSupport.h"
+    #include "griddingTypes.h"
+    #include "openacc.h"
+    #define CFTHandle cufftHandle
 #else // CPU version
-
-#include "fftCPU.h"
-#include "griddingSupport.h"
-#include "griddingTypes.h"
-
-#define MIN(a, b) std::min(a, b)
-#define MAX(a, b) std::max(a, b)
-#define SQRT(a) std::sqrt(a)
-#define CEIL(a) std::ceil(a)
-#define FLOOR(a) std::floor(a)
-#define ABS(a) std::abs(a)
+    #include "fftCPU.h"
+    #include "griddingSupport.h"
+    #include "griddingTypes.h"
+    #define CFTHandle void
 #endif
 
 using namespace arma;
@@ -97,7 +82,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void *stream, cufftHandle *plan,
+                        const uword sizeLUT, void *stream, CFTHandle *plan,
                         T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
                         T1 *pGridData, T1 *pGridData_d);
 
@@ -109,7 +94,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         int Nx, int Ny, int Nz, T1 gridOS,
                         T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
-                        const uword sizeLUT, void *stream, cufftHandle *plan,
+                        const uword sizeLUT, void *stream, CFTHandle *plan,
                         T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
                         T1 *pGridData_os_d, T1 *pSamples);
 
@@ -158,24 +143,24 @@ computeFH_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int,
                           float gridOS, float *, float *, const float,
                           const float, const float *, const uword, void *,
-                          cufftHandle *, float *, float *, float *, float *);
+                          CFTHandle *, float *, float *, float *, float *);
 extern template void
 computeFH_CPU_Grid<double>(int, const double *, const double *, const double *,
                            const double *, const double *, int, int, int,
                            double gridOS, double *, double *, const double,
                            const double, const double *, const uword, void *,
-                           cufftHandle *, double *, double *, double *, double *);
+                           CFTHandle *, double *, double *, double *, double *);
 extern template void
 computeFd_CPU_Grid<float>(int, const float *, const float *, const float *,
                           const float *, const float *, int, int, int, float,
                           float *, float *, const float, const float,
-                          const float *, const uword, void *, cufftHandle *,
+                          const float *, const uword, void *, CFTHandle *,
                           float *, float *, float *, float *, float *);
 extern template void
 computeFd_CPU_Grid<double>(int, const double *, const double *, const double *,
                            const double *, const double *, int, int, int,
                            double, double *, double *, const double,
-                           const double, const double *, const uword, void *, cufftHandle *,
+                           const double, const double *, const uword, void *, CFTHandle *,
                            double *, double *, double *, double *, double *);
 
 #endif

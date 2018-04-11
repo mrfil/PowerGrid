@@ -74,15 +74,15 @@ RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
     cd - && rm -rf pgi-travis
 
 ENV PGI_VERSION 17.10
-ENV PGI_INSTALL_DIR "/usr/local/pgi"
-ENV PGI_HOME "${PGI_INSTALL_DIR}"/linux86-64/"${PGI_VERSION}"
-ENV PGI_BIN_DIR "${PGI_HOME}"/bin
-ENV PGI_LIB_DIR "${PGI_HOME}"/lib
-ENV PGI_MAN_DIR "${PGI_HOME}"/man
+ENV PGI_INSTALL_DIR /usr/local/pgi
+ENV PGI_HOME ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}
+ENV PGI_BIN_DIR ${PGI_HOME}/bin
+ENV PGI_LIB_DIR ${PGI_HOME}/lib
+ENV PGI_MAN_DIR ${PGI_HOME}/man
 
-ENV PATH            "${PGI_BIN_DIR}:${PATH}"
-ENV LD_LIBRARY_PATH "${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
-ENV MANPATH         "${PGI_MAN_DIR}:${MANPATH}"
+ENV PATH            ${PGI_BIN_DIR}:${PATH}
+ENV LD_LIBRARY_PATH ${PGI_LIB_DIR}:${LD_LIBRARY_PATH}
+ENV MANPATH         ${PGI_MAN_DIR}:${MANPATH}
 
 
 # Install Armadillo
@@ -100,10 +100,10 @@ RUN git clone https://github.com/conradsnicta/armadillo-code; \
 
 # Install Latest CMake
 
-RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
+RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
-	tar -xvf ./cmake-3.8.2-Linux-x86_64.tar.gz; \
-	cd ./cmake-3.8.2-Linux-x86_64; \
+	tar -xvf ./cmake-3.9.4-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.9.4-Linux-x86_64; \
 	cp -r bin /usr/; \
 	cp -r doc /usr/share/; \
 	cp -r man /usr/share/; \

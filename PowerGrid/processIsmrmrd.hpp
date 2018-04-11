@@ -331,7 +331,7 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 
 	//Initialization
 	Mat<std::complex<T1>> acqWork;
-  Cube<std::complex<T1>> dataWork;
+  	Cube<std::complex<T1>> dataWork;
 	Mat<T1> kxWork, kyWork, kzWork, tvecWork;
 	uword numAcqTotal = d->getNumberOfAcquisitions();
 	bool firstData = true;
@@ -339,9 +339,9 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 	std::cout << "Num of acquisitions in dataset = " << numAcqTotal << std::endl;
 	int acqIndx = -1;
 	int numAcqs = 0;
-  uword nro = -1, nc = -1;;
+  	int nro = -1, nc = -1;
 	//for (uword acqIndx = 0; acqIndx < numAcq; acqIndx++) {
-  for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
+  	for (uword NPar = 0; NPar < acqTrack->NParMax; NPar++) {
 		for (uword NShot = 0; NShot < acqTrack->NShotMax; NShot++) {
 
 			acqIndx = acqTrack->acqArray(NShot, NPar, NSlice, NRep, NAve, NEcho, NPhase);

@@ -28,15 +28,7 @@
 #define PowerGrid_griddingSupport_h
 
 #ifdef _OPENACC
-#include "accelmath.h"
 #include "openacc.h"
-#define COS(a) cos(a)
-#define SIN(a) sin(a)
-#define SINH(a) sinh(a)
-#else // On CPU
-#define COS(a) std::cos(a)
-#define SIN(a) std::sin(a)
-#define SINH(a) std::sinh(a)
 #endif
 
 #include "PGIncludes.h"
