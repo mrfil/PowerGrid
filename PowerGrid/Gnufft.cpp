@@ -29,7 +29,7 @@ Developed by:
  *****************************************************************************/
 
 #include "Gnufft.h"
-
+#include <chrono>
 template <typename T1>
 Gnufft<T1>::Gnufft(
     uword dataLength, T1 gridos, uword nx, uword ny, uword nz,
@@ -37,6 +37,7 @@ Gnufft<T1>::Gnufft(
     const Col<T1> &i2,
     const Col<T1> &i3) // Change these arguments as you need to setup the object
 {
+  
   // cout << "Entering the class constructor for Ggrid" << endl;
   n1 = nx * ny * nz;
   n2 = dataLength;
@@ -64,15 +65,18 @@ Gnufft<T1>::Gnufft(
   kz = new T1[n2];
 
   for (int i = 0; i < n2; i++) {
-    if (abs(k1(i)) > (Nx / (T1)2.0 - .1) || abs(k2(i)) > (Ny / (T1)2.0 - .1) ||
-        abs(k3(i)) > (Nz / (T1)2.0 - .1)) {
-
-      cout << "Error:k-space trajectory out of range [-N/2,N/2]:\n      "
+    if (abs(k1(i)) > ((Nx / (T1)2.0) * 1.05) || abs(k2(i)) > ((Ny / (T1)2.0) * 1.05) ||
+        abs(k3(i)) > ((Nz / (T1)2.0) * 1.05)) {
+      
+      cout << "Warning :k-space trajectory out of range [-N/2,N/2]:\n      "
             << "gridding requires that k-space should be contained within the "
             << "window -N/2 to N/2" << endl;
       cout << "kx = " << k1(i) << " ky = " << k2(i)<< " kz = " << k3(i)
            << " i = " << i << endl;
       //exit(1);
+      kx[i] = k1(i);
+      ky[i] = k2(i);
+      kz[i] = k3(i);
     } else {
       kx[i] = k1(i);
       ky[i] = k2(i);
@@ -80,6 +84,12 @@ Gnufft<T1>::Gnufft(
     }
   }
 
+  XformedData.set_size(n2);
+  XformedImg.set_size(n1);
+  realXformedData.set_size(n2);
+  imagXformedData.set_size(n2);
+  realXformedImg.set_size(n1);
+  imagXformedImg.set_size(n1);
   // Set Beta
   kernelWidth = 4.0;
   beta = MRI_PI *
@@ -122,6 +132,7 @@ Gnufft<T1>::Gnufft(
 
 // Class destructor to free LUT
 template <typename T1> Gnufft<T1>::~Gnufft() {
+  RANGE()
   #ifdef _OPENACC
     cufftDestroy(plan);
   #endif
@@ -148,12 +159,11 @@ template <typename T1> Gnufft<T1>::~Gnufft() {
 // Overloaded methods for forward and adjoint transform
 // Forward transform operation using gridding
 template <typename T1>
-Col<complex<T1>> Gnufft<T1>::
+inline Col<complex<T1>> Gnufft<T1>::
 operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 {
-  #ifdef USE_NVTX
-    nvtxRangePushA("Gnufft::operator*");
-  #endif
+RANGE()
+
   // cout << "Entering forward operator overload in Ggrid." << endl;
   // This is just specifying size assuming things are the same size, change as
   // necessary
@@ -175,8 +185,8 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 
   // cout << "Allocating memory for transformed data." << endl;
 
-  Col<T1> realXformedData(this->n2);
-  Col<T1> imagXformedData(this->n2);
+  //Col<T1> realXformedData(this->n2);
+  //Col<T1> imagXformedData(this->n2);
   // realXformedData.zeros();
   // imagXformedData.zeros();
   // cout << "Grabbing pointers for new memory." << endl;
@@ -220,22 +230,16 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<complex<T1>> XformedData(this->n2);
+  //Col<complex<T1>> XformedData(this->n2);
   XformedData.set_real(realXformedData);
   XformedData.set_imag(imagXformedData);
-  #ifdef USE_NVTX
-    nvtxRangePop();
-  #endif
-  return conv_to<Col<complex<T1>>>::from(
-      XformedData); // Return a vector of type T1
+
+  return XformedData; // Return a vector of type T1
 }
 
 // Adjoint transform operation
 template <typename T1>
-Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
-  #ifdef USE_NVTX
-    nvtxRangePushA("Gnufft::operator/");
-  #endif
+inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // uword dataLength = n2;
   // Let's trim the operations to avoid data overhead and transfers
   // Basically if we know that the data points are zero, they have no impact
@@ -249,14 +253,14 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   T1 *realDataPtr = realData.memptr();
   T1 *imagDataPtr = imagData.memptr();
 
-  Col<T1> realXformedData(n1);
-  Col<T1> imagXformedData(n1);
+  //Col<T1> realXformedData(n1);
+  //Col<T1> imagXformedData(n1);
 
   // realXformedData.zeros();
   // imagXformedData.zeros();
 
-  T1 *realXformedDataPtr = realXformedData.memptr();
-  T1 *imagXformedDataPtr = imagXformedData.memptr();
+  T1 *realXformedDataPtr = realXformedImg.memptr();
+  T1 *imagXformedDataPtr = imagXformedImg.memptr();
   // Process data here, like calling a brute force transform, dft...
   // I assume you create the pointers to the arrays where the transformed data
   // will be stored
@@ -289,16 +293,12 @@ Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
-  Col<complex<T1>> XformedData(n1);
-  XformedData.set_real(realXformedData);
-  XformedData.set_imag(imagXformedData);
+  //Col<complex<T1>> XformedImg(n1);
+  XformedImg.set_real(realXformedImg);
+  XformedImg.set_imag(imagXformedImg);
   // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
-  // savemat("/shared/mrfil-data/data/PowerGridTest/64_64_16_4coils/ggrid.mat","img",XformedData);
-  #ifdef USE_NVTX
-    nvtxRangePop();
-    #endif
-  return conv_to<Col<complex<T1>>>::from(
-      XformedData); // Return a vector of type T1
+
+  return XformedImg; // Return a vector of type T1
 }
 /*
 template <typename T1>

@@ -60,6 +60,12 @@ public:
   CxT1 i = CxT1(0., 1.);
   Mat<CxT1> Wo;
   Mat<CxT1> WoH;
+  Col<T1> RowOnes;
+  mutable Mat<complex<T1>> outData;
+  mutable Mat<complex<T1>> outImg;
+  mutable Mat<complex<T1>> tempD;
+  mutable Mat<complex<T1>> tempAD;
+
   // Class constructor
   TimeSegmentation(Tobj &G, Col<T1> map_in, Col<T1> timeVec_in, uword a,
                    uword b, uword c, uword interptype = 1, uword shots = 1);

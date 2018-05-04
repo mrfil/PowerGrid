@@ -88,6 +88,12 @@ public:
   complex<T1> *gridData, *gridData_d, *gridData_os, *gridData_os_d;
   complex<T1> *samples;
 
+  mutable Col<CxT1> XformedData;
+  mutable Col<CxT1> XformedImg;  
+  mutable Col<T1> realXformedData;
+  mutable Col<T1> imagXformedData;
+  mutable Col<T1> realXformedImg;
+  mutable Col<T1> imagXformedImg;
   // Overloaded methods for forward and adjoint transform
   // Forward transform operation using gridding
   Col<CxT1> operator*(const Col<CxT1> &d) const;

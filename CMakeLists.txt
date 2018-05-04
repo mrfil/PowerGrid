@@ -6,10 +6,10 @@ cmake_minimum_required(VERSION 3.2) #CMake version 3.2 required to properly supp
 set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_EXTENSIONS ON)
 
-project("PowerGrid" CXX)
+project("PowerGrid" C CXX)
 
 option(OPENACC "Enable OpenACC support" ON)
-option(MPISupport "Enable MPI Support" ON)
+option(MPISupport "Enable MPI Support" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -29,14 +29,16 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 if(OPENACC)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS /usr/local/cuda/include
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2017/cuda/8.0/include /usr/local/pgi/linux86-64/2017/cuda/8.0/include /usr/local/cuda/include
 		$ENV{CUDATOOLKIT_HOME}/include )
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS /usr/local/cuda/lib64
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64
 	$ENV{CUDATOOLKIT_HOME}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
-	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 /usr/local/cuda/lib64)
+	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
+	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS /software/cuda-toolkit-8.0/lib64 $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64)
+	set(LIBS ${LIBS} ${nvToolsExt_LIBRARIES})
 	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
 	find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
 	find_library(FFTWF_LIBRARIES NAMES fftw3f HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
@@ -58,12 +60,14 @@ find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 message(${ARMADILLO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${ARMADILLO_LIBRARIES})
-
+#set(HDF5_ROOT /usr/local)
+#find_package(HDF5)
 find_package(HDF5 COMPONENTS CXX)
 include_directories(${HDF5_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${HDF5_C_LIBRARIES})
 set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
-
+#find_library(GPERFTOOLS_LIBRARIES NAMES profiler libprofiler.so.0 HINTS /usr/)
+#set(LIBS ${LIBS} ${GPERFTOOLS_LIBRARIES})
 include_directories(Support/ArmaExtensions)
 
 #Define files to be compiled
@@ -117,21 +121,22 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O4 -Mvect=simd,assoc,short,prefetch,idiom -Mcache_align -Mconcur -Minfo=accel,ccff -ta=tesla:cc35,cc60,cuda8.0 -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -ta=tesla:cuda9.0 -pgf77libs")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=multicore -pgf77libs -fpermissive")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
 		else()
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive ")
 		endif()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
     endif()
 endif()
 
 #add_definitions(-D__STRICT_ANSI__)
-#add_definitions(-DARMA_NO_DEBUG)
-#add_definitions(-DARMA_DONT_USE_CXX11)
-#add_definitions(-DARMA_USE_OPENMP)
-
+add_definitions(-DARMA_NO_DEBUG)
+add_definitions(-DARMA_DONT_USE_HDF5)
+add_definitions(-DARMA_DONT_USE_OPENMP)
+#add_definitions(-DARMA_SIMPLE_LOOPS)
+#add_definitions(-DUSE_NVTX)
 if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
 endif (MPISupport)

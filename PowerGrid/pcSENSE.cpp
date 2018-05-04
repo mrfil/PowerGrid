@@ -107,12 +107,13 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
 // directly rather return another vector of type T1
 template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
-
+        RANGE()
         Mat<complex<T1> > outData = zeros<Mat<complex<T1> > >(Nd, Ns * Nc);
-        Mat<complex<T1> > temp;
+        Mat<complex<T1> > expiPMap = exp(-i * PMap);
         Mat<T1> temp2;
-        // Shot loop. Each shot has its own kspace trajectory
-        for (unsigned int jj = 0; jj < Ns; jj++) {
+        // Coil loop. Each coil exists for each shot, so we need to work with these.
+        for (unsigned int ii = 0; ii < Nc; ii++) {
+
                 /*
                    Gnufft <T1>*  G = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj),
                    Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
@@ -130,10 +131,10 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
                    std::cout << "A.L = " << AObj->L << std::endl;
                    std::cout << "A.Nshots = " << AObj->Nshots << std::endl;
                  */
-                // Coil loop. Each coil exists for each shot, so we need to work with these.
-                for (unsigned int ii = 0; ii < Nc; ii++) {
+                // Shot loop. Each shot has its own kspace trajectory
+                for (unsigned int jj = 0; jj < Ns; jj++) {
                         outData.col(jj + ii * Ns) =
-                                (*AObj[jj]) * (d % (SMap.col(ii) % exp(-i * (PMap.col(jj)))));
+                                (*AObj[jj]) * (d % (SMap.col(ii) % expiPMap.col(jj)));
                         //std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
                 }
                 // delete AObj;
@@ -147,13 +148,14 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
 // coil data by the SENSE map.
 template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
-
+        nvtxRangePushA("pcSENSE::operator/");
         Mat<complex<T1> > inData = reshape(d, Nd, Ns * Nc);
-
+        Mat<complex<T1> > expiPMap = conj(exp(-i * PMap));
+        Mat<complex<T1> > conjSMap = conj(SMap);
         Col<complex<T1> > outData = zeros<Col<complex<T1> > >(Ni);
-        // Shot Loop. Each shot has it's own k-space trajectory
-        for (unsigned int jj = 0; jj < Ns; jj++) {
-
+        // Coil Loop - for each shot we have a full set of coil data.
+        for (unsigned int ii = 0; ii < Nc; ii++) {
+        
                 // Use grid or DFT?
                 // Gdft<T1> G(Nd, Ni, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz,FMap,
                 // vectorise(Tvec.col(jj)));
@@ -164,17 +166,19 @@ Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
                    TimeSegmentation<T1,Gnufft<T1>>(*G, vectorise(FMap),
                    vectorise(Tvec.col(jj)), Nd, Nx * Ny * Nz, L, type);
                  */
-                // Coil Loop - for each shot we have a full set of coil data.
-                for (unsigned int ii = 0; ii < Nc; ii++) {
 
-                        outData += conj(SMap.col(ii) % exp(-i * (PMap.col(jj)))) %
+                // Shot Loop. Each shot has it's own k-space trajectory
+                for (unsigned int jj = 0; jj < Ns; jj++) {
+                        //outData += conj(SMap.col(ii) % exp(-i * (PMap.col(jj)))) %
+                        //           ((*AObj[jj]) / inData.col(jj + ii * Ns));
+                        outData += (conjSMap.col(ii) % expiPMap.col(jj)) %
                                    ((*AObj[jj]) / inData.col(jj + ii * Ns));
                         //std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
                 }
                 // delete AObj;
                 // delete G;
         }
-
+        nvtxRangePop();
         // equivalent to returning col(output) in MATLAB with IRT
         return vectorise(outData);
 }

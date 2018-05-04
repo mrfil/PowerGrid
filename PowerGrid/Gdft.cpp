@@ -35,6 +35,7 @@ Gdft<T1>::Gdft(
     const Col<T1> &i1, const Col<T1> &i2, const Col<T1> &i3, const Col<T1> &f1,
     const Col<T1> &t1) // Change these arguments as you need to setup the object
 {
+  
   n1 = a;
   n2 = b;
   kx = k1;
@@ -46,11 +47,11 @@ Gdft<T1>::Gdft(
   FM = f1;
   t = t1;
 }
-
 // Overloaded methods for forward and adjoint transform
 // Forward transform operation
 template <typename T1>
 Col<complex<T1>> Gdft<T1>::operator*(const Col<complex<T1>> &d) const {
+  RANGE()
   // This is just specifying size assuming things are the same size, change as
   // necessary
   Col<T1> realData = real(d);
@@ -98,7 +99,7 @@ Col<complex<T1>> Gdft<T1>::operator*(const Col<complex<T1>> &d) const {
 // Adjoint transform operation
 template <typename T1>
 Col<complex<T1>> Gdft<T1>::operator/(const Col<complex<T1>> &d) const {
-
+  RANGE()
   Col<T1> realData = real(d);
   Col<T1> imagData = imag(d);
 

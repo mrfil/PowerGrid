@@ -38,8 +38,12 @@ SENSE<T1, Tobj>::SENSE(Tobj &G, Col<complex<T1>> SENSEmap, uword a, uword b,
   G_obj = &G;
   SMap = reshape(SENSEmap, n2, nc);
   conjSMap = conj(SMap);
-  outData.set_size(n1,nc);
-  outImg.set_size(n2,nc);
+  outData.set_size(this->n1, this->nc);
+  outImg.set_size(this->n1, 1);
+
+  coilImages = zeros<Mat<complex<T1>>>(this->n2,this->nc);
+  coilWeightData.set_size(n1,nc);
+  coilWeightImg.set_size(n2,nc);
 }
 
 // Overloaded operators go here
@@ -48,49 +52,63 @@ SENSE<T1, Tobj>::SENSE(Tobj &G, Col<complex<T1>> SENSEmap, uword a, uword b,
 // d is the vector of data of type T1, note it is const, so we don't modify it
 // directly rather return another vector of type T1
 template <typename T1, typename Tobj>
-Col<complex<T1>> SENSE<T1, Tobj>::operator*(const Col<complex<T1>> &d) const {
+inline Col<complex<T1>> SENSE<T1, Tobj>::operator*(const Col<complex<T1>> &d) const {
+  RANGE()
+  auto start = std::chrono::high_resolution_clock::now();
 
   //Mat<complex<T1>> outData = zeros<Mat<complex<T1>>>(this->n1, this->nc);
   // Col<complex<T1>> temp;
   // In SENSE we store coil data using the columns of the data matrix, and we
   // weight the data by the coil sensitivies from the SENSE map
-  outImg = this->SMap;
-  #pragma omp parallel for schedule(dynamic) shared(outData, d, SMap)
-  for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outImg.col(ii) %= d;
+  /*
+  #pragma omp parallel for shared(coilWeightImg)
+  for (int ii = 0; ii < this->nc; ii++) {
+    coilWeightImg.col(ii) = d % SMap.col(ii);
   }
-
+  */
   for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outData.col(ii) = (*this->G_obj) * outImg.col(ii);
-  }
 
+    outData.col(ii) = (*G_obj) * (d % SMap.col(ii));
+
+  }
+  //Col<complex<T1>> out = vectorise(outData);
   // equivalent to returning col(output) in MATLAB with IRT
+  auto finish = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<float> elapsed = finish - start;
+  std::cout << "SENSE For Elapsed time: " << elapsed.count() << " s\n";
   return vectorise(outData);
 }
 
 // For the adjoint operation, we have to weight the adjoint transform of the
 // coil data by the SENSE map.
 template <typename T1, typename Tobj>
-Col<complex<T1>> SENSE<T1, Tobj>::operator/(const Col<complex<T1>> &d) const {
+inline Col<complex<T1>> SENSE<T1, Tobj>::operator/(const Col<complex<T1>> &d) const {
+  RANGE()
+    auto start = std::chrono::high_resolution_clock::now();
 
-  //Mat<complex<T1>> inData = reshape(d, this->n1, this->nc);
+  Mat<complex<T1>> inData = reshape(d, this->n1, this->nc);
 
   //Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
+  outImg.zeros();
   // Mat <complex<T1>> coilImages(n2,nc);
 
   for (unsigned int ii = 0; ii < this->nc; ii++) {
-    // coilImages.col(ii) = (*this->G_obj)/inData.col(ii);
-    outImg.col(ii) = (*this->G_obj) / d.subvec((ii)*n1, ((ii+1)*n1)-1);
+     //coilImages.col(ii) = conjSMap.col(ii) % ((*G_obj) / inData.col(ii));
+    outImg+= this->conjSMap.col(ii) % ((*this->G_obj) / inData.col(ii));
   }
 
-  #pragma omp parallel for schedule(dynamic) shared(outImg, conjSMap)
-  for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outImg.col(ii) %= this->conjSMap.col(ii);
-  }
-  // outData = sum(conj(SMap)%coilImages,2);
+  //#pragma omp parallel for shared(coilWeightImg)
+  //for (unsigned int ii = 0; ii < this->nc; ii++) {
+  //  coilWeightImg.unsafe_col(ii) = conjSMap.unsafe_col(ii) % coilImages.unsafe_col(ii);
+  //}
 
-  // equivalent to returning col(output) in MATLAB with IRT
-  return sum(outImg,1);
+
+  auto finish = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<float> elapsed = finish - start;
+  std::cout << "SENSE Adj Elapsed time: " << elapsed.count() << " s\n";
+  return outImg;
 }
 
 // Explicit Instantiations

@@ -33,7 +33,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
                         T1 *__restrict pGData) {
-
+  RANGE()
   unsigned int NxL, NxH;
   unsigned int NyL, NyH;
 
@@ -162,6 +162,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
                         ReconstructionSample<T1> *__restrict sample,
                         const T1 *LUT, const uword sizeLUT,
                         T1 *pGData) {
+  RANGE()
   int NxL, NxH;
   int NyL, NyH;
   int NzL, NzH;
@@ -294,7 +295,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
                         const T1 *ky, T1 beta, T1 *__restrict pSamples,
                         const T1 *LUT, const uword sizeLUT,
                         T1 *__restrict pGridData) {
-
+  RANGE()
   int NxL, NxH;
   int NyL, NyH;
   // unsigned int NzL, NzH;
@@ -448,6 +449,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
                         const T1 *ky, const T1 *kz, T1 beta,
                         T1 *__restrict pSamples, const T1 *LUT,
                         const uword sizeLUT, T1 *__restrict pGridData) {
+  RANGE()
   int NxL, NxH;
   int NyL, NyH;
   int NzL, NzH;
@@ -611,7 +613,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         const uword sizeLUT, void* stream, CFTHandle *plan,
                         T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
                         T1 *pGridData, T1 *pGridData_d) {
-
+ 
   /*
    *  Based on Eqn. (5) of Beatty's gridding paper:
    *  "Rapid Gridding Reconstruction With a Minimal Oversampling Ratio"
@@ -626,9 +628,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                                              (gridOS * gridOS) - 0.8
                                              );
   */
-  #ifdef USE_NVTX
-    nvtxRangePushA("computeFH_CPU_Grid");
-  #endif
+  RANGE()
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -827,9 +827,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   delete[] gridData;
   delete[] gridData_d;
   */
-  #ifdef USE_NVTX
-    nvtxRangePop();
-  #endif
+
 }
 
 // Calculates the gridded forward fourier transform
@@ -861,9 +859,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   0.8
   );i
   */
-  #ifdef USE_NVTX
-    nvtxRangePushA("computeFd_CPU_Grid");
-  #endif
+  RANGE()
   parameters<T1> params;
   params.sync = 0;
   params.binsize = 128;
@@ -906,9 +902,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
-  #ifdef USE_NVTX
-    nvtxRangePushA("Allocate and intialize memory");
-  #endif
+
   // allocate gridData
 
   // Have to set 'gridData'
@@ -926,9 +920,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
   T1 *pGridData = reinterpret_cast<T1 *>(gridData);
 */
-#ifdef USE_NVTX
-  nvtxRangePop();
-#endif
+
 
   for (int i = 0; i < imageNumElems; i++) {
     pGridData[2*i]     = dR[i];
@@ -1034,9 +1026,7 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   delete[] gridData_os;
   delete[] gridData_os_d;
   */
-  #ifdef USE_NVTX
-    nvtxRangePop();
-  #endif
+
 }
 
 // Explicit Instantiations

@@ -45,8 +45,9 @@
 //#include "../Support/CeempleComplex.h"
 #ifdef _OPENACC
 #include "nvToolsExt.h"
+#include "cuda_profiler_api.h"
 #endif
-
+#include "Tracer.hpp"
 #include "../Support/CeempleArmadillo.h"
 //#include "../Support/CeempleMatio.h"
 

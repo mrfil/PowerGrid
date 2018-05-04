@@ -42,6 +42,7 @@ TVPenalty<T1>::TVPenalty(uword nx, uword ny, uword nz, T1 beta, T1 delta, uword 
 // Class Methods
 template <typename T1>
 Col<complex<T1>> TVPenalty<T1>::wpot(const Col<complex<T1>> &d) const {
+  RANGE()
   Col<T1> temp = abs(d / this->Delta);
   Col<complex<T1>> out =
       1.0 / sqrt(1.0 + conv_to<Col<complex<T1>>>::from(temp % temp));
@@ -50,6 +51,7 @@ Col<complex<T1>> TVPenalty<T1>::wpot(const Col<complex<T1>> &d) const {
 
 template <typename T1>
 Col<complex<T1>> TVPenalty<T1>::dpot(const Col<complex<T1>> &d) const {
+  RANGE()
   Col<T1> temp = abs(d / this->Delta);
   Col<complex<T1>> out =
       d / sqrt(1.0 + conv_to<Col<complex<T1>>>::from(temp % temp));
@@ -58,6 +60,7 @@ Col<complex<T1>> TVPenalty<T1>::dpot(const Col<complex<T1>> &d) const {
 
 template <typename T1>
 Col<complex<T1>> TVPenalty<T1>::pot(const Col<complex<T1>> &d) const {
+  RANGE()
   Col<complex<T1>> out = conv_to<Col<complex<T1>>>::from(
       this->Delta * this->Delta *
       (sqrt(1.0 + (abs(d / this->Delta) % abs(d / this->Delta))) - 1.0));

@@ -53,7 +53,7 @@ acqTracking::acqTracking(ISMRMRD::Dataset *dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 
 	// Now we can sort the acquisitions
 	for (uword acqIndx = 0; acqIndx < numAcq; acqIndx++) {
-		std::cout << "Scanning through acquisition # " << acqIndx << std::endl;
+		//std::cout << "Scanning through acquisition # " << acqIndx << std::endl;
 		// Scanning through the file.
 		d->readAcquisition(acqIndx, acq);
 		//uword nro = acq.number_of_samples();
@@ -69,7 +69,7 @@ acqTracking::acqTracking(ISMRMRD::Dataset *dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 		NPhase = encIdx.phase;
 
 
-
+		/*
 		std::cout << "Writing back to the NDArray" << std::endl;
 		std::cout << "NPar = "   << NPar << std::endl;
 		std::cout << "NShot = "  << NShot << std::endl;
@@ -78,7 +78,7 @@ acqTracking::acqTracking(ISMRMRD::Dataset *dataSet, ISMRMRD::IsmrmrdHeader &hdr)
 		std::cout << "NAvg = "   << NAvg << std::endl;
 		std::cout << "NEcho = "  << NEcho << std::endl;
 		std::cout << "NPhase = " << NPhase << std::endl;
-
+		*/
 		// Sort the indexes as we need to.
 		this->acqArray(NShot,NPar,NSlice,NRep,NAvg,NEcho,NPhase) = acqIndx;
 	}

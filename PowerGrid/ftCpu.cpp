@@ -98,8 +98,10 @@ void ftCpu(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata_i,
            const int num_i) {
 
   T1 sumr = 0, sumi = 0, expr = 0, tpi = 0,
-     cosexpr = 0, sinexpr = 0, kxtpi = 0,
+      kxtpi = 0,
      kytpi = 0, kztpi = 0;
+
+     float cosexpr = 0, sinexpr = 0;
   //T1   kzdeltaz = 0, kziztpi = 0, kx_N = 0, ky_N = 0, t_tpi = 0;
   int i = 0, j = 0;
   //tpi = 2 * MRI_PI;
@@ -123,9 +125,10 @@ void ftCpu(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata_i,
 #pragma acc loop vector(128)
       for (j = 0; j < num_i; j++) { // j is the pixel point in image-space
         expr = (kxtpi * ix[j] + kytpi * iy[j] + kztpi * iz[j] + (FM[j] * myti));
-
-        cosexpr = cosf(expr);
+        
         sinexpr = sinf(expr);
+        cosexpr = cosf(expr);
+        //my_sincosf(expr, &sinexpr, &cosexpr);
 
         sumr += (cosexpr * idata_r[j]) + (sinexpr * idata_i[j]);
         sumi += (-sinexpr * idata_r[j]) + (cosexpr * idata_i[j]);
@@ -197,8 +200,8 @@ void iftCpu(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdata_i,
 
         // cosexpr = COS(expr); sinexpr = SIN(expr);
 
-        cosexpr = cosf(expr);
         sinexpr = sinf(expr);
+        cosexpr = cosf(expr);
 
         sumr += (cosexpr * kdata_r[i]) - (sinexpr * kdata_i[i]);
         sumi += (sinexpr * kdata_r[i]) + (cosexpr * kdata_i[i]);

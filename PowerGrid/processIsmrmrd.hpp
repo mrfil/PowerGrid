@@ -32,6 +32,7 @@ using namespace arma;
 typedef std::tuple<std::size_t,std::size_t,std::size_t> D3tuple;
 
 void openISMRMRDData(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTracking *&acqTrack) {
+	RANGE()
     std::cout << "trying to create an ISMRMD::Dataset object" << std::endl;
     d = new ISMRMRD::Dataset(inputDataFile.c_str(), "dataset", false);
     //std::cout << "address of the  ISMRMD::Dataset object = " << d << std::endl;
@@ -60,19 +61,21 @@ void closeISMRMRDData( ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr, acqTra
 //Write conversion from Image format to Armadillo matrix format for further use.
 template<typename T1>
 arma::Col<T1> convertFromNDArrayToArma(ISMRMRD::NDArray<T1> &inArray) {
+	RANGE()
     std::cout << "Converting NDArray to Arma Column" << std::endl;
     arma::Col<T1> temp;
     arma::uword numElems = inArray.getNumberOfElements();
     std::cout << "Num Elements to be converted = " << numElems << std::endl;
-    const T1 *auxData = NULL;
+    T1 *auxData = NULL;
     auxData = inArray.getDataPtr();
-    temp = arma::Col<T1>(auxData, numElems);
+    temp = arma::Col<T1>(auxData, numElems, false, false);
 
     return temp;
 }
 
 template<typename T1>
 arma::Col<T1> getISMRMRDFieldMap(ISMRMRD::Dataset *d) {
+	RANGE()
     const std::string fieldMap = "FieldMap";
     arma::Col<double> FM_temp;
     arma::Col<T1> FM;
@@ -88,6 +91,7 @@ arma::Col<T1> getISMRMRDFieldMap(ISMRMRD::Dataset *d) {
 
 template<typename T1>
 arma::Col<T1> getISMRMRDSenseMap(ISMRMRD::Dataset *d) {
+	RANGE()
     const std::string senseMap = "SENSEMap";
     arma::Col<std::complex<double>> sen_temp;
     arma::Col<T1> sen;
@@ -107,6 +111,7 @@ arma::Col<T1> getISMRMRDSenseMap(ISMRMRD::Dataset *d) {
 
 template<typename T1>
 arma::Col<T1> getISMRMRDPhaseMaps(ISMRMRD::Dataset *d) {
+	RANGE()
 	const std::string phaseMaps = "PhaseMaps";
 	arma::Col<double> pMaps_temp;
 	arma::Col<T1> pMaps;
@@ -127,6 +132,7 @@ arma::Col<T1> getISMRMRDPhaseMaps(ISMRMRD::Dataset *d) {
 template<typename T1>
 arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uword NSet, uword NRep, uword NAvg, uword NPhase, uword NEcho, uword NSeg, uword imageSize)
 {
+	RANGE()
 	arma::Col<T1> pMaps = getISMRMRDPhaseMaps<T1>(d);
 
 	std::string xml;
@@ -164,9 +170,10 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 }
 
 template<typename T1>
-arma::Col<T1> getISMRMRDCompleteSENSEMap(ISMRMRD::Dataset *d, uword NSlice, uword imageSize)
+arma::Col<T1> getISMRMRDCompleteSENSEMap(ISMRMRD::Dataset *d, arma::Col<T1> &SENSEMaps, uword NSlice, uword imageSize)
 {
-	arma::Col<T1> SENSEMaps = getISMRMRDSenseMap<T1>(d);
+	RANGE()
+	//arma::Col<T1> SENSEMaps = getISMRMRDSenseMap<T1>(d);
 
 	std::string xml;
 	std::cout << "trying to read the header from the ISMRMD::Dataset object" << std::endl;
@@ -199,9 +206,10 @@ arma::Col<T1> getISMRMRDCompleteSENSEMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 }
 
 template<typename T1>
-arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uword imageSize)
+arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, arma::Col<T1> &FieldMaps, uword NSlice, uword imageSize)
 {
-	arma::Col<T1> FieldMaps = getISMRMRDFieldMap<T1>(d);
+	RANGE()
+	//arma::Col<T1> FieldMaps = getISMRMRDFieldMap<T1>(d);
 
 	std::string xml;
 	std::cout << "trying to read the header from the ISMRMD::Dataset object" << std::endl;
@@ -229,7 +237,7 @@ arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 
 	arma::Col<T1> FieldMapOut = FieldMaps.subvec(startIndex, endIndex);
 
-	FieldMapOut.save("FieldMap.dat", raw_ascii);
+	//FieldMapOut.save("FieldMap.dat", raw_ascii);
 
 	return FieldMapOut;
 }
@@ -237,6 +245,7 @@ arma::Col<T1> getISMRMRDCompleteFieldMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 template<typename T1>
 void processISMRMRDInput(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMRD::IsmrmrdHeader &hdr,
                          arma::Col<T1> &FM, arma::Col<std::complex<T1>> &sen, acqTracking *&acqTrack) {
+	RANGE()
     std::cout << "About to open ISMRMRD file for input" << std::endl;
 	openISMRMRDData(inputDataFile, d, hdr, acqTrack);
     std::cout << "Opened ISMRMRD file for input " << std::endl;
@@ -251,6 +260,7 @@ void processISMRMRDInput(std::string inputDataFile, ISMRMRD::Dataset *&d, ISMRMR
 template<typename T1>
 void getISMRMRDAcqData(ISMRMRD::Dataset *d, uword Nacq, Col<std::complex<T1>> &data, Col<T1> &kx, Col<T1> &ky,
                        Col<T1> &kz, Col<T1> &tvec) {
+	RANGE()
     ISMRMRD::Acquisition acq;
     d->readAcquisition(Nacq, acq);
     uword nro = acq.number_of_samples();
@@ -301,12 +311,13 @@ ISMRMRD::Acquisition getISMRMRDAcq(ISMRMRD::Dataset *d, uword Nacq) {
 */
 template<typename T1>
 void writeISMRMRDImageData(ISMRMRD::Dataset *d, Col<std::complex<T1>> &image, uword Nx, uword Ny, uword Nz) {
+	RANGE()
     ISMRMRD::Image<std::complex<T1>> img_out(Nx, Ny, Nz, 1);
 	//image.save("testImage.dat", raw_ascii);
 	Col<T1> realImage = real(image).eval();
 	Col<T1> imagImage = imag(image).eval();
-	realImage.save("testImageReal.dat", raw_ascii);
-	imagImage.save("testImageImag.dat", raw_ascii);
+	//realImage.save("testImageReal.dat", raw_ascii);
+	//imagImage.save("testImageImag.dat", raw_ascii);
 
     for (int ii = 0; ii < Ny; ii++) {
         for (int jj = 0; jj < Nx; jj++) {
@@ -328,7 +339,7 @@ template<typename T1>
 void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword NSlice, uword NRep, uword NAve, uword NEcho, uword NPhase, Col<std::complex<T1>> &data,
                                Col<T1> &kx, Col<T1> &ky, Col<T1> &kz, Col<T1> &tvec)
 {
-
+	RANGE()
 	//Initialization
 	Mat<std::complex<T1>> acqWork;
   	Cube<std::complex<T1>> dataWork;
@@ -351,8 +362,8 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
           d->readAcquisition(acqIndx, acq);
           nro = acq.number_of_samples();
           nc = acq.active_channels();
-          std::cout << "Nro = " << nro << std::endl;
-          std::cout << "Nc = " << nc << std::endl;
+          //std::cout << "Nro = " << nro << std::endl;
+          //std::cout << "Nc = " << nc << std::endl;
           firstData = false;
         }
       }
@@ -378,20 +389,20 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 
 				ISMRMRD::EncodingCounters encIdx = acq.idx();
 
-				std::cout << "Grabbing acq index #" << acqIndx << std::endl;
+				//std::cout << "Grabbing acq index #" << acqIndx << std::endl;
 
 				for (uword jj = 0; jj<nc; jj++) {
 					for (uword kk = 0; kk<nro; kk++) {
 						acqWork(kk, jj) = static_cast<std::complex<T1>>(acq.data(kk, jj));
 					}
 				}
-
+				/*
 				int NSlice = encIdx.slice;
 				int NRep   = encIdx.repetition;
 				int NAvg   = encIdx.average;
 				int NEcho  = encIdx.contrast;
 				int NPhase = encIdx.phase;
-
+				
 				std::cout << "NPar = "   << NPar   << std::endl;
 				std::cout << "NShot = "  << NShot  << std::endl;
 				std::cout << "NSlice = " << NSlice << std::endl;
@@ -399,7 +410,7 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 				std::cout << "NAvg = "   << NAvg   << std::endl;
 				std::cout << "NEcho = "  << NEcho  << std::endl;
 				std::cout << "NPhase = " << NPhase << std::endl;
-
+				*/
 				//Deal with trajectories
 				for (uword ii = 0; ii<nro; ii++) {
 					kxWork(ii,curAcq)   = static_cast<T1>(acq.traj(0, ii));

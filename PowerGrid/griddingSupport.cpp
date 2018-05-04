@@ -63,6 +63,7 @@ template <typename T1> inline T1 bessi0(T1 x) {
 // window
 template <typename T1>
 void calculateLUT(T1 beta, T1 width, T1 *&LUT, uword &sizeLUT) {
+  RANGE()
   T1 v;
   // T1 _width2_4 = (width*width)/4.0;
 
@@ -111,6 +112,7 @@ template <typename T1>
 void deinterleave_data2d(
     T1 *__restrict pSrc, T1 *__restrict outR_d, T1 *__restrict outI_d,
     int imageX, int imageY) {
+      RANGE()
   int lIndex;
 #pragma acc parallel loop collapse(2) independent present(                     \
     pSrc[0 : 2 * imageX *imageY])                                              \
@@ -128,7 +130,8 @@ template <typename T1>
 void deinterleave_data3d(T1 *__restrict pSrc, T1 *__restrict outR_d,
                          T1 *__restrict outI_d, int imageX, int imageY,
                          int imageZ) {
-  int lIndex, X, Y, Z;
+RANGE()
+int lIndex, X, Y, Z;
 #pragma acc parallel loop collapse(                                            \
     3) independent present(pSrc[0 : 2 * imageX *imageY *imageZ]) present(      \
     outR_d[0 : imageX *imageY *imageZ], outI_d[0 : imageX *imageY *imageZ])
@@ -147,6 +150,7 @@ void deinterleave_data3d(T1 *__restrict pSrc, T1 *__restrict outR_d,
 template <typename T1>
 void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
 		int gridSizeY) {
+  RANGE()
 	// (gridSizeX,gridSizeY) is the size of 'src'
 
     T1 vectorLength= gridSizeX*gridSizeY;
@@ -172,6 +176,7 @@ void normalize_fft2d(T1 *__restrict pDst, T1 *__restrict pSrc, int gridSizeX,
 template <typename T1>
 void normalize_fft3d(T1 *__restrict pDst, T1 *__restrict pSrc,
 		int gridSizeX, int gridSizeY, int gridSizeZ) {
+  RANGE()
 	// (gridSizeX,gridSizeY,gridSizeZ) is the size of 'src'
 	//    assert( (!(gridSizeX%2) && !(gridSizeY%2) && !(gridSizeZ%2)) );
 	//    assert( (!(imageSizeX%2) && !(imageSizeY%2) && !(imageSizeZ%2)) );
@@ -212,7 +217,7 @@ void deapodization2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
                      int imageY, T1 kernelWidth, T1 beta, T1 gridOS) {
 
   // int imageNumElems = imageX * imageY;
-
+  RANGE()
   int Y;
   int X;
 
@@ -296,7 +301,7 @@ template <typename T1>
 void deapodization3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageX,
                      int imageY, int imageZ, T1 kernelWidth, T1 beta,
                      T1 gridOS) {
-
+  RANGE()                     
   int Z;
   int Y;
   int X;
@@ -397,7 +402,7 @@ void crop_center_region2d(T1 *__restrict pDst, T1 *__restrict pSrc,
                           int imageSizeX, int imageSizeY, int gridSizeX,
                           int gridSizeY) {
   // (gridSizeX,gridSizeY) is the size of 'src'
-
+  RANGE()
   int offsetY;
   int offsetX;
   int dY_src;
@@ -481,7 +486,7 @@ template <typename T1>
 void zero_pad2d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageSizeX,
                 int imageSizeY, T1 gridOS) {
   // (gridSizeX,gridSizeY) is the size of 'src'
-
+  RANGE()
   int offsetY;
   int offsetX;
   int dX_dst;
@@ -527,7 +532,7 @@ template <typename T1>
 void zero_pad3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageSizeX,
                 int imageSizeY, int imageSizeZ, T1 gridOS) {
   // (gridSizeX,gridSizeY,gridSizeZ) is the size of 'src'
-
+  RANGE()
   int offsetY;
   int offsetX;
   int offsetZ;
@@ -584,6 +589,7 @@ void zero_pad3d(T1 *__restrict pDst, T1 *__restrict pSrc, int imageSizeX,
 template <typename T>
 void circshift2(T *__restrict pDst, const T *__restrict pSrc, int xdim,
                 int ydim, int xshift, int yshift) {
+  RANGE()                
   int ii, jj;
 
 #pragma acc parallel loop collapse(2) independent present(                     \
@@ -602,6 +608,7 @@ void circshift2(T *__restrict pDst, const T *__restrict pSrc, int xdim,
 template <typename T>
 void circshift3(T *__restrict pDst, const T *__restrict pSrc, int xdim,
                 int ydim, int zdim, int xshift, int yshift, int zshift) {
+  RANGE()
   // cout << "Entering circshift3 " << endl;
   int ii, jj, kk;
 
@@ -656,6 +663,7 @@ void ifftshift3(T *__restrict out, const T *__restrict in, int xdim, int ydim,
 template <typename T1>
 void fft2shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX) {
   //(dimX,dimY) is the size of 'src'
+  RANGE()
   int common_index_dst;
 #pragma acc kernels loop
   for (int dY_dst = 0; dY_dst < dimY; dY_dst++) {
@@ -669,6 +677,7 @@ void fft2shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX) {
 template <typename T1>
 void fft3shift_grid(std::complex<T1> *__restrict src, int dimY, int dimX,
                     int dimZ) {
+  RANGE()
   //(dimX,dimY,dimZ) is the size of 'src'
   int common_index_dst;
 

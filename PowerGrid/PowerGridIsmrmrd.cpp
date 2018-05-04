@@ -31,7 +31,7 @@ Developed by:
 #include "processIsmrmrd.hpp"
 #include "processNIFTI.hpp"
 #include <boost/program_options.hpp>
-
+#include <chrono>
 namespace po = boost::program_options;
 //using namespace PowerGrid;
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   std::string rawDataFilePath, outputImageFilePath, senseMapFilePath,
       fieldMapFilePath, precisionString, TimeSegmentationInterp,
       rawDataNavFilePath;
-  uword Nx, Ny, Nz, NShots = 1, type, L = 0, NIter = 10;
+  uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10;
   //uword ;
   double beta = 0.0;
   uword dims2penalize = 3;
@@ -100,6 +100,8 @@ int main(int argc, char **argv) {
       type = 1;
     } else if (TimeSegmentationInterp.compare("minmax") == 0) {
       type = 2;
+    } else if (TimeSegmentationInterp.compare("histo") == 0) {
+      type = 3;
     } else {
       type = 1;
       std::cout << "Did not recognize temporal interpolator selection. "
@@ -112,8 +114,11 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  arma::Col<float> FM;
-  arma::Col<std::complex<float>> sen;
+  Col<float> FM;
+  Col<float> fmSlice;
+  Col<std::complex<float>> sen;
+ 	Col<std::complex<float>> senSlice;
+
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
 	acqTracking *acqTrack;
@@ -157,7 +162,6 @@ int main(int argc, char **argv) {
   int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
   int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
   int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
-	Col<std::complex<float>> senSlice;
 
   std::cout << "NParMax = "   << NParMax << std::endl;
   std::cout << "NShotMax = "  << NShotMax << std::endl;
@@ -169,7 +173,7 @@ int main(int argc, char **argv) {
   std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
   std::cout << "NSegMax = "   << NSegMax << std::endl;
 
-  std::cout << "About to loop through the counters and scan the file"
+   std::cout << "About to loop through the counters and scan the file"
             << std::endl;
 
   std::string baseFilename = "SENSE";
@@ -181,12 +185,15 @@ int main(int argc, char **argv) {
             for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
                 for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
                     for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+                    //for (uword NSlice = 0; NSlice<=2; NSlice++) {
+                      auto start = std::chrono::high_resolution_clock::now();
 
                       filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) +
           								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
           								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
                           
-	                    senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, Nx*Ny*Nz);
+	                    senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, Nx*Ny*Nz);
+						          fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 
 	                    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
@@ -200,17 +207,21 @@ int main(int argc, char **argv) {
 	                    Gnufft<float> G(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
 			                    iy, iz);
 	                    //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-	                    //TimeSegmentation<float, Gnufft<float>> A(G, FM, tvec, kx.n_rows, Nx*Ny*Nz, L, type, 1);
-	                    //SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-	                    SENSE<float, Gnufft<float>> Sg(G, sen, kx.n_rows, Nx*Ny*Nz, nc);
+	                    TimeSegmentation<float, Gnufft<float>> A(G, fmSlice, tvec, kx.n_rows, Nx*Ny*Nz, L, type, NShots);
+	                    SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, senSlice, kx.n_rows, Nx*Ny*Nz, nc);
+	                    //SENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 	                    //SENSE<float, Gdft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 	                    QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
-	                    ImageTemp = reconSolve<float, SENSE<float, Gnufft<float>>,
-	                            QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
-	                            Ny, Nz, tvec, NIter);
-	                    //ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
-			            //        QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
-			            //        Ny, Nz, tvec, NIter);
+	                    //ImageTemp = reconSolve<float, SENSE<float, Gnufft<float>>,
+	                    //        QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
+	                    //        Ny, Nz, tvec, NIter);
+                      auto finish = std::chrono::high_resolution_clock::now();
+
+                      std::chrono::duration<float> elapsed = finish - start;
+                      std::cout << "Recon Initialization time: " << elapsed.count() << " s\n";
+	                    ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
+			                    QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
+			                    Ny, Nz, tvec, NIter);
 	                  //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
                     writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
                     }

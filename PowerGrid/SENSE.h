@@ -39,6 +39,8 @@ using namespace arma;
 // Gfft<Col<cx_double>>
 template <typename T1, typename Tobj> class SENSE {
   typedef complex<T1> CxT1;
+  typedef Col<CxT1> ColCxT1;
+  typedef Mat<CxT1> MatCxT1;
 
 public:
   SENSE();
@@ -49,6 +51,13 @@ public:
   uword nc = 0; // number of coils
   Tobj *G_obj;
   Mat<CxT1> SMap; // dimensions Image size b (n1 by number of coils (nc)
+  Mat<CxT1> conjSMap; // dimensions Image size b (n1 by number of coils (nc)
+  
+  mutable Mat<CxT1> outData;
+  mutable Mat<CxT1> outImg;
+  mutable Mat<CxT1> coilWeightData;
+  mutable Mat<CxT1> coilWeightImg;
+  mutable Mat<CxT1> coilImages;
 
   // Class constructor
   SENSE(Tobj &G, Col<CxT1> SENSEmap, uword a, uword b, uword c);

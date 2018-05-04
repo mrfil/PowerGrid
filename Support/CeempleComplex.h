@@ -37,7 +37,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 
 #ifndef CEEMPLECOMPLEX_H
 #define CEEMPLECOMPLEX_H
-
+/*
 #include <complex>
 // complex, int
 template <class T> std::complex<T> operator+(const std::complex<T> &x, int y) {
@@ -180,5 +180,5 @@ template <class T>
 std::complex<T> operator*=(unsigned int lhs, const std::complex<T> &rhs) {
   return double(lhs) *= rhs;
 }
-
+*/
 #endif // CEEMPLECOMPLEX_H

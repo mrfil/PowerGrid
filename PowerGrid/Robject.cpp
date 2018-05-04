@@ -82,7 +82,6 @@ Col<complex<T1> > Robject<T1>::Cd(const Col<complex<T1> > &d, uword dim) const {
 
 template <typename T1>
 Col<complex<T1> > Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const {
-
         Col<complex<T1> > out(Nx * Ny * Nz);
         out.zeros();
         uword ll, jj, kk;
@@ -124,6 +123,7 @@ Col<complex<T1> > Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const 
 
 template <typename T1>
 T1 Robject<T1>::Penalty(const Col<complex<T1> > &x) const {
+        RANGE()
         Col<complex<T1> > d = zeros<Col<complex<T1> > >(x.n_rows);
         T1 penal = 0;
         uword nd = 0;
@@ -144,6 +144,7 @@ T1 Robject<T1>::Penalty(const Col<complex<T1> > &x) const {
 }
 template <typename T1>
 Col<complex<T1> > Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
+        RANGE()
         Col<complex<T1> > g = zeros<Col<complex<T1> > >(x.n_rows);
         Col<complex<T1> > d = zeros<Col<complex<T1> > >(x.n_rows);
         uword nd = 0;
@@ -167,6 +168,7 @@ Col<complex<T1> > Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
 template <typename T1>
 complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
                                const Col<complex<T1> > &x) const {
+        RANGE()
         Col<complex<T1> > Cdir = zeros<Col<complex<T1> > >(ddir.n_rows);
         Col<complex<T1> > Cx = zeros<Col<complex<T1> > >(ddir.n_rows);
         complex<T1> penal = 0;

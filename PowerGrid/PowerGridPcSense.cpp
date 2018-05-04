@@ -28,6 +28,7 @@ Developed by:
 
 // //Project headers.
 #include "PowerGrid.h"
+#include "PGIncludes.h"
 #include "ismrmrd/dataset.h"
 #include "ismrmrd/ismrmrd.h"
 #include "ismrmrd/version.h"
@@ -188,8 +189,8 @@ int main(int argc, char **argv)
 
 						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
 								(uword) (Nx*Ny*Nz));
-						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, (uword) (Nx*Ny*Nz));
-						FMap = getISMRMRDCompleteFieldMap<float>(d, NSlice, (uword) (Nx*Ny*Nz));
+						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
+						FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 
 						std::cout << "Number of elements in SMap = " << SMap.n_rows << std::endl;
 						std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;

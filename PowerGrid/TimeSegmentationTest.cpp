@@ -24,6 +24,7 @@
 
 *****************************************************************************/
 #include "TimeSegmentation.h"
+#include <chrono>  // for high_resolution_clock
 // This using field correction by time segmentation
 // The data is corrected to time 0 with reference to the time vector passed
 //
@@ -36,31 +37,34 @@
 template <typename T1, typename Tobj>
 TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
                                              Col<T1> timeVec_in, uword a,
-                                             uword b, uword nTimeSegs, uword interptype,
+                                             uword b, uword c, uword interptype,
                                              uword shots) {
-  cout << "Entering TimeSegmenatation Class constructor" << endl;
+
+  cout << "Entering Class constructor" << endl;
   n1 = a;            // Data size
   n2 = b;            // Image size
+
   // L == 0 or 1 is ambiguous. In matlab we would often specific L = 0 to mean no time segmentation.
-  if ((nTimeSegs == 0) || (nTimeSegs == 1)) {
-    L = 0;
+  if ((L == 0) || (L == 1)) {
+    L = 1;
   } else {  
-    L = nTimeSegs;  
+    L = c;  
   }           // number of time segments
   type = interptype; // type of time segmentation performed
   Nshots = shots;    // number of shots
   obj = &G;
   fieldMap = map_in;
+  outData.set_size(n1,L);
+  outImg.set_size(n2,L);
+  tempD.set_size(n1,L);
+  tempAA.set_size(n1,L);
+  RowOnes.ones(L,1);
+  
   cout << "N1 = " << n1 << endl;
   cout << "N2 = " << n2 << endl;
   cout << "L = " << L << endl;
 
-  outData.set_size(n1,L+1);
-  outImg.set_size(n2,L+1);
-  tempD.set_size(n2,L+1);
-  tempAD.set_size(n1,L+1);
-
-  AA.set_size(n1, L+1); // time segments weights
+  AA.set_size(n1, L); // time segments weights
   timeVec = timeVec_in;
   T_min = timeVec.min();
   T1 rangt = timeVec.max() - T_min;
@@ -68,16 +72,16 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
   timeVec = timeVec - T_min;
 
   uword NOneShot = n1 / Nshots;
-  if (L == 0) {
+  if ((L == 1)) {
     tau = 0;
     AA.ones();
-    Wo.ones(n2, L+1);
-    WoH.ones(n2, L+1);
+    Wo.ones(n2, 1);
+    WoH.ones(n2, 1);
+    
   } else {
-    Mat<complex<T1>> tempAA(NOneShot, L+1);
+    Mat<complex<T1>> tempAA(NOneShot, L);
     if (type == 1) { // Hanning interpolator
-      cout << "Using Hanning window temporal interpolator" << endl;
-      cout << "Field Map size = " << this->fieldMap.n_rows << endl;
+      cout << "Hanning interpolation" << endl;
       for (unsigned int ii = 0; ii < L; ii++) {
         for (unsigned int jj = 0; jj < NOneShot; jj++) {
           if ((abs(timeVec(jj) - ((ii)*tau))) <= tau) {
@@ -89,11 +93,23 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
           }
         }
       }
-      AA = repmat(tempAA, Nshots, 1);
+      cout << "Precalculating interpolators" << endl;
 
+      AA = repmat(tempAA, Nshots, 1);
+      Wo.set_size(n2, L);
+      WoH.set_size(n2, L);
+      #pragma omp parallel for shared(Wo, WoH)
+      for (unsigned int ii = 0; ii < L; ii++) {
+        Wo.col(ii) =
+            exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
+        WoH.col(ii) =
+            exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
+      }
+      //Wo.save("Wo.dat",raw_ascii);
+      //WoH.save("WoH.dat",raw_ascii);
     } else if (type == 2) { // Min-max interpolator: Exact LS interpolator
 
-      cout << "Using exact LS minmax temporal interpolator" << endl;
+      cout << "Min Max time segmentation" << endl;
 
       Mat<complex<T1>> Ltp;
       Ltp.ones(1, L);
@@ -154,64 +170,9 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         tempAA.row(ii) = res.t();
       }
       AA = repmat(tempAA, Nshots, 1);
-    } else if (type == 3) { // Approximate minmax estimator
-      // Estimate histogram of field map
-      std::cout << "Using approximate minmax temporal interpolator." << std::endl;
-      int numBins = 256;
-      Col<uword> fm_histo = hist(vectorise(fieldMap), numBins).eval();
-
-      T1 minFM = min(vectorise(fieldMap));
-      T1 maxFM = max(vectorise(fieldMap));
-
-      T1 rangeFM = maxFM - minFM;
-      std::cout << "rangeFM = " << rangeFM << std::endl;
-
-      Col<T1> bin_edges = linspace<Col<T1>>(minFM,maxFM,numBins);
-
-      int KK = floor(2.0*datum::pi/((rangeFM/(T1)numBins)*tau));
-      std::cout << "KK = " << KK << std::endl;
-      std::cout << "KK = " << 2.0*datum::pi/((rangeFM/(T1)numBins)*tau) << std::endl;
-      T1 dwn = 2*datum::pi/(KK*tau);
-
-      cx_vec ftwe_ap = vectorise(fft(fm_histo % (exp(i * dwn * regspace(0,(numBins-1))*tau*L)),KK));
-      ftwe_ap = (exp(-i*(minFM+dwn/2)*tau*(regspace(0,KK-1)-L)) % ftwe_ap).eval();
-
-      cx_mat GTGap_ap = zeros<cx_mat>(L+1,L+1);
-
-      for(int ii = 1; ii <= (2*L+1); ii++) { 
-        GTGap_ap += diagmat(ftwe_ap(ii-1)*ones<cx_mat>(L+1 - abs((L+1)-(ii)),1),-(L+1)+(ii));
-      }
-      cx_mat iGTGap_ap;
-
-      if(rcond(GTGap_ap.st()) > 10*datum::eps) {
-        iGTGap_ap = inv(GTGap_ap.st());
-      } else {
-        iGTGap_ap = pinv(GTGap_ap.st().eval());
-        std::cout << "Used pinv instead" << std::endl;
-      }
-      cx_vec ftc_ap, GTc_ap;
-
-      #pragma omp parallel for shared(tempAA) private(ftc_ap, GTc_ap)
-      for( uword ii = 0; ii < NOneShot; ii++) {
-        ftc_ap = vectorise(fft(fm_histo % exp(i * regspace(0,(numBins-1)) * dwn * timeVec(ii)),KK));
-        ftc_ap = exp(i*(minFM + dwn/2) * (timeVec(ii)-(tau * regspace(0,KK-1)))) % ftc_ap;
-        GTc_ap = ftc_ap(span(0,L));
-        tempAA.row(ii) = conv_to<Row<CxT1>>::from((iGTGap_ap * GTc_ap).t());
-      }
-      AA = repmat(tempAA,Nshots,1);
     }
-
-    Wo.set_size(n2, L+1);
-    WoH.set_size(n2, L+1);
-    #pragma omp parallel for shared(Wo, WoH)
-    for (unsigned int ii = 0; ii < L+1; ii++) {
-      Wo.col(ii) =
-        exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
-      WoH.col(ii) =
-        exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
-    }
-
   }
+  // savemat("aamat.mat", "AA", vectorise(AA));
   cout << "Exiting class constructor." << endl;
 }
 
@@ -223,71 +184,86 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
 template <typename T1, typename Tobj>
 inline Col<complex<T1>> TimeSegmentation<T1, Tobj>::
 operator*(const Col<complex<T1>> &d) const {
+  RANGE()
+  auto start = std::chrono::high_resolution_clock::now();
 
   Tobj *G = this->obj;
   // output is the size of the kspace data
   //Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n1);
+  //outData.zeros();
+  
   // cout << "OutData size = " << this->n1 << endl;
   //Col<complex<T1>> Wo;
+  
   //Col<complex<T1>> temp;
+  //tempD = this->Wo.each_col() % d;
   //uvec dataMaskTrimmed;
   // loop through time segments
-  tempD = Wo;
-  #pragma omp parallel for schedule(dynamic) shared(tempD)
-  for (unsigned int ii = 0; ii < this->L+1; ii++){
-    tempD.unsafe_col(ii) %= d;
+  
+  #pragma omp parallel for shared(tempD)
+  for (unsigned int ii = 0; ii < this->L; ii++){
+    tempD.unsafe_col(ii) = Wo.unsafe_col(ii) % d;
   }
 
+  for (unsigned int ii = 0; ii < this->L; ii++) {
+    
 
-  for (unsigned int ii = 0; ii < this->L+1; ii++) {
-    // cout << "Entering time segmentation loop" << endl;
     // apply a phase to each time segment
     //Wo = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
 
     // perform multiplication by the object and sum up the time segments
     //temp = (this->Wo.col(ii)) % d;
-    outData.unsafe_col(ii) = (*G * tempD.unsafe_col(ii));
 
-    // dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
-    // std::cout << "Length dataMaskTrimmed = " << dataMaskTrimmed.n_rows <<
-    // std::endl;
-
-    // outData +=
-    //    (this->AA.col(ii)) % ((*G).trimmedForwardOp(Wo % d,
-    //    this->AA.col(ii)));
+    //outData.unsafe_col(ii) =  (*G * tempD.unsafe_col(ii));
+    outData.col(ii) =  (*G * tempD.col(ii));
+    //outData +=  AA.unsafe_col(ii) % (*G * tempD.unsafe_col(ii));
+ 
   }
 
-  #pragma omp parallel for schedule(dynamic) shared(outData, AA)
-  for (unsigned int ii = 0; ii < this->L+1; ii++){
-    outData.unsafe_col(ii) %= AA.unsafe_col(ii);
+  #pragma omp parallel for shared(outData)
+  for (unsigned int ii = 0; ii < this->L; ii++){
+    outData.col(ii) %= AA.col(ii);
   }
+  //outData %= AA;
 
+
+auto finish = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<float> elapsed = finish - start;
+  std::cout << "Time Segmentation For Elapsed time: " << elapsed.count() << " s\n";
+  
   return sum(outData,1);
 }
 template <typename T1, typename Tobj>
 inline Col<complex<T1>> TimeSegmentation<T1, Tobj>::
 operator/(const Col<complex<T1>> &d) const {
+  RANGE()
+  auto start = std::chrono::high_resolution_clock::now();
 
   Tobj *G = this->obj;
-  tempAD = AA;
-  // output is the size of the image
-  //Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
-  #pragma omp parallel for schedule(dynamic) shared(tempAD)
-  for (unsigned int ii = 0; ii < this->L+1; ii++){
-    tempAD.unsafe_col(ii) %= d;
-   }
+  //outImg.zeros();
+  /*
+  #pragma omp parallel for shared(tempAA)
+  for (unsigned int ii = 0; ii < this->L; ii++){
+    tempAA.col(ii) = AA.col(ii) % d;
+  }
+  */
   // loop through the time segments
-
-  for (unsigned int ii = 0; ii < this->L+1; ii++) {
+  for (unsigned int ii = 0; ii < this->L; ii++) {
 
     // perform adjoint operation by the object and sum up the time segments
-    outImg.unsafe_col(ii) = ((*G) / tempAD.unsafe_col(ii));
+    outImg.col(ii) = WoH.col(ii) % ((*G) / (AA.col(ii) % d));
   }
+  /*
+  #pragma omp parallel for shared(outImg)
+  for (unsigned int ii = 0; ii < this->L; ii++) {
+    outImg.col(ii) %= WoH.col(ii);
+  }
+  */
+  auto finish = std::chrono::high_resolution_clock::now();
 
-  #pragma omp parallel for schedule(dynamic) shared(WoH, outImg)
-  for (unsigned int ii = 0; ii < this->L+1; ii++){
-    outImg.unsafe_col(ii) %= WoH.unsafe_col(ii);
-  }
+  std::chrono::duration<float> elapsed = finish - start;
+  std::cout << "Time Segmentation Adj Elapsed time: " << elapsed.count() << " s\n";
   
   return sum(outImg,1);
 }

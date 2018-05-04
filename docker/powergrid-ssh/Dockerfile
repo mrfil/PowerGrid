@@ -1,7 +1,7 @@
 #FROM nvidia/cuda:7.5-devel-ubuntu16.04
 # Base NVIDIA Image
-FROM nvidia/cuda:9.0-devel-ubuntu16.04
-#FROM cuda-ssh:latest
+#FROM nvidia/cuda:9.0-devel-ubuntu16.04
+FROM acerja2/cuda-ssh:cuda-ssh-v9.0
 # Offers X access via ssh for NVVP and PGProf
 # Run everything in /root
 WORKDIR /root
@@ -68,9 +68,9 @@ RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 #ENV PGI /opt/pgi
 #ENV PATH $PATH:$PGI/linux86-64/17.4/bin
 
-RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
+RUN git clone https://github.com/nemequ/pgi-travis.git && \
     cd pgi-travis && \
-    ./install-pgi.sh --nvidia --managed --mpi --mpi-gpu && \
+    ./install-pgi.sh --dest /usr/local/pgi --nvidia --java && \
     cd - && rm -rf pgi-travis
 
 ENV PGI_VERSION 18.4
@@ -90,11 +90,11 @@ ENV MANPATH="${PGI_MAN_DIR}:${MANPATH}"
 
 RUN git clone https://github.com/conradsnicta/armadillo-code; \
 	cd armadillo-code; \
-	git checkout 8.500.x; \
+	git checkout 8.200.x; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \
-	cmake ../; \
+	cmake -DCMAKE_CXX_COMPILER=pgc++ ../; \
 	make; \
 	make install; \
 	ldconfig
@@ -119,3 +119,6 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     cmake ../; \
     make;  \
     make install
+
+# Patching /etc/profile specifically for using cuda-ssh. Not required when using official NVIDIA base layers.
+RUN echo "export PATH=$PATH:/usr/local/cuda/bin" >> /etc/profile
