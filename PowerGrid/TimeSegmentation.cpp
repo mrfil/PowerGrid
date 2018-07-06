@@ -156,6 +156,9 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
       AA = repmat(tempAA, Nshots, 1);
     } else if (type == 3) { // Approximate minmax estimator
       // Estimate histogram of field map
+      auto start = std::chrono::high_resolution_clock::now();
+
+
       std::cout << "Using approximate minmax temporal interpolator." << std::endl;
       int numBins = 256;
       Col<uword> fm_histo = hist(vectorise(fieldMap), numBins).eval();
@@ -170,18 +173,20 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
 
       int KK = floor(2.0*datum::pi/((rangeFM/(T1)numBins)*tau));
       std::cout << "KK = " << KK << std::endl;
-      std::cout << "KK = " << 2.0*datum::pi/((rangeFM/(T1)numBins)*tau) << std::endl;
       T1 dwn = 2*datum::pi/(KK*tau);
 
-      cx_vec ftwe_ap = vectorise(fft(fm_histo % (exp(i * dwn * regspace(0,(numBins-1))*tau*L)),KK));
-      ftwe_ap = (exp(-i*(minFM+dwn/2)*tau*(regspace(0,KK-1)-L)) % ftwe_ap).eval();
+      //cx_vec ftwe_ap = vectorise(fft(fm_histo % (exp(i * dwn * regspace(0,(numBins-1))*tau*L)),KK));
+      Col<CxT1> temp = fm_histo % (exp(i * dwn * regspace<Col<CxT1>>(0,(numBins-1))*tau*L));
+      Col<CxT1> ftwe_ap = vectorise(calcFFT1D(temp,KK));
 
-      cx_mat GTGap_ap = zeros<cx_mat>(L+1,L+1);
+      ftwe_ap = (exp(-i*(minFM+dwn/2)*tau*(regspace<Col<CxT1>>(0,KK-1)-L)) % ftwe_ap);
+
+      Mat<CxT1> GTGap_ap = zeros<Mat<CxT1>>(L+1,L+1);
 
       for(int ii = 1; ii <= (2*L+1); ii++) { 
-        GTGap_ap += diagmat(ftwe_ap(ii-1)*ones<cx_mat>(L+1 - abs((L+1)-(ii)),1),-(L+1)+(ii));
+        GTGap_ap += diagmat(ftwe_ap(ii-1)*ones<Mat<CxT1>>(L+1 - abs((L+1)-(ii)),1),-(L+1)+(ii));
       }
-      cx_mat iGTGap_ap;
+      Mat<CxT1> iGTGap_ap;
 
       if(rcond(GTGap_ap.st()) > 10*datum::eps) {
         iGTGap_ap = inv(GTGap_ap.st());
@@ -189,16 +194,22 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
         iGTGap_ap = pinv(GTGap_ap.st().eval());
         std::cout << "Used pinv instead" << std::endl;
       }
-      cx_vec ftc_ap, GTc_ap;
+      Col<CxT1> ftc_ap, GTc_ap;
 
-      #pragma omp parallel for shared(tempAA) private(ftc_ap, GTc_ap)
+      //#pragma omp parallel for shared(tempAA) private(ftc_ap, GTc_ap)
       for( uword ii = 0; ii < NOneShot; ii++) {
-        ftc_ap = vectorise(fft(fm_histo % exp(i * regspace(0,(numBins-1)) * dwn * timeVec(ii)),KK));
-        ftc_ap = exp(i*(minFM + dwn/2) * (timeVec(ii)-(tau * regspace(0,KK-1)))) % ftc_ap;
+        temp = fm_histo % exp(i * regspace<Col<CxT1>>(0,(numBins-1)) * dwn * timeVec(ii));
+        ftc_ap = vectorise(calcFFT1D(temp,KK));
+        ftc_ap = exp(i*(minFM + dwn/2) * (timeVec(ii)-(tau * regspace<Col<CxT1>>(0,KK-1)))) % ftc_ap;
         GTc_ap = ftc_ap(span(0,L));
         tempAA.row(ii) = conv_to<Row<CxT1>>::from((iGTGap_ap * GTc_ap).t());
       }
       AA = repmat(tempAA,Nshots,1);
+      auto finish = std::chrono::high_resolution_clock::now();
+
+      std::chrono::duration<float> elapsed = finish - start;
+      std::cout << "Time Segmentation Histo Elapsed time: " << elapsed.count() << " s\n";
+  
     }
 
     Wo.set_size(n2, L+1);
@@ -213,6 +224,29 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj &G, Col<T1> map_in,
 
   }
   cout << "Exiting class constructor." << endl;
+}
+
+// Use FFT
+template <typename T1, typename Tobj>
+inline Col<complex<T1>> TimeSegmentation<T1, Tobj>::
+calcFFT1D(const Col<CxT1>& d, uword K) const {
+  arma::Col<CxT1> data;
+  // Start by dealing with zero padding or trimming
+  if (K < d.n_rows) {
+    data = d(span(0,K-1));
+  } else {
+    data.set_size(K,1);
+    data.zeros();
+    data(span(0,d.n_rows-1)) = d;
+  }
+  data.eval();
+  // Now we can do an FF without any additional
+  // zero padding or trimming
+  T1* cplxRawData = reinterpret_cast<T1 *>(data.memptr());
+  
+  fft1dCPU<T1>(cplxRawData,K);
+
+  return data;
 }
 
 // Overloaded operators go here
@@ -269,7 +303,7 @@ inline Col<complex<T1>> TimeSegmentation<T1, Tobj>::
 operator/(const Col<complex<T1>> &d) const {
 
   Tobj *G = this->obj;
-  tempAD = AA;
+  tempAD = conj(AA);
   // output is the size of the image
   //Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
   #pragma omp parallel for schedule(dynamic) shared(tempAD)

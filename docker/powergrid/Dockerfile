@@ -1,69 +1,130 @@
-FROM nvidia/cuda:7.5-devel-ubuntu16.04
 # Base NVIDIA Image
-# FROM cuda-ssh:latest
+FROM nvidia/cuda:9.0-devel-ubuntu16.04 as builder
+#FROM cuda-ssh:latest
 # Offers X access via ssh for NVVP and PGProf
 # Run everything in /root
 WORKDIR /root
 
-# Patch error in /etc/sshd_conf
-RUN  echo 'AddressFamily inet' >> /etc/ssh/sshd_config
-
 # Add needed packages
-RUN apt-get -y update && apt-get install -y g++ gcc curl libopenblas-dev libarpack2-dev nano cmake git xsdcxx libxerces-c-dev libmatio-dev libboost-all-dev libhdf5-dev libfftw3-dev
+RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
+												libarpack2-dev nano wget cmake git \
+												xsdcxx libxerces-c-dev libmatio-dev \
+												libhdf5-dev libfftw3-dev && apt-get clean all;
 
+# Set MPI library to MPICH2. Needed for Shifter to transparently patch MPI for Cray libraries
+#RUN update-alternatives --set mpi /usr/include/mpich;
+
+# Instal MPICH 3.2 using example from NERSC
+RUN cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
+	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
+
+# Install custom compile of boost for mpi.
+RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
+ && tar xjf ~/boost_1_66_0.tar.bz2 \
+ && cd ~/boost_1_66_0/ \
+ && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
+ && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
+ && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
+
+RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
+
+RUN mkdir /opt/lib
+ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 	tar xvf superlu_5.2.1.tar.gz; \
 	mkdir /root/SuperLU_5.2.1/build; \
 	cd /root/SuperLU_5.2.1/build; \
-	cmake ../ -DBUILD_SHARED_LIBS=ON; \
+	cmake ../ -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/opt; \
 	make; \
 	make install;
 
-# Install PGI Compiler Community Edition (17.4)
+# Install PGI Compiler Community Edition
+RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
+    cd pgi-travis && \
+    ./install-pgi.sh --nvidia --managed --mpi --mpi-gpu && \
+    cd - && rm -rf pgi-travis
 
-COPY pgilinux-2017-174-x86_64.tar.gz /root
-RUN mkdir /root/pgi
-RUN tar xvf /root/pgilinux-2017-174-x86_64.tar.gz -C /root/pgi
-ENV PGI_SILENT true
-ENV PGI_ACCEPT_EULA accept
-ENV PGI_INSTALL_DIR /opt/pgi
-ENV PGI_INSTALL_NVIDIA true
-ENV PGI_INSTALL_AMD true
-ENV PGI_INSTALL_JAVA true
-ENV PGI_INSTALL_MPI true
-ENV PGI_MPI_GPU_SUPPORT true
-ENV PGI_INSTALL_MANAGED true
+ARG PGI_VERSION=18.4
+ARG PGI_INSTALL_DIR=/usr/local/pgi
 
-RUN /root/pgi/install
+ENV PGI_VERSION ${PGI_VERSION}
+ENV PGI_INSTALL_DIR ${PGI_INSTALL_DIR}
+ENV PGI_HOME ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}
+ENV PGI_BIN_DIR ${PGI_HOME}/bin
+ENV PGI_LIB_DIR ${PGI_HOME}/lib
+ENV PGI_MAN_DIR ${PGI_HOME}/man
 
-RUN echo "# PGI Compiler Stuff\n" >> /root/.bashrc; \
-	echo "PGI=/opt/pgi; export PGI\n" >> /root/.bashrc; \
- 	echo "MANPATH=\$MANPATH:\$PGI/linux86-64/17.4/man; export MANPATH\n" >> /root/.bashrc; \
-	echo "PATH=\$PATH:\$PGI/linux86-64/17.4/bin\n" >> /root/.bashrc
+ENV PATH="${PGI_BIN_DIR}:${PATH}"
+ENV LD_LIBRARY_PATH="${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
+ENV MANPATH="${PGI_MAN_DIR}:${MANPATH}"
 
-ENV PGI /opt/pgi
-ENV PATH $PATH:$PGI/linux86-64/17.4/bin
+RUN cp -r --dereference ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}/REDIST/ /opt/lib/
 
 # Install Armadillo
-
-RUN curl -O -J -L  https://sourceforge.net/projects/arma/files/armadillo-7.800.2.tar.xz/download; \
-	tar xvf armadillo-7.800.2.tar.xz; \
-	cd armadillo-7.800.2; \
+RUN git clone https://github.com/conradsnicta/armadillo-code; \
+	cd armadillo-code; \
+	git checkout 8.500.x; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \
-	cmake -DCMAKE_CXX_COMPILER=pgc++ ../; \
+	cmake ../ -DCMAKE_INSTALL_PREFIX=/opt; \
 	make; \
-	make install;
+	make install; \
+	ldconfig
 
-	# Install Latest CMake
+# Install Latest CMake
+RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
+	apt-get -y purge cmake; \
+	tar -xvf ./cmake-3.9.4-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.9.4-Linux-x86_64; \
+	cp -r bin /usr/; \
+	cp -r doc /usr/share/; \
+	cp -r man /usr/share/; \
+	cp -r share /usr/
 
-	RUN curl -O -J -L http://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.tar.gz; \
-		apt-get -y purge cmake; \
-		tar -xvf ./cmake-3.8.2-Linux-x86_64.tar.gz; \
-		cd ./cmake-3.8.2-Linux-x86_64; \
-		cp -r bin /usr/; \
-		cp -r doc /usr/share/; \
-		cp -r man /usr/share/; \
-		cp -r share /usr/;
+RUN git clone https://github.com/acerjanic/ismrmrd.git; \
+    cd ismrmrd; \
+    git fetch; \
+    git checkout matlab; \
+    mkdir ./build; \
+    cd build; \
+    cmake ../ -DCMAKE_INSTALL_PREFIX=/opt; \
+    make;  \
+    make install
+
+# add credentials on build
+ARG SSH_PRIVATE_KEY
+RUN mkdir /root/.ssh/
+RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
+RUN chmod 0600 /root/.ssh/id_rsa
+
+RUN cat /root/.ssh/id_rsa >&2
+# make sure your domain is accepted
+RUN touch /root/.ssh/known_hosts
+RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+RUN git clone git@github.com:acerjanic/PrivatePG.git; \
+    cd PrivatePG; \
+    git fetch; \
+    git checkout Vectorization; \
+    mkdir build; \
+    cd build; \
+    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid; \
+    make;  \
+    make install
+	
+#Stage 2 of build to create a runtime only version
+FROM nvidia/cuda:9.0-runtime-ubuntu16.04
+ARG PGI_VERSION=18.4
+ARG PGI_INSTALL_DIR=/usr/local/pgi
+COPY --from=builder /opt/lib/* /opt/lib/
+COPY --from=builder /usr/local/lib/* /opt/lib/
+
+RUN apt-get -y update && apt-get install -y libopenblas-base libarpack2 \
+											libhdf5-10 libfftw3-3 && apt-get clean all;
+
+
+
+
+

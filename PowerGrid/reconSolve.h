@@ -29,6 +29,7 @@
 
 #include "PGIncludes.h"
 #include "Gdft.h"
+#include "GdftR2.h"
 #include "Gnufft.h"
 #include "SENSE.h"
 #include "pcSENSE.h"
@@ -74,6 +75,13 @@ Col<complex<float> > reconSolve<float, SENSE<float, Gdft<float> >, QuadPenalty<f
                                                                                            Col<float>, uword, uword, uword, Col<float>,
                                                                                            uword);
 
+                                                                                           extern template
+Col<complex<float> > reconSolve<float, SENSE<float, GdftR2<float> >, QuadPenalty<float>>(Col<complex<float>>, SENSE<float, GdftR2<float>>&,
+                                                                                           QuadPenalty<float>, Col<float>, Col<float>,
+                                                                                           Col<float>, uword, uword, uword, Col<float>,
+                                                                                           uword);
+
+
 extern template
 Col<complex<float>>
 reconSolve(Col<complex<float>>, pcSENSE<float>&, QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
@@ -89,6 +97,13 @@ Col<complex<double> > reconSolve<double, SENSE<double, Gdft<double> >, QuadPenal
 		QuadPenalty<double>, Col<double>, Col<double>,
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);
+
+        extern template
+Col<complex<double> > reconSolve<double, SENSE<double, GdftR2<double> >, QuadPenalty<double>>(Col<complex<double>>, SENSE<double, GdftR2<double>>&,
+		QuadPenalty<double>, Col<double>, Col<double>,
+		Col<double>, uword, uword, uword, Col<double>,
+		uword);
+
 
 extern template
 Col<complex<double>>

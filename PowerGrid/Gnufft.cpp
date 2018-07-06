@@ -73,23 +73,19 @@ Gnufft<T1>::Gnufft(
             << "window -N/2 to N/2" << endl;
       cout << "kx = " << k1(i) << " ky = " << k2(i)<< " kz = " << k3(i)
            << " i = " << i << endl;
-      //exit(1);
+      }
+      
       kx[i] = k1(i);
       ky[i] = k2(i);
       kz[i] = k3(i);
-    } else {
-      kx[i] = k1(i);
-      ky[i] = k2(i);
-      kz[i] = k3(i);
-    }
   }
 
-  XformedData.set_size(n2);
-  XformedImg.set_size(n1);
-  realXformedData.set_size(n2);
-  imagXformedData.set_size(n2);
-  realXformedImg.set_size(n1);
-  imagXformedImg.set_size(n1);
+  //XformedData.set_size(n2);
+  //XformedImg.set_size(n1);
+  //realXformedData.set_size(n2);
+  //imagXformedData.set_size(n2);
+  //realXformedImg.set_size(n1);
+  //imagXformedImg.set_size(n1);
   // Set Beta
   kernelWidth = 4.0;
   beta = MRI_PI *
@@ -171,8 +167,8 @@ RANGE()
 
   // cout << "Seperating real and imaginary data." << endl;
 
-  Col<T1> realData = real(d).eval();
-  Col<T1> imagData = imag(d).eval();
+  //Col<T1> realData = real(d).eval();
+  //Col<T1> imagData = imag(d).eval();
   // Now we grab the data out of armadillo with the memptr() function
   // This returns a pointer of the type of the elements of the
   // array/vector/matrix/cube (3d matrix)
@@ -180,8 +176,8 @@ RANGE()
   // 2D C++ arrays which are row major.
   // cout << "Grabbing pointers." << endl;
 
-  T1 *realDataPtr = realData.memptr();
-  T1 *imagDataPtr = imagData.memptr();
+  const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
+  //T1 *imagDataPtr = imagData.memptr();
 
   // cout << "Allocating memory for transformed data." << endl;
 
@@ -191,8 +187,8 @@ RANGE()
   // imagXformedData.zeros();
   // cout << "Grabbing pointers for new memory." << endl;
 
-  T1 *realXformedDataPtr = realXformedData.memptr();
-  T1 *imagXformedDataPtr = imagXformedData.memptr();
+  //T1 *realXformedDataPtr = realXformedData.memptr();
+  //T1 *imagXformedDataPtr = imagXformedData.memptr();
 
   // Process data here, like calling a brute force transform, dft...
   // I assume you create the pointers to the arrays where the transformed data
@@ -214,27 +210,28 @@ RANGE()
   #else
     void* nPlan = NULL;
   #endif
-  computeFd_CPU_Grid<T1>(n2, kx, ky, kz, realDataPtr,
-                         imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
+  computeFd_CPU_Grid<T1>(n2, kx, ky, kz, dataPtr,
+                         Nx, Ny, Nz, gridOS,
+                         kernelWidth, beta, LUT, sizeLUT,
                          stream, nPlan, pGridData, pGridData_d, pGridData_os,
                          pGridData_os_d, pSamples);
 
   // To return data, we need to put our data back into Armadillo objects
   // We are telling the object how long it is because it will copy the data
   // back into managed memory
-  // realXformedData(realXformedDataPtr, dataLength);
-  // imagXformedData(imagXformedDataPtr, dataLength);
+  //realXformedData(realXformedDataPtr, dataLength);
+  //imagXformedData(imagXformedDataPtr, dataLength);
 
   // We can free the realDataXformPtr and imagDataXformPtr at this point and
   // Armadillo will manage armadillo object memory as things change size or go
   // out of scope and need to be destroyed
 
   //Col<complex<T1>> XformedData(this->n2);
-  XformedData.set_real(realXformedData);
-  XformedData.set_imag(imagXformedData);
+  //XformedData.set_real(realXformedData);
+  //XformedData.set_imag(imagXformedData);
 
-  return XformedData; // Return a vector of type T1
+  Col<CxT1> temp(reinterpret_cast<CxT1 *>(pSamples), n2, false, true);
+  return temp; // Return a vector of type T1
 }
 
 // Adjoint transform operation
@@ -247,11 +244,11 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
 
   uword dataLength = this->n2;
 
-  Col<T1> realData = real(d).eval();
-  Col<T1> imagData = imag(d).eval();
+  //Col<T1> realData = real(d).eval();
+  //Col<T1> imagData = imag(d).eval();
 
-  T1 *realDataPtr = realData.memptr();
-  T1 *imagDataPtr = imagData.memptr();
+  const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
+  //T1 *imagDataPtr = imagData.memptr();
 
   //Col<T1> realXformedData(n1);
   //Col<T1> imagXformedData(n1);
@@ -259,8 +256,8 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // realXformedData.zeros();
   // imagXformedData.zeros();
 
-  T1 *realXformedDataPtr = realXformedImg.memptr();
-  T1 *imagXformedDataPtr = imagXformedImg.memptr();
+  //T1 *realXformedDataPtr = realXformedImg.memptr();
+  //T1 *imagXformedDataPtr = imagXformedImg.memptr();
   // Process data here, like calling a brute force transform, dft...
   // I assume you create the pointers to the arrays where the transformed data
   // will be stored
@@ -273,8 +270,8 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   void *nPlan = NULL;
   #endif
   computeFH_CPU_Grid<T1>(dataLength, kx, ky, kz,
-                         realDataPtr, imagDataPtr, Nx, Ny, Nz, gridOS,
-                         realXformedDataPtr, imagXformedDataPtr, kernelWidth,
+                         dataPtr, Nx, Ny, Nz, gridOS,
+                         kernelWidth,
                          beta, LUT, sizeLUT, stream, nPlan, pGridData,
                          pGridData_d, pGridData_os, pGridData_os_d);
   /*
@@ -294,11 +291,11 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // out of scope and need to be destroyed
 
   //Col<complex<T1>> XformedImg(n1);
-  XformedImg.set_real(realXformedImg);
-  XformedImg.set_imag(imagXformedImg);
+  //XformedImg.set_real(realXformedImg);
+  //XformedImg.set_imag(imagXformedImg);
   // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
-
-  return XformedImg; // Return a vector of type T1
+  Col<CxT1> temp(reinterpret_cast<CxT1 *>(pGridData), n1, false, true);
+  return temp; // Return a vector of type T1
 }
 /*
 template <typename T1>

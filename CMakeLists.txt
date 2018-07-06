@@ -78,7 +78,9 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/fftCPU.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/fftGPU.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/ftCpu.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/ftCpuWithGrads.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/Gdft.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/GdftR2.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/Gfft.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/TimeSegmentation.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/griddingSupport.cpp
@@ -86,6 +88,7 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/Gnufft.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/SENSE.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/pcSENSE.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/pcSenseTimeSeg.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/reconSolve.cpp
 
 )
@@ -113,6 +116,14 @@ set(POWERGRID_PCSENSE
 add_executable(PowerGridPcSense ${POWERGRID_PCSENSE} ${PG_FILES})
 target_link_libraries(PowerGridPcSense ${LIBS})
 
+set(POWERGRID_PCSENSE_TIMESEG
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
+	./PowerGrid/PowerGridPcSenseTimeSeg.cpp
+)
+add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG} ${PG_FILES})
+target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS})
+
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
 else()
@@ -121,7 +132,7 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -ta=tesla:cuda9.0 -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -ta=tesla:cuda9.1,flushz,fastmath -pgf77libs")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=multicore -pgf77libs -fpermissive")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
 		else()
@@ -140,3 +151,6 @@ add_definitions(-DARMA_DONT_USE_OPENMP)
 if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
 endif (MPISupport)
+
+install(TARGETS PowerGridPcSense DESTINATION bin)
+install(TARGETS PowerGridIsmrmrd DESTINATION bin)

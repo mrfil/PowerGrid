@@ -27,7 +27,7 @@
 *.lib
 
 # Executables
-/build/*
+build/*
 *.exe
 *.out
 *.app
@@ -37,7 +37,8 @@
 *.tar.gz
 
 # Directories
-/build/*
+build/
+
 /.idea/*
 /cmake-*/
 

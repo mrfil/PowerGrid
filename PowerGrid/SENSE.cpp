@@ -57,11 +57,11 @@ Col<complex<T1>> SENSE<T1, Tobj>::operator*(const Col<complex<T1>> &d) const {
   outImg = this->SMap;
   #pragma omp parallel for schedule(dynamic) shared(outData, d, SMap)
   for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outImg.col(ii) %= d;
+    outImg.unsafe_col(ii) %= d;
   }
 
   for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outData.col(ii) = (*this->G_obj) * outImg.col(ii);
+    outData.unsafe_col(ii) = (*this->G_obj) * outImg.unsafe_col(ii);
   }
 
   // equivalent to returning col(output) in MATLAB with IRT
@@ -80,12 +80,12 @@ Col<complex<T1>> SENSE<T1, Tobj>::operator/(const Col<complex<T1>> &d) const {
 
   for (unsigned int ii = 0; ii < this->nc; ii++) {
     // coilImages.col(ii) = (*this->G_obj)/inData.col(ii);
-    outImg.col(ii) = (*this->G_obj) / d.subvec((ii)*n1, ((ii+1)*n1)-1);
+    outImg.unsafe_col(ii) = (*this->G_obj) / d.subvec((ii)*n1, ((ii+1)*n1)-1);
   }
 
   #pragma omp parallel for schedule(dynamic) shared(outImg, conjSMap)
   for (unsigned int ii = 0; ii < this->nc; ii++) {
-    outImg.col(ii) %= this->conjSMap.col(ii);
+    outImg.unsafe_col(ii) %= this->conjSMap.unsafe_col(ii);
   }
   // outData = sum(conj(SMap)%coilImages,2);
 
@@ -100,3 +100,6 @@ template class SENSE<double, Gnufft<double>>;
 template class SENSE<double, TimeSegmentation<double, Gnufft<double>>>;
 template class SENSE<float, Gdft<float>>;
 template class SENSE<double, Gdft<double>>;
+template class SENSE<float, GdftR2<float>>;
+template class SENSE<double, GdftR2<double>>;
+

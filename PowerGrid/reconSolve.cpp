@@ -25,6 +25,7 @@ Developed by:
 
 #include "reconSolve.h"
 #include "pcSENSE.h"
+#include "pcSenseTimeSeg.h"
 
 template <typename T1>
 void initImageSpaceCoords(Col<T1> &ix, Col<T1> &iy, Col<T1> &iz, uword Nx,
@@ -101,12 +102,22 @@ template  Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, Gdft<
                                Col<float>, uword, uword, uword, Col<float>,
                                uword);
 
+template  Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, GdftR2<float>>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
+                               Col<float>, uword, uword, uword, Col<float>,
+                               uword);
+
 template  Col<complex<float>> reconSolve(Col<complex<float>>, SENSE<float, TimeSegmentation<float,Gnufft<float>>>&,
 		QuadPenalty<float>, Col<float>, Col<float>,
 		Col<float>, uword, uword, uword, Col<float>,
 		uword);
 
 template  Col<complex<float>> reconSolve(Col<complex<float>>, pcSENSE<float>&,
+		QuadPenalty<float>, Col<float>, Col<float>,
+		Col<float>, uword, uword, uword, Col<float>,
+		uword);
+
+template  Col<complex<float>> reconSolve(Col<complex<float>>, pcSenseTimeSeg<float>&,
 		QuadPenalty<float>, Col<float>, Col<float>,
 		Col<float>, uword, uword, uword, Col<float>,
 		uword);
@@ -122,12 +133,22 @@ template  Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, Gd
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);
 
+template  Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, GdftR2<double>>&,
+		QuadPenalty<double>, Col<double>, Col<double>,
+		Col<double>, uword, uword, uword, Col<double>,
+		uword);
+
 template  Col<complex<double>> reconSolve(Col<complex<double>>, SENSE<double, TimeSegmentation<double,Gnufft<double>>>&,
 		QuadPenalty<double>, Col<double>, Col<double>,
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);
 
 template  Col<complex<double>> reconSolve(Col<complex<double>>, pcSENSE<double>&,
+		QuadPenalty<double>, Col<double>, Col<double>,
+		Col<double>, uword, uword, uword, Col<double>,
+		uword);
+
+template  Col<complex<double>> reconSolve(Col<complex<double>>, pcSenseTimeSeg<double>&,
 		QuadPenalty<double>, Col<double>, Col<double>,
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);

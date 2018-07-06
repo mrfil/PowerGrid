@@ -55,10 +55,6 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
   unsigned int Ny = params.imageSize[1];
   int gridNumElems = params.gridSize[0] * params.gridSize[1];
 
-  //pGData = reinterpret_cast<T1 *>(gridData);
-
-// float t0 = t[0];
-
 #pragma acc parallel loop independent gang vector present(LUT[0 : sizeLUT], \
   pGData[0 : gridNumElems * 2], sample[0:n])
   for (int i = 0; i < n; i++) {
@@ -82,7 +78,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
       int k0;
       distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
       // Working around issue with PGI 16.10 and OpenACC and kernel_value_LUT
-      if (params.useLUT) {
+      //if (params.useLUT) {
         k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
                    (T1)sizeLUT);
         if (k0 >= sizeLUT)
@@ -90,20 +86,21 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
         else
           kbX = LUT[k0];
         // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
-      } else {
-        kbX = bessi0(beta * std::sqrt((T1)1.0 -
-                                 ((T1)2.0 * distX / kernelWidth) *
-                                     ((T1)2.0 * distX / kernelWidth))) /
-              kernelWidth;
-      }
-
+      //} else {
+      //  kbX = bessi0(beta * std::sqrt((T1)1.0 -
+      //                           ((T1)2.0 * distX / kernelWidth) *
+      //                               ((T1)2.0 * distX / kernelWidth))) /
+      //        kernelWidth;
+      //}
+      /*  
       if (isnanPG(kbX)) { // if kbX = NaN
         kbX = 0;
       }
+      */
 #pragma acc loop seq
       for (ny = NyL; ny <= NyH; ++ny) {
         distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
-        if (params.useLUT) {
+        //if (params.useLUT) {
 
           k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
                      (T1)sizeLUT);
@@ -113,17 +110,17 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
           else
             kbY = LUT[k0];
 
-        } else {
-          kbY = bessi0(beta * std::sqrt((T1)1.0 -
-                                   ((T1)2.0 * distY / kernelWidth) *
-                                       ((T1)2.0 * distY / kernelWidth))) /
-                kernelWidth;
-        }
-
+        //} else {
+        //  kbY = bessi0(beta * std::sqrt((T1)1.0 -
+        //                           ((T1)2.0 * distY / kernelWidth) *
+        //                               ((T1)2.0 * distY / kernelWidth))) /
+        //        kernelWidth;
+        //}
+        /*
         if (isnanPG(kbY)) { // if kbY = NaN
           kbY = (T1)0.0;
         }
-
+        */
         w = kbX * kbY;
 
         /* grid data */
@@ -132,21 +129,10 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
 
 #pragma acc atomic update
         pGData[idx] += w * pt.real;
-// atomicAdd(pGData+2*idx, w*pt.real);
 
 #pragma acc atomic update
         pGData[idx + 1] += w * pt.imag;
-        // atomicAdd(pGData+2*idx+1, w*pt.imag);
 
-        // gridData[idx].y += (w*pt.imag*atm);
-        // gridData[idx].x += (w*pt.real*atm);
-        // gridData[idx].y += (w*pt.imag*atm);
-        // gridData[idx].real(gridData[idx].real()+w*pt.real);
-        // gridData[idx].imag(gridData[idx].imag()+w*pt.imag);
-        /* estimate sample density */
-        //#pragma acc atomic update
-        // sampleDensity[idx] += w;
-        // atomicAdd(sampleDensity+idx, w);
       }
     }
   }
@@ -218,7 +204,7 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
       int k0;
       distZ = std::abs(shiftedKz - ((T1)nz)) / (gridOS);
 
-      if (params.useLUT) {
+      //if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
         k0 = (int)((distZ * distZ * (T1)4.0 / (kernelWidth * kernelWidth)) *
                    (T1)sizeLUT);
@@ -226,17 +212,17 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
           kbZ = (T1)0.0;
         else
           kbZ = LUT[k0];
-      } else {
-        kbZ = bessi0(beta * std::sqrt((T1)1.0 -
-                                 ((T1)2.0 * distZ / kernelWidth) *
-                                     ((T1)2.0 * distZ / kernelWidth))) /
-              kernelWidth;
-      }
+      //} else {
+      //  kbZ = bessi0(beta * std::sqrt((T1)1.0 -
+      //                           ((T1)2.0 * distZ / kernelWidth) *
+      //                               ((T1)2.0 * distZ / kernelWidth))) /
+      //        kernelWidth;
+      //}
 
 #pragma acc loop seq
       for (nx = NxL; nx <= NxH; ++nx) {
         distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
-        if (params.useLUT) {
+        //if (params.useLUT) {
           //                    kbX = kernel_value_LUT(distX, LUT, sizeLUT,
           //                    kernelWidth);
           k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -245,17 +231,17 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
             kbX = (T1)0.0;
           else
             kbX = LUT[k0];
-        } else {
-          kbX = bessi0(beta * std::sqrt((T1)1.0 -
-                                   ((T1)2.0 * distX / kernelWidth) *
-                                       ((T1)2.0 * distX / kernelWidth))) /
-                kernelWidth;
-        }
+        //} else {
+        //  kbX = bessi0(beta * std::sqrt((T1)1.0 -
+        //                           ((T1)2.0 * distX / kernelWidth) *
+        //                               ((T1)2.0 * distX / kernelWidth))) /
+        //        kernelWidth;
+        //}
 
 #pragma acc loop seq
         for (ny = NyL; ny <= NyH; ++ny) {
           distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
-          if (params.useLUT) {
+          //if (params.useLUT) {
             //                      kbY = kernel_value_LUT(distY, LUT,sizeLUT,
             //                      kernelWidth);
             k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -264,12 +250,12 @@ int gridding_adjoint_3D(unsigned int n, parameters<T1> params, T1 beta,
               kbY = (T1)0.0;
             else
               kbY = LUT[k0];
-          } else {
-            kbY = bessi0(beta * std::sqrt((T1)1.0 -
-                                     ((T1)2.0 * distY / kernelWidth) *
-                                         ((T1)2.0 * distY / kernelWidth))) /
-                  kernelWidth;
-          }
+          //} else {
+          //  kbY = bessi0(beta * std::sqrt((T1)1.0 -
+          //                           ((T1)2.0 * distY / kernelWidth) *
+          //                               ((T1)2.0 * distY / kernelWidth))) /
+          //        kernelWidth;
+          //}
 
           w = kbX * kbY * kbZ;
 
@@ -308,8 +294,8 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   //T1 *pSamples;
   //T1 *pGridData;
   T1 w;
-  T1 sampleReal;
-  T1 sampleImag;
+  //T1 sampleReal;
+  //T1 sampleImag;
   T1 shiftedKx, shiftedKy /*, shiftedKz*/;
   T1 distX, kbX, distY, kbY /*, distZ, kbZ*/;
 
@@ -319,7 +305,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
 
   int Nx = params.imageSize[0];
   int Ny = params.imageSize[1];
-  int imageNumElems = params.imageSize[0] * params.imageSize[1];
+  //int imageNumElems = params.imageSize[0] * params.imageSize[1];
   int gridNumElems = params.gridSize[0] * params.gridSize[1];
 
   //pSamples = reinterpret_cast<T1 *>(sample);
@@ -346,7 +332,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
     for (nx = NxL; nx <= NxH; ++nx) {
       int k0;
       distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
-      if (params.useLUT) {
+      //if (params.useLUT) {
 
         k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
                    (T1)sizeLUT);
@@ -355,21 +341,21 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
         else
           kbX = LUT[k0];
 
-      } else {
-        kbX = bessi0(beta * std::sqrt((T1)1.0 -
-                                 ((T1)2.0 * distX / kernelWidth) *
-                                     ((T1)2.0 * distX / kernelWidth))) /
-              kernelWidth;
-      }
-
+      //} else {
+      //  kbX = bessi0(beta * std::sqrt((T1)1.0 -
+      //                           ((T1)2.0 * distX / kernelWidth) *
+      //                               ((T1)2.0 * distX / kernelWidth))) /
+      //        kernelWidth;
+      //}
+      /*
       if (isnanPG(kbX)) { // if kbX = NaN
         kbX = 0;
       }
-
+      */
 #pragma acc loop seq
       for (ny = NyL; ny <= NyH; ++ny) {
         distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
-        if (params.useLUT) {
+        //if (params.useLUT) {
           // kbY = kernel_value_LUT(distY, LUT, sizeLUT, kernelWidth);
 
           k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -379,17 +365,17 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
           else
             kbY = LUT[k0];
 
-        } else {
-          kbY = bessi0(beta * std::sqrt((T1)1.0 -
-                                   ((T1)2.0 * distY / kernelWidth) *
-                                       ((T1)2.0 * distY / kernelWidth))) /
-                kernelWidth;
-        }
-
+        //} else {
+        //  kbY = bessi0(beta * std::sqrt((T1)1.0 -
+        //                           ((T1)2.0 * distY / kernelWidth) *
+        //                               ((T1)2.0 * distY / kernelWidth))) /
+        //        kernelWidth;
+        //}
+        /*
         if (isnanPG(kbY)) { // if kbY = NaN
           kbY = 0;
         }
-
+        */
         /* kernel weighting value */
         // if (params.useLUT){
         //    w = kbX * kbY;
@@ -407,12 +393,6 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
 //#pragma acc atomic update
         pSamples[2 * i + 1] += w * pGridData[2 * idx + 1];
 
-        // sample[i].real(sample[i].real()+w*gridData[idx].real());
-        // sample[i].imag(sample[i].imag()+w*gridData[idx].imag());
-        /* estimate sample density */
-
-        //#pragma acc atomic update
-        // sampleDensity[i] += w;
       }
     }
   }
@@ -423,22 +403,6 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1 *kx,
   // PowerGrid uses: x->y->z because we are column major same as Nady...
   // Nope! XX So we need to convert from (x->y->z)-order to (z->x->y)-order
   // int gridNumElems = params.gridSize[0] * params.gridSize[1];
-
-  // complex<T1> *gridData_reorder = (complex<T1>*) malloc(gridNumElems,
-  // sizeof(typename complex<T1>));
-  //
-  // for(int x=0;x<params.gridSize[0];x++)
-  //    for(int y=0;y<params.gridSize[1];y++)
-  //    {
-  //        int lindex_nady      = x + y*params.gridSize[0];
-  //        int lindex_impatient = y + x*params.gridSize[0];
-  //
-  //        gridData_reorder[lindex_impatient] = gridData[lindex_nady];
-  //    }
-  // memcpy((void*)gridData,(void*)gridData_reorder,gridNumElems*sizeof(typename
-  // complex<T1>));
-  //
-  // free(gridData_reorder);
 
   return 1;
 }
@@ -473,8 +437,8 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
   int Nx = params.imageSize[0];
   int Ny = params.imageSize[1];
   int Nz = params.imageSize[2];
-  int imageNumElems =
-      params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
+  //int imageNumElems =
+  //    params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
   int gridNumElems =
       params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
   //pGridData = reinterpret_cast<T1 *>(gridData);
@@ -513,7 +477,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
       int k0;
       distZ = std::abs(shiftedKz - ((T1)nz)) / (gridOS);
 
-      if (params.useLUT) {
+      //if (params.useLUT) {
         // kbZ = kernel_value_LUT(distZ, LUT, sizeLUT, kernelWidth);
         k0 = (int)((distZ * distZ * (T1)4.0 / (kernelWidth * kernelWidth)) *
                    (T1)sizeLUT);
@@ -522,22 +486,22 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
         else
           kbZ = LUT[k0];
 
-      } else {
-        kbZ = bessi0(beta * std::sqrt((T1)1.0 -
-                                 ((T1)2.0 * distZ / kernelWidth) *
-                                     ((T1)2.0 * distZ / kernelWidth))) /
-              kernelWidth;
-      }
-
+      //} else {
+      //  kbZ = bessi0(beta * std::sqrt((T1)1.0 -
+      //                           ((T1)2.0 * distZ / kernelWidth) *
+      //                               ((T1)2.0 * distZ / kernelWidth))) /
+      //        kernelWidth;
+      //}
+      /*
       if (isnanPG(kbZ)) { // if kbZ = NaN
         kbZ = 0;
       }
-
+      */
 #pragma acc loop seq
       for (nx = NxL; nx <= NxH; ++nx) {
         distX = std::abs(shiftedKx - ((T1)nx)) / (gridOS);
 
-        if (params.useLUT) {
+        //if (params.useLUT) {
           // kbX = kernel_value_LUT(distX, LUT, sizeLUT, kernelWidth);
           k0 = (int)((distX * distX * (T1)4.0 / (kernelWidth * kernelWidth)) *
                      (T1)sizeLUT);
@@ -546,22 +510,22 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
           else
             kbX = LUT[k0];
 
-        } else {
-          kbX = bessi0(beta * std::sqrt((T1)1.0 -
-                                   ((T1)2.0 * distX / kernelWidth) *
-                                       ((T1)2.0 * distX / kernelWidth))) /
-                kernelWidth;
-        }
-
+        //} else {
+        //  kbX = bessi0(beta * std::sqrt((T1)1.0 -
+        //                           ((T1)2.0 * distX / kernelWidth) *
+        //                               ((T1)2.0 * distX / kernelWidth))) /
+        //        kernelWidth;
+        //}
+        /*
         if (isnanPG(kbX)) { // if kbX = NaN
           kbX = 0;
         }
-
+        */
 #pragma acc loop seq
         for (ny = NyL; ny <= NyH; ++ny) {
           distY = std::abs(shiftedKy - ((T1)ny)) / (gridOS);
 
-          if (params.useLUT) {
+          //if (params.useLUT) {
             // kbY = kernel_value_LUT(distY, LUT, sizeLUT, kernelWidth);
 
             k0 = (int)((distY * distY * (T1)4.0 / (kernelWidth * kernelWidth)) *
@@ -571,17 +535,17 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
             else
               kbY = LUT[k0];
 
-          } else {
-            kbY = bessi0(beta * std::sqrt(1.0 -
-                                     (2.0 * distY / kernelWidth) *
-                                         (2.0 * distY / kernelWidth))) /
-                  kernelWidth;
-          }
-
+          //} else {
+          //  kbY = bessi0(beta * std::sqrt(1.0 -
+          //                           (2.0 * distY / kernelWidth) *
+          //                               (2.0 * distY / kernelWidth))) /
+          //        kernelWidth;
+          //}
+          /*
           if (isnanPG(kbY)) { // if kbY = NaN
             kbY = 0;
           }
-
+          */
           w = kbX * kbY * kbZ;
 
           /* grid data */
@@ -606,28 +570,13 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1 *kx,
 template <typename T1>
 void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         const T1 *__restrict ky, const T1 *__restrict kz,
-                        const T1 *__restrict dR, const T1 *__restrict dI,
+                        const T1 *__restrict dIn,
                         int Nx, int Ny, int Nz, T1 gridOS,
-                        T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
                         const uword sizeLUT, void* stream, CFTHandle *plan,
                         T1 *pGridData_crop_deAp, T1 *pGridData_crop_d,
                         T1 *pGridData, T1 *pGridData_d) {
- 
-  /*
-   *  Based on Eqn. (5) of Beatty's gridding paper:
-   *  "Rapid Gridding Reconstruction With a Minimal Oversampling Ratio"
-   *
-   *  Note that Beatty use their kernel width to be equal twice the window
-   *  width parameter used by Jackson et al.
-   */
-  /*
-  T1 kernelWidth = 4.0;
-  T1 beta = MRI_PI * std::sqrt( (gridOS - 0.5) * (gridOS - 0.5) *
-                                             (kernelWidth * kernelWidth*4.0) /
-                                             (gridOS * gridOS) - 0.8
-                                             );
-  */
+
   RANGE()
   parameters<T1> params;
   params.sync = 0;
@@ -667,8 +616,8 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     samples[i].kY = ky[i];
     samples[i].kZ = kz[i];
 
-    samples[i].real = dR[i];
-    samples[i].imag = dI[i];
+    samples[i].real = dIn[2 * i];
+    samples[i].imag = dIn[2 * i + 1];
 
     samples[i].sdc = (T1)1.0;
     // samples[i].t = t[i];
@@ -697,18 +646,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   // Have to set 'gridData' and 'sampleDensity' to zero.
   // Because they will be involved in accumulative operations
   // inside gridding functions.
-  /*
-  complex<T1> *gridData = new complex<T1>[gridNumElems];
-  complex<T1> *gridData_d = new complex<T1>[gridNumElems];
-  complex<T1> *gridData_crop_d = new complex<T1>[imageNumElems];
-  complex<T1> *gridData_crop_deAp = new complex<T1>[imageNumElems];
-  T1 *pGridData_crop_d = reinterpret_cast<T1 *>(gridData_crop_d);
-  T1 *pGridData_crop_deAp = reinterpret_cast<T1 *>(gridData_crop_deAp);
-  T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
-  T1 *pGridData = reinterpret_cast<T1 *>(gridData);
-  */
-#pragma acc enter data copyin( samples[0:n])      \
-	create(outI_d[0:imageNumElems], outR_d[0:imageNumElems])
+#pragma acc enter data copyin( samples[0:n])
 
   #pragma acc parallel loop
   for (int i = 0; i < gridNumElems; i++) {
@@ -739,18 +677,9 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 #pragma acc host_data use_device(pGridData_d)
 {
 
-
-    // Query OpenACC for CUDA stream
-    //void *stream = acc_get_cuda_stream(acc_async_sync);
-
-    // Launch FFT on the GPU
-    //#pragma acc update self(pGridData_d[0:2*gridNumElems])
     if (Nz == 1) {
-      //ifft2dCPU(pGridData_d, params.gridSize[0], params.gridSize[1]);
       ifft2dGPU(pGridData_d, params.gridSize[0], params.gridSize[1], stream, plan);
     } else {
-      //ifft3dCPU(pGridData_d, params.gridSize[0], params.gridSize[1],
-      //        params.gridSize[2]);
       ifft3dGPU(pGridData_d, params.gridSize[0], params.gridSize[1],
                 params.gridSize[2], stream, plan);
     }
@@ -798,6 +727,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                              params.gridSize[0], params.gridSize[1],
                              params.gridSize[2]);
   }
+
   // deapodization
   if (Nz == 1) {
     deapodization2d<T1>(pGridData_crop_deAp, pGridData_crop_d, Nx, Ny,
@@ -806,27 +736,21 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
     deapodization3d<T1>(pGridData_crop_deAp, pGridData_crop_d, Nx, Ny, Nz,
                         kernelWidth, beta, params.gridOS);
   }
-
+  
   // Copy results from gridData_crop_d to outR_d and outI_d
   // gridData_crop_d is cufftComplex, interleaving
   // De-interleaving the data from cufftComplex to outR_d-and-outI_d
-
+  /*
   if (Nz == 1) {
     deinterleave_data2d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny);
   } else {
     deinterleave_data3d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny, Nz);
   }
-
-#pragma acc exit data copyout(outR_d[0 : imageNumElems],outI_d[0 : imageNumElems])  \
-    delete(samples[0:n])
-    free(samples);
-  /*
-  delete[] gridData_crop_d;
-  delete[] gridData_crop_deAp;
-
-  delete[] gridData;
-  delete[] gridData_d;
   */
+#pragma acc exit data delete(samples[0:n])
+#pragma acc update self(pGridData_crop_deAp[0:2*imageNumElems])
+    free(samples);
+
 
 }
 
@@ -834,31 +758,13 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 template <typename T1>
 void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
                         const T1 *__restrict ky, const T1 *__restrict kz,
-                        const T1 *__restrict dR, const T1 *__restrict dI,
+                        const T1 *__restrict dIn,
                         int Nx, int Ny, int Nz, T1 gridOS,
-                        T1 *__restrict outR_d, T1 *__restrict outI_d,
                         const T1 kernelWidth, const T1 beta, const T1 *LUT,
                         const uword sizeLUT, void* stream, CFTHandle *plan,
                         T1 *pGridData, T1 *pGridData_d, T1 *pGridData_os,
                         T1 *pGridData_os_d, T1 *pSamples) {
 
-  /*
-   *  Based on Eqn. (5) of Beatty's gridding paper:
-   *  "Rapid Gridding Reconstruction With a Minimal Oversampling Ratio"
-   *
-   *  Note that Beatty use their kernel width to be equal twice the window
-   *  width parameter used by Jackson et al.
-   */
-  /*
-  T1 kernelWidth = .0;
-  T1 beta = MRI_PI * std::sqrt( (gridOS - 0.5) * (gridOS - 0.5) *
-                                                            (kernelWidth *
-  kernelWidth*4.0) /
-                                                            (gridOS * gridOS)
-  -
-  0.8
-  );i
-  */
   RANGE()
   parameters<T1> params;
   params.sync = 0;
@@ -879,7 +785,6 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   params.gridSize[2] = (Nz == 1) ? Nz : (std::ceil(gridOS * (T1)Nz)); // 2D or 3D
   params.numSamples = numK_per_coil;
 
-  //complex<T1> *samples = new complex<T1>[params.numSamples];
 
   unsigned int n = params.numSamples;
 
@@ -898,38 +803,18 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
   }
   //
 
-  int gridNumElems =
-      params.gridSize[0] * params.gridSize[1] * params.gridSize[2];
+
   int imageNumElems =
       params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
-  // allocate gridData
-
-  // Have to set 'gridData'
-  // Because they will be involved in accumulative operations
-  // inside gridding functions.
-
+memcpy(pGridData,dIn,sizeof(T1) * 2 * imageNumElems);
 /*
-	T1 *pSamples = reinterpret_cast<T1 *>(samples);
-  complex<T1> *gridData = new complex<T1>[imageNumElems];
-	complex<T1> *gridData_d = new complex<T1>[imageNumElems];
-  complex<T1> *gridData_os_d = new complex<T1>[gridNumElems];
-  complex<T1> *gridData_os = new complex<T1>[gridNumElems];
-  T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
-  T1 *pGridData_os_d = reinterpret_cast<T1 *>(gridData_os_d);
-  T1 *pGridData_os = reinterpret_cast<T1 *>(gridData_os);
-  T1 *pGridData = reinterpret_cast<T1 *>(gridData);
+for (int i = 0; i < 2*imageNumElems; i++) {
+  pGridData[i]     = dIn[i];
+}
 */
 
-
-  for (int i = 0; i < imageNumElems; i++) {
-    pGridData[2*i]     = dR[i];
-    pGridData[2*i + 1] = dI[i];
-  }
-
 #pragma acc update device(pGridData[0:2*imageNumElems])
-
-
 #pragma acc parallel loop present(pSamples[0:2*n])
   for (int ii = 0; ii < 2*n; ii++) {
     pSamples[ii] = (T1)0.0;
@@ -1014,18 +899,12 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1 *__restrict kx,
 // deallocate samples
 
 #pragma acc update host(pSamples[0:2*n])
-
+/*
 	for (int ii = 0; ii < n; ii++) {
 		outR_d[ii] = pSamples[2*ii];
 		outI_d[ii] = pSamples[2*ii+1];
 	}
-/*
-  delete[] samples;
-  delete[] gridData;
-  delete[] gridData_d;
-  delete[] gridData_os;
-  delete[] gridData_os_d;
-  */
+*/
 
 }
 
@@ -1068,30 +947,26 @@ template int gridding_forward_3D<double>(unsigned int, parameters<double>,
                                          double *, const double *,
                                          const uword, double *);
 template void computeFH_CPU_Grid<float>(int, const float *, const float *,
-                                        const float *, const float *,
+                                        const float *,
                                         const float *, int, int, int,
-                                        float gridOS, float *, float *,
+                                        float gridOS,
                                         const float, const float, const float *,
                                         const uword, void *, CFTHandle *, float *,
                                         float *, float *, float *);
 template void computeFH_CPU_Grid<double>(int, const double *, const double *,
-                                         const double *, const double *,
+                                         const double *,
                                          const double *, int, int, int,
-                                         double gridOS, double *, double *,
+                                         double gridOS,
                                          const double, const double,
                                          const double *, const uword, void *, CFTHandle *,
                                          double *, double *, double *, double *);
-template void computeFd_CPU_Grid<float>(int, const float *, const float *,
-                                        const float *, const float *,
-                                        const float *, int, int, int, float,
-                                        float *, float *, const float,
-                                        const float, const float *,
-                                        const uword, void *, CFTHandle *,
-                                         float *, float *, float *, float *, float *);
-template void computeFd_CPU_Grid<double>(int, const double *, const double *,
-                                         const double *, const double *,
-                                         const double *, int, int, int, double,
-                                         double *, double *, const double,
-                                         const double, const double *,
-                                         const uword, void *, CFTHandle *,
-                                          double *, double *, double *, double *, double *);
+template void computeFd_CPU_Grid<float>(int, const float *,
+                                        const float *, const float *, const float *,
+                                        int, int, int, float, const float, const float,
+                                        const float *, const uword, void *, CFTHandle *,
+                                        float *, float *, float *, float *, float *);
+template void computeFd_CPU_Grid<double>(int, const double *,
+                                        const double *, const double *, const double *,
+                                        int, int, int, double, const double, const double,
+                                        const double *, const uword, void *, CFTHandle *,
+                                        double *, double *, double *, double *, double *);

@@ -37,9 +37,9 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv) {
   std::string rawDataFilePath, outputImageFilePath, senseMapFilePath,
-      fieldMapFilePath, precisionString, TimeSegmentationInterp,
+      fieldMapFilePath, precisionString, TimeSegmentationInterp, FourierTrans,
       rawDataNavFilePath;
-  uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10;
+  uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10, FtType = 0;
   //uword ;
   double beta = 0.0;
   uword dims2penalize = 3;
@@ -47,6 +47,8 @@ int main(int argc, char **argv) {
   desc.add_options()("help,h", "produce help message")(
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
+ 			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
+
       /*
       ("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
       ISMRMRD Navigator Raw Data")
@@ -67,6 +69,7 @@ int main(int argc, char **argv) {
           ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
           ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
           ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
+          ("FourierTransform,F", po::value<std::string>(&FourierTrans)->required(), "Implementation of Fourier Transform")
           ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
           ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
           ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver")
@@ -96,18 +99,32 @@ int main(int argc, char **argv) {
     }
     */
 
-    if (TimeSegmentationInterp.compare("hanning") == 0) {
-      type = 1;
-    } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-      type = 2;
-    } else if (TimeSegmentationInterp.compare("histo") == 0) {
-      type = 3;
+    if (FourierTrans.compare("DFT") == 0) {
+        FtType = 2;
+    
+    } else if (FourierTrans.compare("NUFFT") == 0) {
+      
+      FtType = 1;
+      if (TimeSegmentationInterp.compare("hanning") == 0) {
+        type = 1;
+      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+        type = 2;
+      } else if (TimeSegmentationInterp.compare("histo") == 0) {
+        type = 3;
+      } else {
+        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                  << "Acceptable values are hanning or minmax."            << std::endl;
+        return 1;
+      }
+    } else if (FourierTrans.compare("DFTGrads") == 0) {
+      FtType = 3;
     } else {
-      type = 1;
-      std::cout << "Did not recognize temporal interpolator selection. "
-                   "Acceptable values are hanning or minmax."
-                << std::endl;
+      std::cout << "Did not recognize Fourier transform selection. " << std::endl
+                << "Acceptable values are DFT or NUFFT."             << std::endl;
+      return 1;
     }
+
+
   } catch (boost::program_options::error &e) {
     std::cerr << "Error: " << e.what() << std::endl;
     std::cout << desc << std::endl;
@@ -178,6 +195,9 @@ int main(int argc, char **argv) {
 
   std::string baseFilename = "SENSE";
   std::string filename;
+  if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
+    	outputImageFilePath += '/';
+	}
   //uword NSet = 0; //Set is only used for arrayed ADCs
   //uword NSeg = 0;
 	for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
@@ -185,10 +205,7 @@ int main(int argc, char **argv) {
             for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
                 for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
                     for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
-                    //for (uword NSlice = 0; NSlice<=2; NSlice++) {
-                      auto start = std::chrono::high_resolution_clock::now();
-
-                      filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) +
+                      filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
           								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
           								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
                           
@@ -197,31 +214,37 @@ int main(int argc, char **argv) {
 
 	                    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
-	                    //senSlice.save("senSlice.dat", raw_ascii);
 	                    std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
 	                    std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
 	                    std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
 	                    std::cout << "Number of rows in data = " << data.n_rows << std::endl;
 	                    std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-	                    Gnufft<float> G(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
-			                    iy, iz);
-	                    //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-	                    TimeSegmentation<float, Gnufft<float>> A(G, fmSlice, tvec, kx.n_rows, Nx*Ny*Nz, L, type, NShots);
-	                    SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, senSlice, kx.n_rows, Nx*Ny*Nz, nc);
-	                    //SENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-	                    //SENSE<float, Gdft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 	                    QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
-	                    //ImageTemp = reconSolve<float, SENSE<float, Gnufft<float>>,
-	                    //        QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
-	                    //        Ny, Nz, tvec, NIter);
-                      auto finish = std::chrono::high_resolution_clock::now();
 
-                      std::chrono::duration<float> elapsed = finish - start;
-                      std::cout << "Recon Initialization time: " << elapsed.count() << " s\n";
-	                    ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
+                      if (FtType == 1) {
+	                      Gnufft<float> G(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
+			                    iy, iz);
+	                      TimeSegmentation<float, Gnufft<float>> A(G, fmSlice, tvec, kx.n_rows, Nx*Ny*Nz, L, type, NShots);
+                        SENSE<float, TimeSegmentation<float, Gnufft<float>>> Sg(A, senSlice, kx.n_rows, Nx*Ny*Nz, nc);
+	                      ImageTemp = reconSolve<float, SENSE<float, TimeSegmentation<float, Gnufft<float>>>,
 			                    QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
 			                    Ny, Nz, tvec, NIter);
+                      } else if (FtType == 2) {
+                        Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,fmSlice,tvec);
+	                      SENSE<float, Gdft<float>> Sg(A, senSlice, kx.n_rows, Nx*Ny*Nz, nc);
+	                      ImageTemp = reconSolve<float, SENSE<float, Gdft<float>>,
+	                            QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
+                              Ny, Nz, tvec, NIter);
+                      } else if (FtType == 3) {
+                        GdftR2<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,fmSlice,tvec,Nx,Ny,Nz);
+	                      SENSE<float, GdftR2<float>> Sg(A, senSlice, kx.n_rows, Nx*Ny*Nz, nc);
+	                      ImageTemp = reconSolve<float, SENSE<float, GdftR2<float>>,
+	                            QuadPenalty<float>>(data, Sg, R, kx, ky, kz, Nx,
+                              Ny, Nz, tvec, NIter);
+                      }
+
+
 	                  //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
                     writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
                     }

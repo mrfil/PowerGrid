@@ -44,6 +44,7 @@
 #include "Gnufft.h"
 
 #include "pcSENSE.h"
+#include "pcSenseTimeSeg.h"
 #include "solve_pwls_pcg.hpp"
 
 #include "SENSE.h"

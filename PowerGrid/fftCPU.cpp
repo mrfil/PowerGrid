@@ -31,17 +31,31 @@ Developed by:
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
 // template parameter.
+
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
+void fft1dCPU(T1 *d_data, uword nx) {
+
+  fftwf_plan plan;
+  plan =
+      fftwf_plan_dft_1d(nx, (fftwf_complex *)d_data,
+                        (fftwf_complex *)d_data, FFTW_FORWARD, FFTW_ESTIMATE);
+
+  fftwf_execute(plan);
+  fftwf_destroy_plan(plan);
+}
+
 template <typename T1,
           typename std::enable_if<std::is_same<T1, float>::value, uword>::type>
 void ifft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running backward xform 2d" << endl;
   fftwf_plan plan;
   plan =
-      fftwf_plan_dft_2d(nx, ny, (fftwf_complex *)d_data,
+      fftwf_plan_dft_2d(ny, nx, (fftwf_complex *)d_data,
                         (fftwf_complex *)d_data, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
-  // fftwf_pruword_plan(plan);
+
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
 }
@@ -52,7 +66,7 @@ void fft2dCPU(T1 *d_data, uword nx, uword ny) {
   cout << "Running forward xform 2d" << endl;
   fftwf_plan plan;
   plan =
-      fftwf_plan_dft_2d(nx, ny, (fftwf_complex *)d_data,
+      fftwf_plan_dft_2d(ny, nx, (fftwf_complex *)d_data,
                         (fftwf_complex *)d_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
   // Inverse transform 'gridData_d' in place.
@@ -89,6 +103,20 @@ void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
   // fftwf_pruword_plan(plan);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);
+}
+
+template <typename T1,
+          typename std::enable_if<std::is_same<T1, double>::value, uword>::type>
+void fft1dCPU(T1 *d_data, uword nx) {
+  cout << "Running forward xform 2d" << endl;
+
+  fftw_plan plan;
+  plan = fftw_plan_dft_1d(nx, (fftw_complex *)d_data,
+                          (fftw_complex *)d_data, FFTW_FORWARD, FFTW_ESTIMATE);
+
+  // Inverse transform 'gridData_d' in place.
+  fftw_execute(plan);
+  fftw_destroy_plan(plan);
 }
 
 template <typename T1,
@@ -148,6 +176,9 @@ void fft3dCPU(T1 *d_data, uword nx, uword ny, uword nz) {
 }
 
 // Explicit Instantiations
+template void fft1dCPU<float>(float *, uword);
+template void fft1dCPU<double>(double *, uword);
+
 template void ifft2dCPU<float>(float *, uword, uword);
 template void ifft2dCPU<double>(double *, uword, uword);
 

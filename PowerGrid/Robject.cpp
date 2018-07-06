@@ -25,6 +25,7 @@
 *****************************************************************************/
 
 #include "Robject.h"
+#include <chrono>  // for high_resolution_clock
 
 // template <typename T1> Robject<T1>::Robject(){};
 
@@ -46,7 +47,7 @@ Robject<T1>::Robject(uword nx, uword ny, uword nz, T1 beta, uword dims2penalize)
 // crash rather than give un results.
 
 template <typename T1>
-Col<complex<T1> > Robject<T1>::Cd(const Col<complex<T1> > &d, uword dim) const {
+Col<complex<T1>> Robject<T1>::Cd(const Col<complex<T1> > &d, uword dim) const {
 
         Col<complex<T1> > out(Nx * Ny * Nz);
         out.zeros();
@@ -81,7 +82,7 @@ Col<complex<T1> > Robject<T1>::Cd(const Col<complex<T1> > &d, uword dim) const {
 }
 
 template <typename T1>
-Col<complex<T1> > Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const {
+Col<complex<T1>> Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const {
         Col<complex<T1> > out(Nx * Ny * Nz);
         out.zeros();
         uword ll, jj, kk;
@@ -106,16 +107,13 @@ Col<complex<T1> > Robject<T1>::Ctd(const Col<complex<T1> > &d, uword dim) const 
                         "Undefined case!"
                      << endl;
         }
-
+        
         uword offset = ll + jj * Ny + kk * Nx * Ny;
-        for (uword ii = offset; ii < Ny * Nx * Nz; ii++) {
-                if (ii == offset - 1) {
-                        out(ii) = -d(ii + 1);
-                } else if (ii == Ny * Nx * Nz - 1) {
-                        out(ii - offset) = d(ii - offset);
-                } else {
-                        out(ii - offset) = d(ii - offset) - d(ii);
-                }
+        out(offset - 1) = -d(offset);
+        out(Ny * Nx * Nz - 1 - offset) = d(Ny * Nx * Nz - 1 - offset);
+        
+        for (uword ii = offset; ii < Ny * Nx * Nz - 1; ii++) {
+                out(ii - offset) = d(ii - offset) - d(ii);
         }
 
         return out;
@@ -143,7 +141,7 @@ T1 Robject<T1>::Penalty(const Col<complex<T1> > &x) const {
         return this->Beta * penal;
 }
 template <typename T1>
-Col<complex<T1> > Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
+Col<complex<T1>> Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
         RANGE()
         Col<complex<T1> > g = zeros<Col<complex<T1> > >(x.n_rows);
         Col<complex<T1> > d = zeros<Col<complex<T1> > >(x.n_rows);
@@ -159,7 +157,8 @@ Col<complex<T1> > Robject<T1>::Gradient(const Col<complex<T1> > &x) const {
                 d = this->Cd(x, ii);
                 d = this->dpot(d);
                 d = this->Ctd(d, ii);
-                g = g + d;
+                g += d;
+
         }
 
         return this->Beta * g;
@@ -169,8 +168,9 @@ template <typename T1>
 complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
                                const Col<complex<T1> > &x) const {
         RANGE()
-        Col<complex<T1> > Cdir = zeros<Col<complex<T1> > >(ddir.n_rows);
-        Col<complex<T1> > Cx = zeros<Col<complex<T1> > >(ddir.n_rows);
+
+        Col<complex<T1>> Cdir = zeros<Col<complex<T1>>>(ddir.n_rows);
+        Col<complex<T1>> Cx = zeros<Col<complex<T1>>>(ddir.n_rows);
         complex<T1> penal = 0;
         complex<T1> temp;
         complex<T1> cxBeta(this->Beta, 0);
@@ -180,13 +180,13 @@ complex<T1> Robject<T1>::Denom(const Col<complex<T1> > &ddir,
         } else {
                 nd = 3;
         }
-
         for (uword ii = 0; ii < nd; ii++) {
                 Cdir = this->Cd(ddir, ii);
                 Cx = this->wpot(this->Cd(x, ii));
-                Cx = Cx % Cdir;
-                temp = as_scalar(Cdir.t() * Cx);
+                Cx %= Cdir;
+                temp = as_scalar(cdot(Cdir,Cx));
                 penal += temp;
+
         }
 
         return penal * cxBeta;

@@ -40,6 +40,11 @@ Developed by:
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
 // template parameter.
+
+template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
+                                               int>::type = 0>
+void fft1dGPU(T1 *d_data, int nx, void *stream, cufftHandle *plan);
+
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type = 0>
 void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan);
@@ -55,6 +60,10 @@ void ifft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *pl
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type = 0>
 void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *plan);
+
+template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
+                                               int>::type = 0>
+void fft1dGPU(T1 *d_data, int nx, void *stream, cufftHandle *plan);
 
 template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
                                                int>::type = 0>
@@ -73,6 +82,9 @@ template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
 void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *plan);
 
 // Explicit Instantiations
+extern template void fft1dGPU<float>(float *, int, void *, cufftHandle *);
+extern template void fft1dGPU<double>(double *, int, void *, cufftHandle *);
+
 extern template void ifft2dGPU<float>(float *, int, int, void *, cufftHandle *);
 extern template void ifft2dGPU<double>(double *, int, int, void *, cufftHandle *);
 

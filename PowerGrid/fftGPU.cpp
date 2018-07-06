@@ -37,6 +37,32 @@
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the
 // template parameter.
+
+template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
+                                               int>::type>
+void fft1dGPU(T1 *d_data, int nx, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
+        // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
+
+        if (cufftPlan1d(&plan, nx, CUFFT_C2C) != CUFFT_SUCCESS) {
+                fprintf(stderr, "CUFFT error: Plan creation failed");
+        }
+
+        cufftSetStream(plan, (cudaStream_t)stream);
+        */
+        if(cufftExecC2C(*plan, (cufftComplex *)d_data, (cufftComplex *)d_data,
+                     CUFFT_FORWARD) != CUFFT_SUCCESS) {
+                       fprintf(stderr, "Cufft error: ExecC2C Failed\n");
+        };
+                             // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
+        //cufftDestroy(plan);
+}
+
 template <typename T1, typename std::enable_if<std::is_same<T1, float>::value,
                                                int>::type>
 void ifft2dGPU(T1 *d_data, int nx, int ny, void *stream, cufftHandle *plan) {
@@ -134,6 +160,35 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz, void *stream, cufftHandle *pla
         };
 
                              // Wait for operation to complete
+        if (cudaDeviceSynchronize() != cudaSuccess){
+            fprintf(stderr, "Cuda error: Failed to synchronize\n");
+        }
+
+        //cufftDestroy(plan);
+}
+
+template <typename T1, typename std::enable_if<std::is_same<T1, double>::value,
+                                               int>::type>
+void fft1dGPU(T1 *d_data, int nx, void *stream, cufftHandle *plan) {
+        /*
+        cufftHandle *plan;
+
+        // cufftSetCompatibilityMode(plan, CUFFT_COMPATIBILITY_FFTW_ALL);
+
+        if (cufftPlan1d(&plan, nx, CUFFT_Z2Z) != CUFFT_SUCCESS) {
+                printf("CUFFT error: Plan creation failed\n");
+        }
+        // printf("Built plan \n");
+
+        cufftSetStream(plan, (cudaStream_t)stream);
+        */
+        if (cufftExecZ2Z(*plan, (cufftDoubleComplex *)d_data,
+                         (cufftDoubleComplex *)d_data,
+                         CUFFT_FORWARD) != CUFFT_SUCCESS) {
+                printf("CUFFT error: Plan execution failed\n");
+        };
+
+                // Wait for operation to complete
         if (cudaDeviceSynchronize() != cudaSuccess){
             fprintf(stderr, "Cuda error: Failed to synchronize\n");
         }
@@ -257,6 +312,9 @@ void fft3dGPU(T1 *d_data, int nx, int ny, int nz,
 }
 
 // Explicit Instantiations
+template void fft1dGPU<float>(float *, int, void *, cufftHandle *);
+template void fft1dGPU<double>(double *, int, void *, cufftHandle *);
+
 template void ifft2dGPU<float>(float *, int, int, void *, cufftHandle *);
 template void ifft2dGPU<double>(double *, int, int, void *, cufftHandle *);
 

@@ -73,6 +73,11 @@ public:
   // Overloaded operators go here
   Col<CxT1> operator*(const Col<CxT1> &d) const;
   Col<CxT1> operator/(const Col<CxT1> &d) const;
+
+  protected:
+
+  // Handy utility function for fftw via armadillo
+  Col<CxT1> calcFFT1D(const Col<CxT1> &d, uword KK) const;
 };
 
 // Now we insert the explicit instantiations we need

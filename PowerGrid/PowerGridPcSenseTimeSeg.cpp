@@ -11,7 +11,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [PowerGridPcSense.cpp]
+    File Name   [PowerGridPcSenseTimeSeg.cpp]
 
     Synopsis    [PowerGrid reconstruction executable supporting ISMRMRD format
                                 as input and Phase Corrected Sense Algorithm.]
@@ -42,20 +42,22 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-	std::string rawDataFilePath, outputImageFilePath;
-	uword Nx, Ny, Nz, NShots = 1, NIter = 10;
+	std::string rawDataFilePath, outputImageFilePath, TimeSegmentationInterp;
+	uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10;
 	//uword type, L = 0;
 	double beta = 0.0;
 	uword dims2penalize = 3;
 	po::options_description desc("Allowed options");
-	desc.add_options()("help,h", "produce help message")
-			("inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
+	desc.add_options()("help,h", "produce help message")(
+			"inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
 			"input ISMRMRD Raw Data file")
 			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
 			/*
 			("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
 			ISMRMRD Navigator Raw Data")
-
+			("outputImage,o",
+			po::value<std::string>(&outputImageFilePath)->required(), "output ISMRMRD
+			Image file")
 			("SENSEMap,S", po::value<std::string>(&senseMapFilePath),
 			 "Enable SENSE recon with the specified SENSE map in ISMRMRD image
 			format")
@@ -69,12 +71,13 @@ int main(int argc, char **argv)
 			("Ny,y", po::value<uword>(&Ny)->required(),
 					"Image size in Y (Required)")
 			("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
+            ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
+            ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
 			("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
 			("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
 			("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
 			("CGIterations,n", po::value<uword>(&NIter),
 					"Number of preconditioned conjugate gradient interations for main solver");
-
 
 	po::variables_map vm;
 
@@ -98,7 +101,17 @@ int main(int argc, char **argv)
 		double precision." << std::endl;
 		}
 		*/
-
+	  if (TimeSegmentationInterp.compare("hanning") == 0) {
+        type = 1;
+      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+        type = 2;
+      } else if (TimeSegmentationInterp.compare("histo") == 0) {
+        type = 3;
+      } else {
+        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
+        return 1;
+      }
 
 	}
 	catch (boost::program_options::error& e) {
@@ -170,13 +183,11 @@ int main(int argc, char **argv)
 	std::cout << "NSegMax = " << NSegMax << std::endl;
 	std::cout << "About to loop through the counters and scan the file"
 	          << std::endl;
-  	std::string baseFilename = "pcSENSE";
+  	std::string baseFilename = "pcSenseTimeSeg";
 	std::string filename;
-
 	if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
     	outputImageFilePath += '/';
 	}
-	
 	uword NSet = 0; //Set is only used for arrayed ADCs
 	uword NSeg = 0;
 	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
@@ -209,12 +220,12 @@ int main(int argc, char **argv)
 						//Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
 						// iy, iz);
 						//Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-						pcSENSE<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, SMap, FMap,
+						pcSenseTimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
 								0-PMap);
 						//pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 						QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 
-						ImageTemp = reconSolve<float, pcSENSE<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
+						ImageTemp = reconSolve<float, pcSenseTimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
 								Nx,
 								Ny, Nz, tvec, NIter);
 						//writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
