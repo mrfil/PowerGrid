@@ -93,21 +93,12 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     make;  \
     make install
 
-# add credentials on build
-ARG SSH_PRIVATE_KEY
-RUN mkdir /root/.ssh/
-RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
-RUN chmod 0600 /root/.ssh/id_rsa
+ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
 
-RUN cat /root/.ssh/id_rsa >&2
-# make sure your domain is accepted
-RUN touch /root/.ssh/known_hosts
-RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
-
-RUN git clone git@github.com:acerjanic/PrivatePG.git; \
+RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
     cd PrivatePG; \
     git fetch; \
-    git checkout Vectorization; \
+    git checkout master; \
     mkdir build; \
     cd build; \
     cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid; \
