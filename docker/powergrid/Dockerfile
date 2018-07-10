@@ -59,7 +59,7 @@ ENV PATH="${PGI_BIN_DIR}:${PATH}"
 ENV LD_LIBRARY_PATH="${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
 ENV MANPATH="${PGI_MAN_DIR}:${MANPATH}"
 
-RUN cp -r --dereference ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}/REDIST/ /opt/lib/
+RUN cp -r --dereference ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}/lib/* /opt/lib/
 
 # Install Armadillo
 RUN git clone https://github.com/conradsnicta/armadillo-code; \
@@ -106,14 +106,18 @@ RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git;
     make install
 	
 #Stage 2 of build to create a runtime only version
+
 FROM nvidia/cuda:9.0-runtime-ubuntu16.04
 ARG PGI_VERSION=18.4
 ARG PGI_INSTALL_DIR=/usr/local/pgi
+COPY --from=builder /opt /opt
 COPY --from=builder /opt/lib/* /opt/lib/
 COPY --from=builder /usr/local/lib/* /opt/lib/
 
-RUN apt-get -y update && apt-get install -y libopenblas-base libarpack2 \
-											libhdf5-10 libfftw3-3 && apt-get clean all;
+RUN apt-get -y update && apt-get install -y libopenblas-base liblapack3 libarpack2 \
+											libhdf5-10 libhdf5-cpp-11 libfftw3-3 libatomic1 \
+											 && apt-get clean all;
+ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
 
 
 
