@@ -73,7 +73,7 @@ iftCpu(T1 *idata_r, T1 *idata_i,
 /*                                                                           */
 /*===========================================================================*/
 template <typename T1>
-inline T1 sinc(T1 x)
+inline T1 sincPG(T1 x)
 
 {
   if (fabs(x) < 0.0001) {
@@ -128,8 +128,8 @@ void ftCpuWithGrads(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata
         
         sinexpr = sinf(expr);
         cosexpr = cosf(expr);
-        //my_sincosf(expr, &sinexpr, &cosexpr);
-        bfunc = sinc(kx[i]/num_x + Gx[j] * myti) * sinc(ky[i]/num_y + Gy[j] * myti) * sinc(kz[i]/num_z + Gz[j] * myti);
+        //my_sincPGosf(expr, &sinexpr, &cosexpr);
+        bfunc = sincPG(kx[i]/num_x + Gx[j] * myti) * sincPG(ky[i]/num_y + Gy[j] * myti) * sincPG(kz[i]/num_z + Gz[j] * myti);
 
         sumr += bfunc * ((cosexpr * idata_r[j]) + (sinexpr * idata_i[j]));
         sumi += bfunc * ((-sinexpr * idata_r[j]) + (cosexpr * idata_i[j]));
@@ -205,7 +205,7 @@ void iftCpuWithGrads(T1 *idata_r, T1 *idata_i, const T1 *kdata_r, const T1 *kdat
 
         sinexpr = sinf(expr);
         cosexpr = cosf(expr);
-        bfunc = sinc(kx[i]/num_x + Gx[j] * t[i]) * sinc(ky[i]/num_y + Gy[j] * t[i]) * sinc(kz[i]/num_z + Gz[j] * t[i]);
+        bfunc = sincPG(kx[i]/num_x + Gx[j] * t[i]) * sincPG(ky[i]/num_y + Gy[j] * t[i]) * sincPG(kz[i]/num_z + Gz[j] * t[i]);
         sumr += bfunc * ((cosexpr * kdata_r[i]) - (sinexpr * kdata_i[i]));
         sumi += bfunc * ((sinexpr * kdata_r[i]) + (cosexpr * kdata_i[i]));
       }
