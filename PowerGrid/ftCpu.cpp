@@ -97,7 +97,7 @@ void ftCpu(T1 *kdata_r, T1 *kdata_i, const T1 *idata_r, const T1 *idata_i,
            const T1 *iz, const T1 *FM, const T1 *t, const int num_k,
            const int num_i) {
 
-  T1 sumr = 0, sumi = 0, expr = 0, tpi = 0,
+  T1 sumr = 0, sumi = 0, expr = 0,
       kxtpi = 0,
      kytpi = 0, kztpi = 0;
 
