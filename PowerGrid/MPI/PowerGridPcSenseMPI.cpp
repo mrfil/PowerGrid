@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
   desc.add_options()("help,h", "produce help message")(
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
+      ("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
       /*
       ("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
       ISMRMRD Navigator Raw Data")
@@ -201,8 +202,8 @@ int main(int argc, char **argv) {
 
 						    PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
 								  (uword) (Nx*Ny*Nz));
-						    SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, NSlice, (uword) (Nx*Ny*Nz));
-						    FMap = getISMRMRDCompleteFieldMap<float>(d, NSlice, (uword) (Nx*Ny*Nz));
+						    SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
+						    FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 
                 std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
                 std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
