@@ -1,6 +1,7 @@
 #FROM nvidia/cuda:7.5-devel-ubuntu16.04
 # Base NVIDIA Image
-FROM nvidia/cuda:9.0-devel-ubuntu16.04
+#FROM nvidia/cuda:9.0-devel-ubuntu16.04
+FROM nvcr.io/hpc/pgi-compilers:ce as builder
 #FROM cuda-ssh:latest
 # Offers X access via ssh for NVVP and PGProf
 # Run everything in /root
@@ -11,17 +12,19 @@ WORKDIR /root
 
 # Add needed packages
 RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
-																					libarpack2-dev nano wget cmake git \
-																					xsdcxx libxerces-c-dev libmatio-dev \
-																					libhdf5-dev \
-																					libfftw3-dev && apt-get clean all;
+						libarpack2-dev nano wget cmake git \
+						libhdf5-dev libfftw3-dev && apt-get clean all;
 
 # Set MPI library to MPICH2. Needed for Shifter to transparently patch MPI for Cray libraries
 #RUN update-alternatives --set mpi /usr/include/mpich;
 
 # Instal MPICH 3.2 using example from NERSC
-RUN cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
-	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
+#RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
+#	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
+
+# Install Open-MPI > 2.1.0 for transparent MPI support via Singularity.
+RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
+	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
 
 # Install custom compile of boost for mpi.
 RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
@@ -68,29 +71,29 @@ RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 #ENV PGI /opt/pgi
 #ENV PATH $PATH:$PGI/linux86-64/17.4/bin
 
-RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
-    cd pgi-travis && \
-    ./install-pgi.sh --nvidia --managed --mpi --mpi-gpu && \
-    cd - && rm -rf pgi-travis
+#RUN git clone https://github.com/Hopobcn/pgi-travis.git && \
+#    cd pgi-travis && \
+#    ./install-pgi.sh --nvidia --managed --mpi --mpi-gpu && \
+#    cd - && rm -rf pgi-travis
 
-ENV PGI_VERSION 18.4
-ENV PGI_INSTALL_DIR /usr/local/pgi
-ENV PGI_HOME ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}
-ENV PGI_BIN_DIR ${PGI_HOME}/bin
-ENV PGI_LIB_DIR ${PGI_HOME}/lib
-ENV PGI_MAN_DIR ${PGI_HOME}/man
+#ENV PGI_VERSION 18.4
+#ENV PGI_INSTALL_DIR /usr/local/pgi
+#ENV PGI_HOME ${PGI_INSTALL_DIR}/linux86-64/${PGI_VERSION}
+#ENV PGI_BIN_DIR ${PGI_HOME}/bin
+#ENV PGI_LIB_DIR ${PGI_HOME}/lib
+#ENV PGI_MAN_DIR ${PGI_HOME}/man
 
-ENV PATH="${PGI_BIN_DIR}:${PATH}"
-ENV LD_LIBRARY_PATH="${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
-ENV MANPATH="${PGI_MAN_DIR}:${MANPATH}"
+#ENV PATH="${PGI_BIN_DIR}:${PATH}"
+#ENV LD_LIBRARY_PATH="${PGI_LIB_DIR}:${LD_LIBRARY_PATH}"
+#ENV MANPATH="${PGI_MAN_DIR}:${MANPATH}"
 
 
 
 # Install Armadillo
 
-RUN git clone https://github.com/conradsnicta/armadillo-code; \
+RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	cd armadillo-code; \
-	git checkout 8.500.x; \
+	git checkout 9.200.x; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \

@@ -1,0 +1,50 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start develop env",
+            "type": "shell",
+            "command": "docker-compose -f ./docker/develop-compose.yml run --name devenv dev-image bash",
+            "problemMatcher": []
+        },
+        {
+            "label": "stop develop env",
+            "type": "shell",
+            "command": "docker-compose -f ./docker/develop-compose.yml down",
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake generate",
+            "type": "shell",
+            "command": "docker exec -it devenv cmake .",
+            "problemMatcher": []
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "group": "build",
+            "command": "docker exec -it devenv make",
+            "problemMatcher": []
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "docker exec -it devenv make clean",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "build develop image",
+            "type": "shell",
+            "command": "cd docker; docker build -t latest powergrid-dev",
+            "problemMatcher": []
+        },
+        {
+            "label": "build release image",
+            "type": "shell",
+            "command": "cd docker; docker build -t latest powergrid",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+version: '2'
+services:
+  ##### the develop image you've build
+  ### don't forget to open ports for your app
+  dev-image:
+    image: powergrid-dev:latest
+    privileged: true
+    container_name: devenv
+# mapping your project folder (.) to /home/develop/project    
+    volumes:
+      - "../:/root/code"
+      
