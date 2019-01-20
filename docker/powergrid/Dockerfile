@@ -16,8 +16,8 @@ RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 #	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
 
 # Install Open-MPI > 2.1.0 for transparent MPI support via Singularity.
-RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && pwd && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
-	&& ./configure && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
+RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
+	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
 
 # Install custom compile of boost for mpi.
 RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
@@ -29,15 +29,13 @@ RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.
 
 RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
 
-RUN mkdir /opt/lib
-ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 	tar xvf superlu_5.2.1.tar.gz; \
 	mkdir /root/SuperLU_5.2.1/build; \
 	cd /root/SuperLU_5.2.1/build; \
-	cmake ../ -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/opt; \
+	cmake ../ -DBUILD_SHARED_LIBS=ON; \
 	make; \
 	make install;
 
@@ -87,17 +85,17 @@ RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git;
 	
 #Stage 2 of build to create a runtime only version
 
-FROM nvidia/cuda:9.0-runtime-ubuntu16.04
-ARG PGI_VERSION=18.4
-ARG PGI_INSTALL_DIR=/usr/local/pgi
-COPY --from=builder /opt /opt
-COPY --from=builder /opt/lib/* /opt/lib/
-COPY --from=builder /usr/local/lib/* /opt/lib/
-
-RUN apt-get -y update && apt-get install -y libopenblas-base liblapack3 libarpack2 \
-											libhdf5-10 libhdf5-cpp-11 libfftw3-3 libatomic1 \
-											 && apt-get clean all;
-ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
+#FROM nvidia/cuda:9.0-runtime-ubuntu16.04
+#ARG PGI_VERSION=18.7
+#ARG PGI_INSTALL_DIR=/usr/local/pgi
+#COPY --from=builder /opt /opt
+#COPY --from=builder /opt/lib/* /opt/lib/
+#COPY --from=builder /usr/local/lib/* /opt/lib/
+#
+#RUN apt-get -y update && apt-get install -y libopenblas-base liblapack3 libarpack2 \
+#											libhdf5-10 libhdf5-cpp-11 libfftw3-3 libatomic1 \
+#											 && apt-get clean all;
+#ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
 
 
 

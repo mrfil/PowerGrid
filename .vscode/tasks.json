@@ -14,6 +14,18 @@
             "problemMatcher": []
         },
         {
+            "label": "start prod env",
+            "type": "shell",
+            "command": "docker-compose -f ./docker/develop-compose.yml run --name devenv dev-image bash",
+            "problemMatcher": []
+        },
+        {
+            "label": "stop prod env",
+            "type": "shell",
+            "command": "docker-compose -f ./docker/develop-compose.yml down",
+            "problemMatcher": []
+        },
+        {
             "label": "cmake generate",
             "type": "shell",
             "command": "docker exec -it devenv cmake .",
