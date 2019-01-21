@@ -49,13 +49,13 @@
         {
             "label": "build develop image",
             "type": "shell",
-            "command": "cd docker; docker build -t latest powergrid-dev",
+            "command": "cd docker; docker build -t powergrid-dev powergrid-dev",
             "problemMatcher": []
         },
         {
             "label": "build release image",
             "type": "shell",
-            "command": "cd docker; docker build -t latest powergrid",
+            "command": "cd docker; docker build -t powergrid powergrid",
             "problemMatcher": []
         }
     ]

@@ -29,15 +29,15 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 if(OPENACC)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2017/cuda/8.0/include /usr/local/pgi/linux86-64/2017/cuda/8.0/include /usr/local/cuda/include
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/9.1/include /usr/local/pgi/linux86-64/2018/cuda/9.1/include /usr/local/cuda/include
 		$ENV{CUDATOOLKIT_HOME}/include )
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/9.1/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64
 	$ENV{CUDATOOLKIT_HOME}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
-	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64)
+	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2018/cuda/9.1/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
-	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS /software/cuda-toolkit-8.0/lib64 $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2017/cuda/8.0/lib64 /usr/local/pgi/linux86-64/2017/cuda/8.0/lib64 /usr/local/cuda/lib64)
+	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS /software/cuda-toolkit-9.1/lib64 $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2018/cuda/9.1/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${nvToolsExt_LIBRARIES})
 	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
 	find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
@@ -132,7 +132,7 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -tp bulldozer,haswell,px -mp -gopt -fast -O3 -ta=tesla:cc35,cc70,cuda9.1,flushz -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cuda9.1,flushz -pgf77libs")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=multicore -pgf77libs -fpermissive")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
 		else()
