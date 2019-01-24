@@ -37,9 +37,15 @@ RUN  apt-get -y update && apt-get install -y curl libopenblas-dev \
 #	&& ./configure && make -j6 && make install && rm /root/mpich-3.2.tar.gz
 
 # Install Open-MPI >= 2.1.0 for transparent MPI support via Singularity.
-RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.0.tar.gz && tar xzvf openmpi-2.1.0.tar.gz && cd /root/openmpi-2.1.0 \
-	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j6 && make install && rm /root/openmpi-2.1.6.tar.gz
+#RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.0.tar.gz && tar xzvf openmpi-2.1.0.tar.gz && cd /root/openmpi-2.1.0 \
+#	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 -tp=bulldozer,sandybridge,px FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && rm /root/openmpi-2.1.0.tar.gz
 
+RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.2.tar.gz && tar xzvf openmpi-2.1.2.tar.gz && cd /root/openmpi-2.1.2 \
+	&& ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && rm /root/openmpi-2.1.2.tar.gz
+
+ENV LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}"
+
+RUN cd openmpi-2.1.2/examples && make && cp ring_c /usr/local/bin
 # Install custom compile of boost for mpi.
 RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
  && tar xjf ~/boost_1_66_0.tar.bz2 \
@@ -49,7 +55,6 @@ RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.
  && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
 
 RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
-
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
@@ -92,7 +97,7 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     make;  \
     make install
 
-ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
+    ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
 
 RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
     cd PrivatePG; \
@@ -104,20 +109,7 @@ RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git;
 	make;  \
 	make install
 	
-#Stage 2 of build to create a runtime only version
-
-#FROM nvidia/cuda:9.0-runtime-ubuntu16.04
-#ARG PGI_VERSION=18.7
-#ARG PGI_INSTALL_DIR=/usr/local/pgi
-#COPY --from=builder /opt /opt
-#COPY --from=builder /opt/lib/* /opt/lib/
-#COPY --from=builder /usr/local/lib/* /opt/lib/
-#
-#RUN apt-get -y update && apt-get install -y libopenblas-base liblapack3 libarpack2 \
-#											libhdf5-10 libhdf5-cpp-11 libfftw3-3 libatomic1 \
-#											 && apt-get clean all;
 ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
-
 
 #RUN wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz; \
 #    tar xf osu-micro-benchmarks-5.3.2.tar.gz; \
@@ -125,6 +117,3 @@ ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
 #    ./configure CC=$(which mpicc) CXX=$(which mpicxx); \
 #    make; \
 #    make install
-
-
-
