@@ -2,7 +2,7 @@ version: '2'
 services:
   ##### the develop image you've build
   ### don't forget to open ports for your app
-  dev-image:
+  prod-image:
     image: powergrid:latest
     privileged: true
     container_name: prodenv

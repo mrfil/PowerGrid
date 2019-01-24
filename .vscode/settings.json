@@ -43,5 +43,6 @@
         "*.ixx": "cpp",
         "optional": "cpp",
         "complex": "cpp"
-    }
+    },
+    "python.linting.pylintEnabled": false
 }
