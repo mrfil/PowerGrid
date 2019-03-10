@@ -14,7 +14,8 @@ option(MPISupport "Enable MPI Support" ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # Find Boost
-set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
+#set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
+set(BOOST_ROOT /usr/local/lib)
 
 if(MPISupport)
     find_package(MPI)
