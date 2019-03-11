@@ -12,7 +12,7 @@ WORKDIR /root
 
 # Add needed packages
 RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
-						libarpack2-dev nano wget cmake git \
+						libarpack2-dev nano wget cmake git libboost-all-dev \
 						libhdf5-dev libfftw3-dev && apt-get clean all;
 
 # Set MPI library to MPICH2. Needed for Shifter to transparently patch MPI for Cray libraries
@@ -23,18 +23,18 @@ RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 #	&& ./configure && make -j4 && make install && make clean && rm /root/mpich-3.2.tar.gz
 
 # Install Open-MPI > 2.1.0 for transparent MPI support via Singularity.
-RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
-	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
+#RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
+#	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
 
 # Install custom compile of boost for mpi.
-RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
- && tar xjf ~/boost_1_66_0.tar.bz2 \
- && cd ~/boost_1_66_0/ \
- && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
- && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
- && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
+#RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
+# && tar xjf ~/boost_1_66_0.tar.bz2 \
+# && cd ~/boost_1_66_0/ \
+# && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
+# && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
+# && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
 
-RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
+#RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
 
 
 # Install SuperLU5

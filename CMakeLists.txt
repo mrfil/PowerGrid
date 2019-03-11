@@ -9,13 +9,13 @@ set(CMAKE_CXX_STANDARD 11)
 project("PowerGrid" C CXX)
 
 option(OPENACC "Enable OpenACC support" ON)
-option(MPISupport "Enable MPI Support" ON)
+option(MPISupport "Enable MPI Support" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # Find Boost
-#set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
-set(BOOST_ROOT /usr/local/lib)
+set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
+#set(BOOST_ROOT /usr/local/lib)
 
 if(MPISupport)
     find_package(MPI)
@@ -133,7 +133,7 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cuda9.1,flushz -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cc60,cuda9.1,flushz -pgf77libs")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=multicore -pgf77libs -fpermissive")
 			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
 		else()

@@ -161,6 +161,7 @@ int main(int argc, char **argv) {
 
   // Check and abort if we have more than one encoding space (No Navigators for
   // now).
+  std::cout << "hdr.encoding.size() = " << hdr.encoding.size() << std::endl;
   if (hdr.encoding.size() != 1) {
     std::cout << "There are " << hdr.encoding.size()
               << " encoding spaces in this file" << std::endl;
