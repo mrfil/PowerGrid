@@ -9,29 +9,12 @@ WORKDIR /root
 # Add needed packages
 RUN  apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 												libarpack2-dev nano wget cmake git \
-												libhdf5-dev libfftw3-dev && apt-get clean all;
+												libboost-all-dev libhdf5-dev libfftw3-dev \
+												&& apt-get clean all;
 
 
 
-
-# Instal MPICH 3.2 using example from NERSC
-RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
-	&& ./configure && make -j6 && make install && make clean && rm /root/mpich-3.2.tar.gz
-
-# Install Open-MPI > 2.1.0 for transparent MPI support via Singularity.
-#RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.6.tar.gz && tar xzvf openmpi-2.1.6.tar.gz && cd /root/openmpi-2.1.6 \
-#	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && make clean && rm /root/openmpi-2.1.6.tar.gz
-
-# Install custom compile of boost for mpi.
-RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
- && tar xjf ~/boost_1_66_0.tar.bz2 \
- && cd ~/boost_1_66_0/ \
- && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
- && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
- && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
-
-RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
-
+ENV LD_LIBRARY_PATH="/opt/pgi/linux86-64/2018/cuda/9.1/lib64:${LD_LIBRARY_PATH}"
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
@@ -54,6 +37,8 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	make install; \
 	ldconfig
 
+ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
+
 # Install Latest CMake
 RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
@@ -64,13 +49,13 @@ RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
 	cp -r man /usr/share/; \
 	cp -r share /usr/
 
-RUN git clone https://github.com/acerjanic/ismrmrd.git; \
+RUN git clone https://github.com/ismrmrd/ismrmrd.git; \
     cd ismrmrd; \
     git fetch; \
-    git checkout matlab; \
+    git checkout master; \
     mkdir ./build; \
     cd build; \
-    cmake ../ -DCMAKE_INSTALL_PREFIX=/opt; \
+    cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc; \
     make;  \
     make install
 
@@ -79,13 +64,14 @@ ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
 RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
     cd PrivatePG; \
     git fetch; \
-    git checkout master; \
+    git checkout SharedLib; \
     mkdir build; \
     cd build; \
-    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid; 
-	
-#    make;  \
-#    make install
+    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid; \
+    make -j4; make install
+
+ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
+ENV PATH="${PATH}:/opt/PowerGrid/bin"
 	
 #Stage 2 of build to create a runtime only version
 

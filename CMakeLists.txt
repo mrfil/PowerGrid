@@ -9,13 +9,13 @@ set(CMAKE_CXX_STANDARD 11)
 project("PowerGrid" C CXX)
 
 option(OPENACC "Enable OpenACC support" ON)
-option(MPISupport "Enable MPI Support" ON)
+option(MPISupport "Enable MPI Support" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # Find Boost
-#set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
-set(BOOST_ROOT /usr/local/lib)
+set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
+#set(BOOST_ROOT /usr/local/lib)
 
 if(MPISupport)
     find_package(MPI)
@@ -91,39 +91,19 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/pcSENSE.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/pcSenseTimeSeg.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/reconSolve.cpp
-
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
 )
+
+add_library(PowerGrid SHARED ${PG_FILES})
+target_link_libraries(PowerGrid ${LIBS})
 
 if(MPISupport)
 	include_directories(MPI)
 endif(MPISupport)
 
-
-set(POWERGRID_ISMRMRD
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
-	./PowerGrid/PowerGridIsmrmrd.cpp
-)
 find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/ ~/CIVIC/lib)
 set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
-add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD} ${PG_FILES})
-target_link_libraries(PowerGridIsmrmrd ${LIBS})
-
-set(POWERGRID_PCSENSE
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
-	./PowerGrid/PowerGridPcSense.cpp
-)
-add_executable(PowerGridPcSense ${POWERGRID_PCSENSE} ${PG_FILES})
-target_link_libraries(PowerGridPcSense ${LIBS})
-
-set(POWERGRID_PCSENSE_TIMESEG
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
-	./PowerGrid/PowerGridPcSenseTimeSeg.cpp
-)
-add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG} ${PG_FILES})
-target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS})
 
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
@@ -133,9 +113,7 @@ else()
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cuda9.1,flushz -pgf77libs")
-			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -acc -g -Minfo=accel,ccff -ta=multicore -pgf77libs -fpermissive")
-			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Minfo=ccff -fpermissive -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cc60,cuda9.1,flushz -pgf77libs")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive ")
 		endif()
@@ -143,15 +121,33 @@ else()
     endif()
 endif()
 
-#add_definitions(-D__STRICT_ANSI__)
 add_definitions(-DARMA_NO_DEBUG)
 add_definitions(-DARMA_DONT_USE_HDF5)
 add_definitions(-DARMA_DONT_USE_OPENMP)
-#add_definitions(-DARMA_SIMPLE_LOOPS)
-#add_definitions(-DUSE_NVTX)
+
 if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
 endif (MPISupport)
 
+set(POWERGRID_ISMRMRD
+	./PowerGrid/PowerGridIsmrmrd.cpp
+)
+add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD})
+target_link_libraries(PowerGridIsmrmrd ${LIBS} PowerGrid)
+
+set(POWERGRID_PCSENSE
+	./PowerGrid/PowerGridPcSense.cpp
+)
+add_executable(PowerGridPcSense ${POWERGRID_PCSENSE})
+target_link_libraries(PowerGridPcSense ${LIBS} PowerGrid)
+
+set(POWERGRID_PCSENSE_TIMESEG
+	./PowerGrid/PowerGridPcSenseTimeSeg.cpp
+)
+add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
+target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
+
+# Manage installing targets to sane locations in /opt
 install(TARGETS PowerGridPcSense DESTINATION bin)
 install(TARGETS PowerGridIsmrmrd DESTINATION bin)
+install(TARGETS PowerGrid DESTINATION lib)
