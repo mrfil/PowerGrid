@@ -11,3 +11,7 @@ services:
     volumes:
       - "../:/root/code"
       
+networks:
+  default:
+    external:
+      name: bridge
