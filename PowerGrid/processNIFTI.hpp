@@ -46,19 +46,32 @@ void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uwor
 
   // Initialize header
   hdr.sizeof_hdr = MIN_HEADER_SIZE;
-  hdr.dim[0] = 4;
+  hdr.dim[0] = 3;
   hdr.dim[1] = Nx;
   hdr.dim[2] = Ny;
   hdr.dim[3] = Nz;
+  hdr.dim[4] = 1;
   hdr.datatype = NIFTI_TYPE_FLOAT32;
   hdr.bitpix = 32;
   hdr.pixdim[0] = 1.0;
   hdr.pixdim[1] = 1.0;
   hdr.pixdim[2] = 1.0;
   hdr.pixdim[3] = 1.0; //STUPID!!
+
   hdr.quatern_b = 0;
   hdr.quatern_c = 0;
   hdr.quatern_d = 0;
+  hdr.qoffset_x = 0;
+  hdr.qoffset_y = 0;
+  hdr.qoffset_z = 0;
+
+  for (int ii = 0; ii < 4; ii++) {
+    hdr.srow_x[ii] = 0.0f;
+    hdr.srow_y[ii] = 0.0f;
+    hdr.srow_z[ii] = 0.0f;
+  }
+
+
 
   hdr.vox_offset = (float) NII_HEADER_SIZE;
   hdr.scl_slope = 100.0;
