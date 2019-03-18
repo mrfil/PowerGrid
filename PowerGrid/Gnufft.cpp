@@ -121,6 +121,7 @@ Gnufft<T1>::Gnufft(
   // Generating Look-Up Table
   // cout << "Calculating look up table" << endl;
   calculateLUT(beta, kernelWidth, LUT, sizeLUT);
+
 #pragma acc enter data copyin(LUT[0 : sizeLUT], kx[0:n2], ky[0:n2], \
   kz[0:n2]) create(pGridData[0:2*imageNumElems], pGridData_d[0:2*imageNumElems], \
   pGridData_os[0:2*gridNumElems], pGridData_os_d[0:2*gridNumElems], pSamples[0:2*n2])
@@ -248,16 +249,7 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   //Col<T1> imagData = imag(d).eval();
 
   const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
-  //T1 *imagDataPtr = imagData.memptr();
 
-  //Col<T1> realXformedData(n1);
-  //Col<T1> imagXformedData(n1);
-
-  // realXformedData.zeros();
-  // imagXformedData.zeros();
-
-  //T1 *realXformedDataPtr = realXformedImg.memptr();
-  //T1 *imagXformedDataPtr = imagXformedImg.memptr();
   // Process data here, like calling a brute force transform, dft...
   // I assume you create the pointers to the arrays where the transformed data
   // will be stored
@@ -274,26 +266,7 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
                          kernelWidth,
                          beta, LUT, sizeLUT, stream, nPlan, pGridData,
                          pGridData_d, pGridData_os, pGridData_os_d);
-  /*
-  iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
-             realDataPtr, imagDataPtr, kx.memptr(),
-             ky.memptr(), kz.memptr(),
-             ix.memptr(), iy.memptr(), iz.memptr(),
-             FM.memptr(), t.memptr(),
-             this->n2, this->n1
-             );
-  */
-  // realXformedData(realXformedDataPtr, dataLength);
-  // imagXformedData(imagXformedDataPtr, dataLength);
-
-  // We can free the realDataXformPtr and imagDataXformPtr at this point and
-  // Armadillo will manage armadillo object memory as things change size or go
-  // out of scope and need to be destroyed
-
-  //Col<complex<T1>> XformedImg(n1);
-  //XformedImg.set_real(realXformedImg);
-  //XformedImg.set_imag(imagXformedImg);
-  // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
+  
   Col<CxT1> temp(reinterpret_cast<CxT1 *>(pGridData), n1, false, true);
   return temp; // Return a vector of type T1
 }

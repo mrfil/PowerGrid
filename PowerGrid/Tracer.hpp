@@ -19,16 +19,18 @@
 #ifdef USE_NVTX
 class Tracer {
 public:
-    Tracer() {
-     //   nvtxRangePushA(__FUNCTION__);
+    Tracer(const char* name)
+    {
+        nvtxRangePushA(name);
     }
-    ~Tracer() {
-     //   nvtxRangePop();
+    ~Tracer()
+    {
+        nvtxRangePop();
     }
 };
-#define RANGE() Tracer uniq_name_using_macros();
+#define RANGE(name) Tracer uniq_name_using_macros(name);
 #else
-#define RANGE()
+#define RANGE(name)
 #endif
 
 #endif
