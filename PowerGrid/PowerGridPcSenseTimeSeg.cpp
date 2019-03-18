@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 	std::cout << "NSegMax = " << NSegMax << std::endl;
 	std::cout << "About to loop through the counters and scan the file"
 	          << std::endl;
-  	std::string baseFilename = "pcSenseTimeSeg";
+  	std::string baseFilename = "img";
 	std::string filename;
 	if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
     	outputImageFilePath += '/';

@@ -33,19 +33,19 @@ RUN  apt-get -y update && apt-get install -y curl libopenblas-dev \
 
 
 # Instal MPICH 3.2 using example from NERSC
-#RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
-#	&& ./configure && make -j6 && make install && rm /root/mpich-3.2.tar.gz
+RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && CC=pgcc && CXX=pgc++ && F77=pgfortran && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
+	&& ./configure --enable-static --enable-shared --with-device=ch3:nemesis --with-thread-package=posix --with-pm=hydra --without-valgrind --disable-fast && make -j6 && make install && rm /root/mpich-3.2.tar.gz
 
 # Install Open-MPI >= 2.1.0 for transparent MPI support via Singularity.
 #RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.0.tar.gz && tar xzvf openmpi-2.1.0.tar.gz && cd /root/openmpi-2.1.0 \
 #	&& env CC=pgcc CFLAGS=-O2 CPP=cpp CXX=pgc++ CXXFLAGS=-O2 -tp=bulldozer,sandybridge,px FC=pgfortran FCFLAGS=-O2 ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && rm /root/openmpi-2.1.0.tar.gz
 
-RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.2.tar.gz && tar xzvf openmpi-2.1.2.tar.gz && cd /root/openmpi-2.1.2 \
-	&& ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && rm /root/openmpi-2.1.2.tar.gz
+#RUN cd /root && wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.2.tar.gz && tar xzvf openmpi-2.1.2.tar.gz && cd /root/openmpi-2.1.2 \#
+#	&& ./configure --enable-shared --enable-static --without-tm --enable-mpi-cxx && make -j4 && make install && rm /root/openmpi-2.1.2.tar.gz
 
 ENV LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}"
 
-RUN cd openmpi-2.1.2/examples && make && cp ring_c /usr/local/bin
+#RUN cd openmpi-2.1.2/examples && make && cp ring_c /usr/local/bin
 # Install custom compile of boost for mpi.
 RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
  && tar xjf ~/boost_1_66_0.tar.bz2 \
@@ -78,10 +78,10 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	ldconfig
 
 # Install Latest CMake
-RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
+RUN curl -O -J -L http://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
-	tar -xvf ./cmake-3.9.4-Linux-x86_64.tar.gz; \
-	cd ./cmake-3.9.4-Linux-x86_64; \
+	tar -xvf ./cmake-3.14.0-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.14.0-Linux-x86_64; \
 	cp -r bin /usr/; \
 	cp -r doc /usr/share/; \
 	cp -r man /usr/share/; \
@@ -105,11 +105,13 @@ RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git;
     git checkout master; \
     mkdir build; \
     cd build; \
-    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid; \
+    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid -DMPISupport=ON; \
 	make;  \
 	make install
 	
 ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
+ENV PATH="/opt/PowerGrid/bin:${PATH}"
 
 #RUN wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz; \
 #    tar xf osu-micro-benchmarks-5.3.2.tar.gz; \
