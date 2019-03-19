@@ -26,12 +26,14 @@
 #ifndef PowerGrid_mpipcSENSE_hpp
 #define PowerGrid_mpipcSENSE_hpp
 
-#include "../Support/ArmaExtensions/arma_extensions.h"
+#include "../../Support/ArmaExtensions/arma_extensions.h"
 #include "../PGIncludes.h"
 #include "../Gdft.h"
 #include <boost/mpi.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/environment.hpp>
+#include "../PowerGrid.h"
+
 using namespace arma;
 
 namespace bmpi = boost::mpi;
@@ -97,5 +99,13 @@ Col<CxT1> operator/(const Col<CxT1> &d) const;
 // Explict Instantiation
 extern template class mpipcSENSE<float>;
 extern template class mpipcSENSE<double>;
+
+#ifdef PowerGridMPI
+
+extern template  Col<complex<float>> reconSolve(Col<complex<float>>, mpipcSENSE<float>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
+                               Col<float>, uword, uword, uword, Col<float>,
+                               uword);
+#endif
 
 #endif // PowerGrid_mpipcSENSE_hpp

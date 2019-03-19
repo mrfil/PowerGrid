@@ -127,6 +127,7 @@ add_definitions(-DARMA_DONT_USE_HDF5)
 add_definitions(-DARMA_DONT_USE_OPENMP)
 add_definitions(-DUSE_NVTX)
 if (MPISupport)
+	add_definitions(-DPowerGridMPI)
     add_subdirectory(PowerGrid/MPI)
 endif (MPISupport)
 

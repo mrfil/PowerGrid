@@ -259,3 +259,11 @@ Col<complex<T1>> mpipcSENSE<T1>::operator/(const Col<complex<T1>> &d) const {
 // Explict Instantiation
 template class mpipcSENSE<float>;
 template class mpipcSENSE<double>;
+
+#ifdef PowerGridMPI
+#pragma message("building reconSolve MPI verison")
+template  Col<complex<float>> reconSolve(Col<complex<float>>, mpipcSENSE<float>&,
+                               QuadPenalty<float>, Col<float>, Col<float>,
+                               Col<float>, uword, uword, uword, Col<float>,
+                               uword);
+#endif

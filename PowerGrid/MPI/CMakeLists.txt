@@ -1,4 +1,4 @@
-    add_definitions(-DPowerGridMPI)
+ 
     find_package(MPI)
     include_directories(${MPI_CXX_INCLUDE_PATH})
     include_directories(../../Support)
