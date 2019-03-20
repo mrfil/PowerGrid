@@ -31,15 +31,15 @@ include_directories(${Boost_INCLUDE_DIRS})
 set(CUDAVER 9.1)
 
 if(OPENACC)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/include /usr/local/pgi/linux86-64/2018/cuda/9.1/include /usr/local/cuda/include
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/include /usr/local/cuda/include
 		$ENV{CUDATOOLKIT_HOME}/include )
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64
 	$ENV{CUDATOOLKIT_HOME}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
-	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64)
+	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
-	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS /software/cuda-toolkit-9.1/lib64 $ENV{CRAY_CUDATOOLKIT_DIR}/lib64 $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/pgi/linux86-64/2018/cuda/9.1/lib64 /usr/local/cuda/lib64)
+	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${nvToolsExt_LIBRARIES})
 	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
 	find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)

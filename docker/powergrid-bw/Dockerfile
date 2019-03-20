@@ -101,8 +101,8 @@ RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git;
 	make -j4;  \
 	make install
 	
-ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
-ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:/opt/pgi/linux86-64/2018/cuda/9.1/lib64:{LD_LIBRARY_PATH}"
 ENV PATH="/opt/PowerGrid/bin:${PATH}"
 
 #RUN wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz; \
