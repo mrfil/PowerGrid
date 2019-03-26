@@ -50,6 +50,8 @@ build/
 # Icon must end with two \r
 Icon
 
+# vscode garbage (intellisense cache)
+.vscode/ipch/*
 
 # Thumbnails
 ._*
