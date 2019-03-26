@@ -51,6 +51,9 @@ void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uwor
   hdr.dim[2] = Ny;
   hdr.dim[3] = Nz;
   hdr.dim[4] = 1;
+  hdr.dim[5] = 1;
+  hdr.dim[6] = 1;
+  hdr.dim[7] = 1;
   hdr.datatype = NIFTI_TYPE_FLOAT32;
   hdr.bitpix = 32;
   hdr.pixdim[0] = 1.0;
