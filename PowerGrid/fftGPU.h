@@ -31,7 +31,7 @@ Developed by:
 #ifndef PowerGrid_fftGPU_hpp
 #define PowerGrid_fftGPU_hpp
 
-#ifdef _OPENACC
+#ifdef OPENACC_GPU
 #include "cufft.h"
 #include <complex>
 #include <type_traits>
@@ -97,5 +97,5 @@ extern template void ifft3dGPU<double>(double *, int, int, int, void *, cufftHan
 extern template void fft3dGPU<float>(float *, int, int, int, void *, cufftHandle *);
 extern template void fft3dGPU<double>(double *, int, int, int, void *, cufftHandle *);
 
-#endif //_OPENACC
+#endif //OPENACC_GPU
 #endif // PowerGrid_fftGPU_hpp

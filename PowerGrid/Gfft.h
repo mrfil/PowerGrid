@@ -29,8 +29,12 @@ Developed by:
 #ifndef __PowerGrid__Gfft__h
 #define __PowerGrid__Gfft__h
 
-#ifdef _OPENACC // GPU Version
+#ifdef OPENACC_GPU // GPU Version
 #include "cufft.h"
+#include "fftGPU.h"
+#include "gridding.h"
+#include "openacc.h"
+#elif OPENACC_MP
 #include "fftGPU.h"
 #include "gridding.h"
 #include "openacc.h"
@@ -53,7 +57,7 @@ public:
   uword Nx = 0; // Size in x dimension
   uword Ny = 0; // Size in y dimension
   uword Nz = 0; // Size in z dimension
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
     void *stream;
     cufftHandle *plan;
   #endif

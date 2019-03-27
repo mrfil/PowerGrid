@@ -33,7 +33,7 @@ template <typename T1> Gfft<T1>::Gfft(uword ix, uword iy, uword iz) {
   Nx = ix;
   Ny = iy;
   Nz = iz;
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
   stream = acc_get_cuda_stream(acc_async_sync);
   cufftCreate(plan);
   if(Nz ==1) {
@@ -86,7 +86,7 @@ Col<complex<T1>> Gfft<T1>::operator*(const Col<complex<T1>> &d) const {
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
 
 // fftn(gridData)
-#ifdef _OPENACC // We're on GPU
+#ifdef OPENACC_GPU // We're on GPU
                 // Inside this region the device data pointer will be used
 // cout << "about to reach openacc region in forward transform" << endl;
 
@@ -177,7 +177,7 @@ Col<complex<T1>> Gfft<T1>::operator/(const Col<complex<T1>> &d) const {
   T1 *pGridData_d = reinterpret_cast<T1 *>(gridData_d);
 // fftn(gridData)
 
-#ifdef _OPENACC // We're on GPU
+#ifdef OPENACC_GPU // We're on GPU
                 // Inside this region the device data pointer will be used
 // cout << "about to reach openacc region in forward transform" << endl;
 

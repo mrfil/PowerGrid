@@ -153,6 +153,14 @@ arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uwor
 	uword NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
 	uword NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
 
+    std::cout << "NSliceMax = " << NSliceMax << std::endl;
+    std::cout << "NSetMax = " << NSetMax << std::endl;
+    std::cout << "NRepMax = " << NRepMax << std::endl;
+    std::cout << "NAvgMax = " << NAvgMax << std::endl;
+    std::cout << "NEchoMax = " << NEchoMax << std::endl;
+    std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
+    std::cout << "NSegMax = " << NSegMax << std::endl;
+
 	uword PMapSize   = imageSize*(NShotMax)*(NParMax);
 	uword startIndex = PMapSize*NSlice + PMapSize*NSliceMax*NAvg + PMapSize*NSliceMax*NAvgMax*NPhase + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEcho + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRep + PMapSize*NSliceMax*NAvgMax*NPhaseMax*NEchoMax*NRepMax*NSeg;
 

@@ -43,7 +43,7 @@
 
 // Support Headers for making it easier to work with Armadillo and Matio.
 //#include "../Support/CeempleComplex.h"
-#ifdef _OPENACC
+#ifdef OPENACC_GPU
 #include "nvToolsExt.h"
 #include "cuda_profiler_api.h"
 #endif

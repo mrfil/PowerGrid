@@ -30,7 +30,7 @@ Developed by:
 
 #include <cstdlib>
 
-#ifdef _OPENACC // GPU Version
+#ifdef OPENACC_GPU // GPU Version
     #include "cufft.h"
     #include "fftGPU.h"
     #include "fftCPU.h"
@@ -38,6 +38,12 @@ Developed by:
     #include "griddingTypes.h"
     #include "openacc.h"
     #define CFTHandle cufftHandle
+#elif _OPENACC
+    #include "fftCPU.h"
+    #include "griddingSupport.h"
+    #include "griddingTypes.h"
+    #define CFTHandle void
+    #include "openacc.h"
 #else // CPU version
     #include "fftCPU.h"
     #include "griddingSupport.h"

@@ -74,7 +74,7 @@ public:
   T1 kernelWidth; // Kaiser Bessel Kernel Support
   void *stream;
   
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
     cufftHandle plan;
   #else
     void* plan;

@@ -42,14 +42,16 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
 # Install Latest CMake
 
-RUN curl -O -J -L http://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz; \
+# Install Latest CMake
+RUN curl -O -J -L http://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
-	tar -xvf ./cmake-3.9.4-Linux-x86_64.tar.gz; \
-	cd ./cmake-3.9.4-Linux-x86_64; \
+	tar -xvf ./cmake-3.14.0-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.14.0-Linux-x86_64; \
 	cp -r bin /usr/; \
 	cp -r doc /usr/share/; \
 	cp -r man /usr/share/; \
 	cp -r share /usr/
+
 
 RUN git clone https://github.com/ismrmrd/ismrmrd.git; \
     cd ismrmrd; \

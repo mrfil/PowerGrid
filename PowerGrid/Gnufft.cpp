@@ -92,7 +92,7 @@ Gnufft<T1>::Gnufft(
          std::sqrt((gridOS - 0.5) * (gridOS - 0.5) *
                        (kernelWidth * kernelWidth * 4.0) / (gridOS * gridOS) -
                    0.8);
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
   stream = acc_get_cuda_stream(acc_async_sync);
   cufftCreate(&plan);
   if(Nz ==1) {
@@ -130,7 +130,7 @@ Gnufft<T1>::Gnufft(
 // Class destructor to free LUT
 template <typename T1> Gnufft<T1>::~Gnufft() {
   RANGE()
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
     cufftDestroy(plan);
   #endif
   #pragma acc exit data delete(pGridData[0:2*imageNumElems], \
@@ -206,7 +206,7 @@ RANGE()
   */
   // T2 gridOS = 2.0;
   // cout << "About to call the forward gridding routine." << endl;
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
     cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   #else
     void* nPlan = NULL;
@@ -256,7 +256,7 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   // realXformedDataPtr and imagXformedDataPtr and they are of type float*
 
   // T2 gridOS = 2.0;
-  #ifdef _OPENACC
+  #ifdef OPENACC_GPU
   cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
   #else
   void *nPlan = NULL;

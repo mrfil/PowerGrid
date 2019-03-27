@@ -107,7 +107,7 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
 // directly rather return another vector of type T1
 template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
-        RANGE()
+        RANGE("pcSENSE::operator*")
         Mat<complex<T1> > outData = zeros<Mat<complex<T1> > >(Nd, Ns * Nc);
         Mat<complex<T1> > expiPMap = exp(-i * PMap);
         Mat<T1> temp2;
@@ -148,7 +148,7 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
 // coil data by the SENSE map.
 template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
-        nvtxRangePushA("pcSENSE::operator/");
+        RANGE("pcSENSE::operator/");
         Mat<complex<T1> > inData = reshape(d, Nd, Ns * Nc);
         Mat<complex<T1> > expiPMap = conj(exp(-i * PMap));
         Mat<complex<T1> > conjSMap = conj(SMap);
@@ -178,7 +178,7 @@ Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
                 // delete AObj;
                 // delete G;
         }
-        nvtxRangePop();
+        
         // equivalent to returning col(output) in MATLAB with IRT
         return vectorise(outData);
 }

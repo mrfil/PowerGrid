@@ -39,7 +39,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
     uword b, uword nTimeSegs, uword interptype,
     uword shots)
 {
-    cout << "Entering TimeSegmenatation Class constructor" << endl;
+    //cout << "Entering TimeSegmenatation Class constructor" << endl;
     n1 = a; // Data size
     n2 = b; // Image size
     // L == 0 or 1 is ambiguous. In matlab we would often specific L = 0 to mean no time segmentation.
@@ -52,9 +52,9 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
     Nshots = shots; // number of shots
     obj = &G;
     fieldMap = map_in;
-    cout << "N1 = " << n1 << endl;
-    cout << "N2 = " << n2 << endl;
-    cout << "L = " << L << endl;
+    //cout << "N1 = " << n1 << endl;
+    //cout << "N2 = " << n2 << endl;
+    //cout << "L = " << L << endl;
 
     outData.set_size(n1, L + 1);
     outImg.set_size(n2, L + 1);
@@ -217,7 +217,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
             WoH.col(ii) = exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
         }
     }
-    cout << "Exiting class constructor." << endl;
+    //cout << "Exiting class constructor." << endl;
 }
 
 // Use FFT

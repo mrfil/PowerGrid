@@ -95,7 +95,7 @@ pcSenseTimeSeg<T1>::pcSenseTimeSeg(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
                 //AObj[jj] =
                 //        new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
                 //                     Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
-	            G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
+	        G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
                 AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
                  vectorise(Tvec.col(jj)), (uword) Nd, (uword)(Nx * Ny * Nz), (uword) L, type, Ns);
         }
@@ -108,7 +108,7 @@ pcSenseTimeSeg<T1>::pcSenseTimeSeg(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx,
 // directly rather return another vector of type T1
 template <typename T1>
 Col<complex<T1> > pcSenseTimeSeg<T1>::operator*(const Col<complex<T1> > &d) const {
-        RANGE()
+        RANGE("pcSenseTimeSeg::operator*")
         Mat<complex<T1> > outData = zeros<Mat<complex<T1> > >(Nd, Ns * Nc);
         Mat<complex<T1> > expiPMap = exp(-i * PMap);
         Mat<T1> temp2;
@@ -149,7 +149,7 @@ Col<complex<T1> > pcSenseTimeSeg<T1>::operator*(const Col<complex<T1> > &d) cons
 // coil data by the SENSE map.
 template <typename T1>
 Col<complex<T1> > pcSenseTimeSeg<T1>::operator/(const Col<complex<T1> > &d) const {
-        nvtxRangePushA("pcSenseTimeSeg::operator/");
+        RANGE("pcSenseTimeSeg::operator/");
         Mat<complex<T1> > inData = reshape(d, Nd, Ns * Nc);
         Mat<complex<T1> > expiPMap = conj(exp(-i * PMap));
         Mat<complex<T1> > conjSMap = conj(SMap);
@@ -179,7 +179,7 @@ Col<complex<T1> > pcSenseTimeSeg<T1>::operator/(const Col<complex<T1> > &d) cons
                 // delete AObj;
                 // delete G;
         }
-        nvtxRangePop();
+
         // equivalent to returning col(output) in MATLAB with IRT
         return vectorise(outData);
 }

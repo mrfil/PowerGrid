@@ -8,8 +8,13 @@ set(CMAKE_CXX_STANDARD 11)
 
 project("PowerGrid" C CXX)
 
-option(OPENACC "Enable OpenACC support" ON)
+option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" ON)
+option(OPENACC_MP "Enable OpenACC support on CPU (PGI Only) " OFF)
 option(MPISupport "Enable MPI Support" OFF)
+
+if(OPENACC_GPU AND OPENACC_MP)
+message( FATAL_ERROR "You cannot build with both OPENACC_GPU AND OPENACC_MP at the same time")
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -30,12 +35,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 set(CUDAVER 9.1)
 
-if(OPENACC)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/include /usr/local/cuda/include
-		$ENV{CUDATOOLKIT_HOME}/include )
+if(OPENACC_GPU)
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/include)
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64
-	$ENV{CUDATOOLKIT_HOME}/lib64)
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
 	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
@@ -113,8 +116,12 @@ else()
 
 	else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
-		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mllvm -Minfo=accel -acc -mp -gopt -fast -O3 -tp=px -ta=tesla:cc35,cc60,cuda9.1,flushz -pgf77libs")
+		if(OPENACC_GPU)
+			add_definitions(-DOPENACC_GPU)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mllvm -Minfo=accel -acc -mp -fast -O3 -tp=px -ta=tesla:cc35,cc60,cuda9.1,flushz -pgf77libs")
+		elseif(OPENACC_MP)
+			add_definitions(-DOPENACC_MP)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minfo=accel -acc -mp -fast -O3 -tp=px -ta=multicore -pgf77libs")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive ")
 		endif()
@@ -125,11 +132,9 @@ endif()
 add_definitions(-DARMA_NO_DEBUG)
 add_definitions(-DARMA_DONT_USE_HDF5)
 add_definitions(-DARMA_DONT_USE_OPENMP)
-add_definitions(-DUSE_NVTX)
-if (MPISupport)
-	add_definitions(-DPowerGridMPI)
-    add_subdirectory(PowerGrid/MPI)
-endif (MPISupport)
+if(OPENACC_GPU)
+	add_definitions(-DUSE_NVTX)
+endif()
 
 set(POWERGRID_ISMRMRD
 	./PowerGrid/PowerGridIsmrmrd.cpp
@@ -148,6 +153,11 @@ set(POWERGRID_PCSENSE_TIMESEG
 )
 add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
 target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
+
+if (MPISupport)
+	add_definitions(-DPowerGridMPI)
+    add_subdirectory(PowerGrid/MPI)
+endif (MPISupport)
 
 # Manage installing targets to sane locations in /opt
 install(TARGETS PowerGridPcSense DESTINATION bin)

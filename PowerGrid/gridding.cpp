@@ -511,7 +511,8 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
     }
 
     // Need to deal with 1/N normalization from the inverse FFT
-#ifdef _OPENACC // We're on GPU
+//#ifdef _OPENACC // We're on GPU
+#ifdef OPENACC_GPU // We're on GPU
     // Inside this region the device data pointer will be used for cuFFT
 
 #pragma acc host_data use_device(pGridData_d)
@@ -681,7 +682,8 @@ for (int i = 0; i < 2*imageNumElems; i++) {
     }
 
 // ifftn(gridData)
-#ifdef _OPENACC // We're on GPU 
+//#ifdef _OPENACC // We're on GPU 
+#ifdef OPENACC_GPU
     // Inside this region the device data pointer will be used
     // cout << "about to reach openacc region in forward transform" << endl;
 

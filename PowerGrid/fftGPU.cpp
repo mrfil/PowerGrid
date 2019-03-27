@@ -29,10 +29,13 @@
 // https://www.olcf.ornl.gov/tutorials/mixing-openacc-with-gpu-libraries/
 
 #include "fftGPU.h"
+
+#ifdef OPENACC_GPU
+
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 
-#ifdef _OPENACC
+
 // Like Armadillo, we're using SFINAE here to choose between float and double.
 // (Maybe FP16 some day in the future)
 // We need enable_if to choose which version to run based on the type of the

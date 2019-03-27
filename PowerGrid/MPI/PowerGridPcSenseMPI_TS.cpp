@@ -11,7 +11,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [PowerGridPcSenseMPI.cpp]
+    File Name   [PowerGridPcSenseMPI_TS.cpp]
 
     Synopsis    [PowerGrid reconstruction executable supporting ISMRMRD format
                                 as input and Phase Corrected Sense Algorithm
@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
   
   std::cout << "I am rank #: " << world.rank() << std::endl;
 
-  std::string rawDataFilePath, outputImageFilePath;
-  uword Nx, Ny, Nz, NShots = 1, NIter = 10;
+  std::string rawDataFilePath, outputImageFilePath, TimeSegmentationInterp;
+  uword Nx, Ny, Nz, NShots = 1, NIter = 10, L = 0, type = 1;
   //uword  type, L = 0;
   double beta = 0.0;
   uword dims2penalize = 3;
@@ -59,26 +59,13 @@ int main(int argc, char **argv) {
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
       ("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-      /*
-      ("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
-      ISMRMRD Navigator Raw Data")
-      ("outputImage,o",
-      po::value<std::string>(&outputImageFilePath)->required(), "output ISMRMRD
-      Image file")
-      ("SENSEMap,S", po::value<std::string>(&senseMapFilePath),
-       "Enable SENSE recon with the specified SENSE map in ISMRMRD image
-      format")
-      ("FieldMap,F", po::value<std::string>(&fieldMapFilePath),
-      "Enable field corrected reconstruction with the specified field map in
-      ISMRMRD format")
-      ("Precision,P", po::value<std::string>(&precisionString),
-       "Numerical precision to use, float or double currently supported")
-       */
        ("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
        ("Ny,y", po::value<uword>(&Ny)->required(),
                                      "Image size in Y (Required)")
       ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
       ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
+      ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
+      ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
       ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
       ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
       ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main "
@@ -95,17 +82,18 @@ int main(int argc, char **argv) {
       std::cout << desc << std::endl;
       return 1;
     }
-    /*
-    if(precisionString.compare("double") ==0) {
-            typedef double PGPrecision;
-    } else if(precisionString.compare("float") == 0) {
-            typedef float PGPrecision;
-    } else {
-            typedef double PGPrecision;
-            std::cout << "Did not recognize precision option. Defaulting to
-    double precision." << std::endl;
-    }
-    */
+
+    if (TimeSegmentationInterp.compare("hanning") == 0) {
+        type = 1;
+      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+        type = 2;
+      } else if (TimeSegmentationInterp.compare("histo") == 0) {
+        type = 3;
+      } else {
+        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                  << "Acceptable values are hanning or minmax."            << std::endl;
+        return 1;
+      }
 
 
   } catch (boost::program_options::error &e) {
@@ -119,23 +107,30 @@ int main(int argc, char **argv) {
   arma::Col<float> PMap;
   arma::Col<float> FMap;
   arma::Col<std::complex<float>> SMap;
+
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
 	acqTracking* acqTrack;
-	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
-
-  if (world.rank() == 0) {
+  uword nro, nc;
+	if (world.rank() == 0) {
+    processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
     std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
     std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
-  }
-  uword numAcq = d->getNumberOfAcquisitions();
 
-  // Grab first acquisition to get parameters (We assume all subsequent
-  // acquisitions will be similar).
-  ISMRMRD::Acquisition acq;
-  d->readAcquisition(0, acq);
-  uword nro = acq.number_of_samples();
-  uword nc = acq.active_channels();
+    uword numAcq = d->getNumberOfAcquisitions();
+
+    // Grab first acquisition to get parameters (We assume all subsequent
+    // acquisitions will be similar).
+    ISMRMRD::Acquisition acq;
+    d->readAcquisition(0, acq);
+    nro = acq.number_of_samples();
+    nc = acq.active_channels();
+    bmpi::broadcast(world,nro,0);
+    bmpi::broadcast(world,nc,0);
+  } else {
+    bmpi::broadcast(world,nro,0);
+    bmpi::broadcast(world,nc,0);
+  }
 
   Col<float> ix, iy, iz;
   initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
@@ -143,39 +138,58 @@ int main(int argc, char **argv) {
   Col<std::complex<float>> data(nro * nc);
   Col<std::complex<float>> ImageTemp(Nx * Ny * Nz);
 
+  if (world.rank() == 0) {
   // Check and abort if we have more than one encoding space (No Navigators for
   // now).
-  if (hdr.encoding.size() != 1) {
-    if (world.rank() == 0) {
+    if (hdr.encoding.size() != 1) {
+
       std::cout << "There are " << hdr.encoding.size()
                 << " encoding spaces in this file" << std::endl;
       std::cout
               << "This recon does not handle more than one encoding space. Aborting."
               << std::endl;
+
+      return -1;
     }
-    return -1;
   }
+  uword NSliceMax, NSetMax, NRepMax, NAvgMax, NSegMax, NEchoMax, NPhaseMax;
+
+  if (world.rank() == 0) {
+	  NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
+	  NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
+	  NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
+	  NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
+	  NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
+	  NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
+	  NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
 
 
-	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-	uword NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
-	uword NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
-	uword NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
-	uword NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
-	uword NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
-	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
-
-    if (world.rank() == 0) {
-      std::cout << "NSliceMax = " << NSliceMax << std::endl;
-      std::cout << "NSetMax = " << NSetMax << std::endl;
-      std::cout << "NRepMax = " << NRepMax << std::endl;
-      std::cout << "NAvgMax = " << NAvgMax << std::endl;
-      std::cout << "NEchoMax = " << NEchoMax << std::endl;
-      std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
-      std::cout << "NSegMax = " << NSegMax << std::endl;
-      std::cout << "About to loop through the counters and scan the file"
+    std::cout << "NSliceMax = " << NSliceMax << std::endl;
+    std::cout << "NSetMax = " << NSetMax << std::endl;
+    std::cout << "NRepMax = " << NRepMax << std::endl;
+    std::cout << "NAvgMax = " << NAvgMax << std::endl;
+    std::cout << "NEchoMax = " << NEchoMax << std::endl;
+    std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
+    std::cout << "NSegMax = " << NSegMax << std::endl;
+    std::cout << "About to loop through the counters and scan the file"
               << std::endl;
-    }
+    bmpi::broadcast(world,NSliceMax,0);
+    bmpi::broadcast(world,NSetMax,0);
+    bmpi::broadcast(world,NRepMax,0);
+    bmpi::broadcast(world,NAvgMax,0);
+    bmpi::broadcast(world,NEchoMax,0);
+    bmpi::broadcast(world,NPhaseMax,0);
+    bmpi::broadcast(world,NSegMax,0);
+  } else{
+    bmpi::broadcast(world,NSliceMax,0);
+    bmpi::broadcast(world,NSetMax,0);
+    bmpi::broadcast(world,NRepMax,0);
+    bmpi::broadcast(world,NAvgMax,0);
+    bmpi::broadcast(world,NEchoMax,0);
+    bmpi::broadcast(world,NPhaseMax,0);
+    bmpi::broadcast(world,NSegMax,0);
+
+  }
   
     std::string baseFilename = "img";
   	std::string filename;
@@ -254,12 +268,12 @@ int main(int argc, char **argv) {
               //Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
               // iy, iz);
               //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-              mpipcSENSE<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, sen, FM,
+              mpipcSENSETimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, sen, FM,
 		              0 - PMap, env, world);
               //pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
               QuadPenalty<float> R(Nx, Ny, Nz, beta);
 
-              ImageTemp = reconSolve<float, mpipcSENSE<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz, Nx,
+              ImageTemp = reconSolve<float, mpipcSENSETimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz, Nx,
                 Ny, Nz, tvec, NIter);
               //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
               if (world.rank() == 0) {

@@ -18,7 +18,8 @@ RUN mkdir -p /var/tmp && wget -q -nc --no-check-certificate -O /var/tmp/pgi-comm
     echo "variable library_path is default(\$if(\$LIBRARY_PATH,\$foreach(ll,\$replace(\$LIBRARY_PATH,":",), -L\$ll)));" >> /opt/pgi/linux86-64/18.10/bin/siterc && \
     echo "append LDLIBARGS=\$library_path;" >> /opt/pgi/linux86-64/18.10/bin/siterc && \
     rm -rf /var/tmp/pgi-community-linux-x64-latest.tar.gz /var/tmp/pgi
-ENV LD_LIBRARY_PATH=/opt/pgi/linux86-64/18.10/lib:$LD_LIBRARY_PATH \
+ENV PGI=/opt/pgi
+ENV LD_LIBRARY_PATH="/opt/pgi/linux86-64/18.10/lib:${LD_LIBRARY_PATH}" \
     PATH=/opt/pgi/linux86-64/18.10/bin:$PATH
 
 FROM pgi-ce as develop
@@ -64,7 +65,7 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	mkdir build; \
 	cd build; \
 	echo $PATH; \
-	cmake ../ -DCMAKE_INSTALL_PREFIX=/opt; \
+	cmake ../; \
 	make; \
 	make install; \
 	ldconfig
@@ -85,12 +86,13 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     git checkout matlab; \
     mkdir ./build; \
     cd build; \
-    cmake ../ -DCMAKE_INSTALL_PREFIX=/opt; \
+    cmake ../; \
     make;  \
     make install
 
-    ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
-
+ENV LD_LIBRARY_PATH="/opt/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:/opt/pgi/linux86-64/2018/cuda/9.1/lib64:${LD_LIBRARY_PATH}"
+ENV PATH="/opt/PowerGrid/bin:${PATH}"
 #RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
 #    cd PrivatePG; \
 #    git fetch; \

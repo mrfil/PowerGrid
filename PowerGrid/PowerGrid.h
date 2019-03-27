@@ -60,6 +60,7 @@
 #ifdef PowerGridMPI
 
 #include "MPI/mpipcSENSE.h"
+#include "MPI/mpipcSENSETimeSeg.h"
 #endif // PowerGridMPI
 
 //}
