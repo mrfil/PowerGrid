@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
               //Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
               // iy, iz);
               //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-              mpipcSENSETimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, sen, FM,
+              mpipcSENSETimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
 		              0 - PMap, env, world);
               //pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
               QuadPenalty<float> R(Nx, Ny, Nz, beta);
