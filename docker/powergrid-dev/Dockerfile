@@ -17,6 +17,8 @@ RUN apt-get -y update && apt-get install -y g++ gcc curl wget libopenblas-dev \
 						libarpack2-dev nano wget cmake git libboost-all-dev \
 						libhdf5-dev libfftw3-dev && apt-get clean all;
 
+ENV LD_LIBRARY_PATH="/opt/pgi/linux86-64/2018/cuda/9.1/lib64:${LD_LIBRARY_PATH}"
+
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
 	tar xvf superlu_5.2.1.tar.gz; \
@@ -40,6 +42,8 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	ldconfig
 
 ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
+
+
 # Install Latest CMake
 
 # Install Latest CMake

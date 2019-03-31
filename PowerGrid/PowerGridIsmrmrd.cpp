@@ -21,9 +21,9 @@ Developed by:
                                 time segmentation for field correction. This
  support is experimental.]
 
-    Revision    [0.1.0; Alex Cerjanic, BIOE UIUC]
+    Revision    [0.2.0; Alex Cerjanic, BIOE UIUC]
 
-    Date        [4/19/2016]
+    Date        [2019/03/31]
 
  *****************************************************************************/
 
@@ -132,18 +132,16 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  Col<float> FM;
-  Col<float> fmSlice;
-  Col<std::complex<float>> sen;
- 	Col<std::complex<float>> senSlice;
 
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
 	acqTracking *acqTrack;
-  processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
+  Col<float> FM;
+  Col<std::complex<float>> sen;
+ 	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
 
-  std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
-  std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
+  //std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
+  //std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
 
   uword numAcq = d->getNumberOfAcquisitions();
 
@@ -156,9 +154,7 @@ int main(int argc, char **argv) {
 
   Col<float> ix, iy, iz;
   initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
-  Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
-  Col<std::complex<float>> data(nro * nc);
-  Col<std::complex<float>> ImageTemp(Nx * Ny * Nz);
+
 
   // Check and abort if we have more than one encoding space (No Navigators for
   // now).
@@ -200,28 +196,53 @@ int main(int argc, char **argv) {
   if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
     	outputImageFilePath += '/';
 	}
-  //uword NSet = 0; //Set is only used for arrayed ADCs
-  //uword NSeg = 0;
-	for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
-		for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
-            for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
-                for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
-                    for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+  size_t ngpus, gpunum;
+  #pragma omp parallel for private(filename, gpunum) default(shared)
+  for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+  
+    size_t tid = omp_get_thread_num(); 
+    //acc_set_device_num(tid, acc_device_nvidia);
+    //Col<float> FM;
+    Col<float> fmSlice;
+    //Col<std::complex<float>> sen;
+ 	  Col<std::complex<float>> senSlice;
+    Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
+    Col<std::complex<float>> data(nro * nc);
+    Col<std::complex<float>> ImageTemp(Nx * Ny * Nz);
+
+	  for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
+		  for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
+        for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
+          for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
+
+            ngpus = acc_get_num_devices(acc_device_nvidia);
+            if( ngpus ) {
+              gpunum = tid % ngpus;
+              acc_set_device_num( gpunum, acc_device_nvidia );
+            } else {
+              acc_set_device_type(acc_device_host);
+            }
+
                       filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
           								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
           								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
-                          
-	                    senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, Nx*Ny*Nz);
-						          fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 
-	                    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
+                      #pragma omp critical 
+                      { 
+                        std::cout << "NSlice in omp critical = " << NSlice << std::endl;
+	                      senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, Nx*Ny*Nz);
+						            fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
+	                      getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
+                      }
+
+                          if(tid == 0) {
 	                    std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
 	                    std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
 	                    std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
 	                    std::cout << "Number of rows in data = " << data.n_rows << std::endl;
 	                    std::cout << "Number of columns in data = " << data.n_cols << std::endl;
-
+                          }
 	                    QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 
                       if (FtType == 1) {
