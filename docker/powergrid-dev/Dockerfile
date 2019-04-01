@@ -55,3 +55,6 @@ RUN git clone https://github.com/ismrmrd/ismrmrd.git; \
 
 ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
 ENV PATH="${PATH}:/opt/PowerGrid/bin"
+
+# For singularity compatibility
+RUN ldconfig
