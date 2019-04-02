@@ -46,7 +46,7 @@ ENV LD_LIBRARY_PATH="/opt/lib:/opt/lib64:${PATH}"
 RUN git clone https://github.com/ismrmrd/ismrmrd.git; \
     cd ismrmrd; \
     git fetch; \
-    git checkout master; \
+    git checkout tags/v1.4.0; \
     mkdir ./build; \
     cd build; \
     cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_INSTALL_PREFIX=/opt; \
