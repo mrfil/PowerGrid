@@ -41,7 +41,7 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	make install; \
 	ldconfig
 
-ENV LD_LIBRARY_PATH="/opt/lib:/opt/lib64:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/lib:/opt/lib64:${LD_LIBRARY_PATH}"
 
 RUN git clone https://github.com/ismrmrd/ismrmrd.git; \
     cd ismrmrd; \
