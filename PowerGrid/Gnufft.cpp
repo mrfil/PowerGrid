@@ -80,12 +80,6 @@ Gnufft<T1>::Gnufft(
       kz[i] = k3(i);
   }
 
-  //XformedData.set_size(n2);
-  //XformedImg.set_size(n1);
-  //realXformedData.set_size(n2);
-  //imagXformedData.set_size(n2);
-  //realXformedImg.set_size(n1);
-  //imagXformedImg.set_size(n1);
   // Set Beta
   kernelWidth = 4.0;
   beta = MRI_PI *
@@ -161,49 +155,8 @@ operator*(const Col<complex<T1>> &d) const // Don't change these arguments
 {
 RANGE()
 
-  // cout << "Entering forward operator overload in Ggrid." << endl;
-  // This is just specifying size assuming things are the same size, change as
-  // necessary
-  // uword dataLength = d.n_rows;
-
-  // cout << "Seperating real and imaginary data." << endl;
-
-  //Col<T1> realData = real(d).eval();
-  //Col<T1> imagData = imag(d).eval();
-  // Now we grab the data out of armadillo with the memptr() function
-  // This returns a pointer of the type of the elements of the
-  // array/vector/matrix/cube (3d matrix)
-  // Armadillo uses column major like MATLAB and Fortran, but different from
-  // 2D C++ arrays which are row major.
-  // cout << "Grabbing pointers." << endl;
-
   const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
-  //T1 *imagDataPtr = imagData.memptr();
 
-  // cout << "Allocating memory for transformed data." << endl;
-
-  //Col<T1> realXformedData(this->n2);
-  //Col<T1> imagXformedData(this->n2);
-  // realXformedData.zeros();
-  // imagXformedData.zeros();
-  // cout << "Grabbing pointers for new memory." << endl;
-
-  //T1 *realXformedDataPtr = realXformedData.memptr();
-  //T1 *imagXformedDataPtr = imagXformedData.memptr();
-
-  // Process data here, like calling a brute force transform, dft...
-  // I assume you create the pointers to the arrays where the transformed data
-  // will be stored
-  // realXformedDataPtr and imagXformedDataPtr and they are of type float*
-  /*
-  ftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
-            realDataPtr, imagDataPtr, kx.memptr(),
-            ky.memptr(), kz.memptr(),
-            ix.memptr(), iy.memptr(), iz.memptr(),
-            FM.memptr(), t.memptr(),
-            this->n2, this->n1
-  );
-  */
   // T2 gridOS = 2.0;
   // cout << "About to call the forward gridding routine." << endl;
   #ifdef OPENACC_GPU
@@ -216,20 +169,6 @@ RANGE()
                          kernelWidth, beta, LUT, sizeLUT,
                          stream, nPlan, pGridData, pGridData_d, pGridData_os,
                          pGridData_os_d, pSamples);
-
-  // To return data, we need to put our data back into Armadillo objects
-  // We are telling the object how long it is because it will copy the data
-  // back into managed memory
-  //realXformedData(realXformedDataPtr, dataLength);
-  //imagXformedData(imagXformedDataPtr, dataLength);
-
-  // We can free the realDataXformPtr and imagDataXformPtr at this point and
-  // Armadillo will manage armadillo object memory as things change size or go
-  // out of scope and need to be destroyed
-
-  //Col<complex<T1>> XformedData(this->n2);
-  //XformedData.set_real(realXformedData);
-  //XformedData.set_imag(imagXformedData);
 
   Col<CxT1> temp(reinterpret_cast<CxT1 *>(pSamples), n2, false, true);
   return temp; // Return a vector of type T1

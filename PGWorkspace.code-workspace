@@ -48,7 +48,15 @@
 			"tuple": "cpp",
 			"typeinfo": "cpp",
 			"utility": "cpp",
-			"optional": "cpp"
+			"optional": "cpp",
+			"cstdarg": "cpp",
+			"atomic": "cpp",
+			"strstream": "cpp",
+			"list": "cpp",
+			"thread": "cpp",
+			"cinttypes": "cpp",
+			"typeindex": "cpp",
+			"valarray": "cpp"
 		}
 	}
 }

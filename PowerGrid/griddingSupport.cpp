@@ -106,8 +106,7 @@ void deinterleave_data2d(
     int lIndex;
 #pragma acc parallel loop collapse(2) independent present( \
     pSrc [0:2 * imageX * imageY])                          \
-    present(outR_d [0:imageX * imageY], outI_d [0:imageX * imageY]) \
-    async(1)
+    present(outR_d [0:imageX * imageY], outI_d [0:imageX * imageY]) 
     for (int X = 0; X < imageX; X++) {
         for (int Y = 0; Y < imageY; Y++) {
             lIndex = Y + X * imageY;
@@ -126,8 +125,7 @@ void deinterleave_data3d(T1* __restrict pSrc, T1* __restrict outR_d,
     int lIndex, X, Y, Z;
 #pragma acc parallel loop collapse( \
     3) independent present(pSrc [0:2 * imageX * imageY * imageZ]) \
-    present(outR_d [0:imageX * imageY * imageZ],  outI_d [0:imageX * imageY * imageZ]) \
-    async(1)
+    present(outR_d [0:imageX * imageY * imageZ],  outI_d [0:imageX * imageY * imageZ]) 
     for (Z = 0; Z < imageZ; Z++) {
         for (X = 0; X < imageX; X++) {
             for (Y = 0; Y < imageY; Y++) {
@@ -150,7 +148,7 @@ void normalize_fft2d(T1* __restrict pDst, T1* __restrict pSrc, int gridSizeX,
     T1 vectorLength = gridSizeX * gridSizeY;
     //int common_index;
 #pragma acc parallel loop present(pSrc [0:2 * gridSizeX * gridSizeY]) \
-    present(pDst [0:2 * gridSizeX * gridSizeY]) async(1)
+    present(pDst [0:2 * gridSizeX * gridSizeY])
     for (int dX = 0; dX < 2 * gridSizeX * gridSizeY; dX++) {
         //pDst[ dX ] = pSrc[ dX ]/vectorLength;
         pDst[dX] = pSrc[dX];
@@ -182,7 +180,7 @@ void normalize_fft3d(T1* __restrict pDst, T1* __restrict pSrc,
 
 #pragma acc parallel loop present(                  \
     pSrc [0:2 * gridSizeX * gridSizeY * gridSizeZ]) \
-    present(pDst [0:2 * gridSizeX * gridSizeY * gridSizeZ]) async(1)
+    present(pDst [0:2 * gridSizeX * gridSizeY * gridSizeZ])
     for (int dX = 0; dX < 2 * gridSizeX * gridSizeY * gridSizeZ; dX++) {
         //pDst[ dX ] = pSrc[ dX ]/vectorLength;
         pDst[dX] = pSrc[dX];
@@ -232,15 +230,15 @@ void deapodization2d(T1* __restrict pDst, T1* __restrict pSrc, int imageX,
     T1 gridOS2;
 
     int destSize = imageX * imageY;
-    /*
+    
 #pragma acc parallel loop independent present(pDst [0:2 * imageX * imageY])
     for (int ii = 0; ii < 2 * destSize; ii++) {
         pDst[ii] = (T1)0.0;
     }
-    */
+    
 
 #pragma acc parallel loop collapse(2) independent present(pDst [0:2 * imageX * imageY]) present( \
-    pSrc [0:2 * imageX * imageY]) async(1)
+    pSrc [0:2 * imageX * imageY]) 
     {
         for (X = 0; X < imageX; X++) {
             for (Y = 0; Y < imageY; Y++) {
@@ -311,16 +309,16 @@ void deapodization3d(T1* __restrict pDst, T1* __restrict pSrc, int imageX,
     T1 gridOS3;
     // int common_index;
     int destSize = imageX * imageY * imageZ;
-/*
+
 #pragma acc parallel loop independent present(pSrc [0:2 * imageX * imageY * imageZ]) \
     present(pDst [0:2 * imageX * imageY * imageZ])
     for (int ii = 0; ii < 2 * destSize; ii++) {
         pDst[ii] = (T1)0.0;
     }
-*/
+
 #pragma acc parallel loop collapse(3)                          \
     independent present(pSrc [0:2 * imageX * imageY * imageZ]) \
-        present(pDst [0:2 * imageX * imageY * imageZ]) async(1)
+        present(pDst [0:2 * imageX * imageY * imageZ]) 
     {
         for (Z = 0; Z < imageZ; Z++) {
             for (X = 0; X < imageX; X++) {
@@ -386,7 +384,7 @@ void crop_center_region2d(T1* __restrict pDst, T1* __restrict pSrc,
 
 #pragma acc parallel loop collapse(2)                       \
     independent present(pSrc [0:2 * gridSizeX * gridSizeY]) \
-        present(pDst [0:2 * imageSizeX * imageSizeY]) async(1)
+        present(pDst [0:2 * imageSizeX * imageSizeY]) 
     for (int dX_dst = 0; dX_dst < imageSizeX; dX_dst++) {
         for (int dY_dst = 0; dY_dst < imageSizeY; dY_dst++) {
 
@@ -427,7 +425,7 @@ void crop_center_region3d(T1* __restrict pDst, T1* __restrict pSrc,
 
 #pragma acc parallel loop collapse(3) independent present( \
     pSrc [0:2 * gridSizeX * gridSizeY * gridSizeZ])        \
-    present(pDst [0:2 * imageSizeX * imageSizeY * imageSizeZ]) async(1)
+    present(pDst [0:2 * imageSizeX * imageSizeY * imageSizeZ])
     for (int dZ_dst = 0; dZ_dst < imageSizeZ; dZ_dst++) {
         for (int dX_dst = 0; dX_dst < imageSizeX; dX_dst++) {
             for (int dY_dst = 0; dY_dst < imageSizeY; dY_dst++) {
@@ -474,13 +472,13 @@ void zero_pad2d(T1* __restrict pDst, T1* __restrict pSrc, int imageSizeX,
 
 
 #pragma acc  parallel loop independent present(pDst [0:2 * destSize]) \
-    present(pSrc [0:2 * imageSizeX * imageSizeY]) async(1)
+    present(pSrc [0:2 * imageSizeX * imageSizeY])
         for (int jj = 0; jj < 2 * destSize; jj++) {
             pDst[jj] = (T1)0.0;
         }
 
 #pragma acc parallel loop collapse(2) independent present(pDst [0:2 * destSize]) \
-    present(pSrc [0:2 * imageSizeX * imageSizeY]) async(1)
+    present(pSrc [0:2 * imageSizeX * imageSizeY])
         for (int dY_src = 0; dY_src < imageSizeY; dY_src++) {
             for (int dX_src = 0; dX_src < imageSizeX; dX_src++) {
 
@@ -522,13 +520,13 @@ void zero_pad3d(T1* __restrict pDst, T1* __restrict pSrc, int imageSizeX,
 
 
 #pragma acc parallel loop present(pDst [0:2 * destSize]) present( \
-    pSrc [0:2 * imageSizeX * imageSizeY * imageSizeZ]) async(1)
+    pSrc [0:2 * imageSizeX * imageSizeY * imageSizeZ])
         for (int jj = 0; jj < 2 * destSize; jj++) {
             pDst[jj] = (T1)0.0;
         }
 
 #pragma acc parallel loop collapse(3) independent present(pDst [0:2 * destSize]) present( \
-    pSrc [0:2 * imageSizeX * imageSizeY * imageSizeZ]) async(1)
+    pSrc [0:2 * imageSizeX * imageSizeY * imageSizeZ])
         for (int dZ_src = 0; dZ_src < imageSizeZ; dZ_src++) {
             for (int dY_src = 0; dY_src < imageSizeY; dY_src++) {
                 for (int dX_src = 0; dX_src < imageSizeX; dX_src++) {
@@ -558,7 +556,7 @@ void circshift2(T* __restrict pDst, const T* __restrict pSrc, int xdim,
     int ii, jj;
 
 #pragma acc parallel loop collapse(2) independent present( \
-    pSrc [0:2 * xdim * ydim]) present(pDst [0:2 * xdim * ydim]) async(1)
+    pSrc [0:2 * xdim * ydim]) present(pDst [0:2 * xdim * ydim])
     for (int x = 0; x < xdim; x++) {
         for (int y = 0; y < ydim; y++) {
             ii = (x + xshift) % xdim;
@@ -579,7 +577,7 @@ void circshift3(T* __restrict pDst, const T* __restrict pSrc, int xdim,
     int ii, jj, kk;
 
 #pragma acc parallel loop collapse(3) independent present( \
-    pSrc [0:2 * xdim * ydim * zdim]) present(pDst [0:2 * xdim * ydim * zdim]) async(1)
+    pSrc [0:2 * xdim * ydim * zdim]) present(pDst [0:2 * xdim * ydim * zdim])
     for (int x = 0; x < xdim; x++) {
         for (int y = 0; y < ydim; y++) {
             for (int z = 0; z < zdim; z++) {

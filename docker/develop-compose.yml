@@ -3,7 +3,7 @@ services:
   ##### the develop image you've build
   ### don't forget to open ports for your app
   dev-image:
-    image: powergrid-dev:latest
+    image: acerja2/powergrid-dev:latest
     privileged: true
     container_name: devenv
     runtime: nvidia

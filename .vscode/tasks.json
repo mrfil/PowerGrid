@@ -73,25 +73,25 @@
         {
             "label": "build develop image",
             "type": "shell",
-            "command": "cd docker; docker build --no-cache -t powergrid-dev powergrid-dev",
+            "command": "cd docker; docker build -t powergrid-dev powergrid-dev",
             "problemMatcher": []
         },
         {
             "label": "build develop MPI image",
             "type": "shell",
-            "command": "cd docker; docker build --no-cache -t powergrid-bw-dev powergrid-bw-dev",
+            "command": "cd docker; docker build -t powergrid-bw-dev powergrid-bw-dev",
             "problemMatcher": []
         },
         {
             "label": "build prod image",
             "type": "shell",
-            "command": "cd docker; docker build --no-cache -t powergrid powergrid",
+            "command": "cd docker; docker build -t powergrid powergrid",
             "problemMatcher": []
         },
         {
             "label": "build prod MPI image",
             "type": "shell",
-            "command": "cd docker; docker build --no-cache -t powergrid-bw powergrid-bw",
+            "command": "cd docker; docker build -t powergrid-bw powergrid-bw",
             "problemMatcher": []
         }
     ]

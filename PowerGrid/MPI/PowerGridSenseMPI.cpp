@@ -12,7 +12,7 @@ Developed by:
 
 /*****************************************************************************
 
-    File Name   [PowerGridIsmrmrd.cpp]
+    File Name   [PowerGridSenseMPI.cpp]
 
     Synopsis    [PowerGrid reconstruction executable supporting ISMRMRD format
                                 as input.]
@@ -34,12 +34,16 @@ Developed by:
 #include <boost/program_options.hpp>
 #include <chrono>
 namespace po = boost::program_options;
-//using namespace PowerGrid;
+namespace bmpi = boost::mpi;
 
 int main(int argc, char **argv) {
   std::string rawDataFilePath, outputImageFilePath, senseMapFilePath,
       fieldMapFilePath, precisionString, TimeSegmentationInterp, FourierTrans,
       rawDataNavFilePath;
+
+  bmpi::environment env(argc, argv, true);
+  bmpi::communicator world;
+
   uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10, FtType = 0;
   //uword ;
   double beta = 0.0;
@@ -49,22 +53,6 @@ int main(int argc, char **argv) {
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
  			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-
-      /*
-      ("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
-      ISMRMRD Navigator Raw Data")
-      ("outputImage,o",
-      po::value<std::string>(&outputImageFilePath)->required(), "output ISMRMRD
-      Image file")
-      ("SENSEMap,S", po::value<std::string>(&senseMapFilePath),
-       "Enable SENSE recon with the specified SENSE map in ISMRMRD image
-      format")
-      ("FieldMap,F", po::value<std::string>(&fieldMapFilePath),
-      "Enable field corrected reconstruction with the specified field map in
-      ISMRMRD format")
-      ("Precision,P", po::value<std::string>(&precisionString),
-       "Numerical precision to use, float or double currently supported")
-       */
       ("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
           ("Ny,y", po::value<uword>(&Ny)->required(), "Image size in Y (Required)")
           ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
@@ -88,17 +76,7 @@ int main(int argc, char **argv) {
       std::cout << desc << std::endl;
       return 1;
     }
-    /*
-    if(precisionString.compare("double") ==0) {
-            typedef double PGPrecision;
-    } else if(precisionString.compare("float") == 0) {
-            typedef float PGPrecision;
-    } else {
-            typedef double PGPrecision;
-            std::cout << "Did not recognize precision option. Defaulting to
-    double precision." << std::endl;
-    }
-    */
+
 
     if (FourierTrans.compare("DFT") == 0) {
         FtType = 2;
@@ -135,13 +113,10 @@ int main(int argc, char **argv) {
 
   ISMRMRD::Dataset *d;
   ISMRMRD::IsmrmrdHeader hdr;
-  acqTracking *acqTrack;
+	acqTracking *acqTrack;
   Col<float> FM;
   Col<std::complex<float>> sen;
-  processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
-
-  //std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
-  //std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
+ 	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
 
   uword numAcq = d->getNumberOfAcquisitions();
 
@@ -168,27 +143,32 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
-  int NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum;
-  int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-  int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
-  int NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
-  int NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
-  int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
-  int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
-  int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
+  int NShotMax  = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
+  int NParMax   = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
+  int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum + 1;
+  int NSetMax   = hdr.encoding[0].encodingLimits.set->maximum + 1;
+  int NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum + 1;
+  int NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum + 1;
+  int NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum + 1;
+  int NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum + 1;
+  int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum + 1;
 
   std::cout << "NParMax = "   << NParMax << std::endl;
   std::cout << "NShotMax = "  << NShotMax << std::endl;
   std::cout << "NSliceMax = " << NSliceMax << std::endl;
   std::cout << "NSetMax = "   << NSetMax << std::endl;
   std::cout << "NRepMax = "   << NRepMax << std::endl;
+
   std::cout << "NAvgMax = "   << NAvgMax << std::endl;
+
   std::cout << "NEchoMax = "  << NEchoMax << std::endl;
+
   std::cout << "NPhaseMax = " << NPhaseMax << std::endl;
+
   std::cout << "NSegMax = "   << NSegMax << std::endl;
 
-   std::cout << "About to loop through the counters and scan the file"
+
+  std::cout << "About to loop through the counters and the file"
             << std::endl;
 
   std::string baseFilename = "img";
@@ -197,35 +177,102 @@ int main(int argc, char **argv) {
     	outputImageFilePath += '/';
 	}
 
-  for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
-  
-    //acc_set_device_num(tid, acc_device_nvidia);
+  // Figure out what slices to work on in this rank
+  Col<uword> sliceList;
+  Col<uword> phaseList;
+  Col<uword> echoList;
+  Col<uword> avgList;
+  Col<uword> repList;
+
+  uword numTasks = NSliceMax * NPhaseMax * NEchoMax * NAvgMax * NRepMax;
+
+  sliceList.resize(numTasks);
+  phaseList.resize(numTasks);
+  echoList.resize(numTasks);
+  avgList.resize(numTasks);
+  repList.resize(numTasks);
+
+  // Now we make lists of the tasks such that we are mapping out all the tasks
+  for (uword ii = 0; ii < NSliceMax; ii++) {   // slice loop
+    for (uword jj = 0; jj < NPhaseMax; jj++) { // phase Loop
+      for (uword kk = 0; kk < NEchoMax; kk++) {  // echo loop
+        for (uword ll = 0; ll < NAvgMax; ll++) { // avg Loop
+          for (uword mm = 0; mm < NRepMax; mm++) {   // rep loop
+            sliceList( ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = ii;
+            phaseList( ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = jj;
+            echoList ( ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = kk;
+            avgList  ( ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = ll; 
+            repList  ( ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = mm;  
+          }
+        }
+      }
+    }
+  }
+
+  // Start by creating a 2D vector (vector of vectors) to hold the MPI rank ->
+  // task mapping
+  vector<uword> init(0);
+  std::vector<std::vector<uword> > *taskList = new std::vector<std::vector<uword>>(world.size(), init);
+  uword process = 0;
+  for (uword task = 0; task < numTasks; task++) {
+    (*taskList)[process].push_back(task);
+
+    process++; 
+    if (process == world.size()) {
+      process = 0;
+    }
+  }
+  uword taskIndex;
+  std::cout << " Number of tasks = " << numTasks << std::endl;
+
+  #ifdef OPENACC_GPU
+  // Spread out our tasks across GPUs.
+  uword gpunum;
+  uword ngpus = acc_get_num_devices( acc_device_nvidia );
+  if (ngpus) {
+    gpunum = world.rank() % ngpus;
+    acc_set_device_num( gpunum, acc_device_nvidia );
+  } else {
+    acc_set_device_type( acc_device_host );
+  }
+  #endif
+
+  std::cout << "Rank = " << world.rank() << std::endl;
+
+  uword NSlice, NRep, NAvg, NEcho, NPhase;
+  for (uword ii = 0; ii < (*taskList)[world.rank()].size(); ii++) {
+    
+    taskIndex = (*taskList)[world.rank()].at(ii);
+
+    NSlice = sliceList(taskIndex);
+    NRep   = repList(taskIndex);
+    NAvg   = avgList(taskIndex);
+    NEcho  = echoList(taskIndex);
+    NPhase = phaseList(taskIndex);
+
+    std::cout << "NSlice = " << NSlice << std::endl;
+    std::cout << "NRep   = " << NRep   << std::endl;
+    std::cout << "NAvg   = " << NAvg   << std::endl;
+    std::cout << "NEcho  = " << NEcho  << std::endl;
+    std::cout << "NPhase = " << NPhase << std::endl;
+    
+
     //Col<float> FM;
     Col<float> fmSlice;
     //Col<std::complex<float>> sen;
- 	Col<std::complex<float>> senSlice;
+ 	  Col<std::complex<float>> senSlice;
     Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
     Col<std::complex<float>> data(nro * nc);
     Col<std::complex<float>> ImageTemp(Nx * Ny * Nz);
 
-	  for (uword NPhase = 0; NPhase <= NPhaseMax; NPhase++) {
-		for (uword NEcho = 0; NEcho <= NEchoMax; NEcho++) {
-          for (uword NAvg = 0; NAvg <= NAvgMax; NAvg++) {
-             for (uword NRep = 0; NRep < NRepMax +1; NRep++) {
-
-
                       filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
           								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
           								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
-
-
-                        std::cout << "NSlice in omp critical = " << NSlice << std::endl;
+ 
 	                      senSlice = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, Nx*Ny*Nz);
 						            fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 	                      getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
-
-
 
 	                    std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
 	                    std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
@@ -257,14 +304,8 @@ int main(int argc, char **argv) {
                               Ny, Nz, tvec, NIter);
                       }
 
-
-	                  //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
                     writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
-                    }
-
-                }
-            }
-        }
+                    
     }
 
 

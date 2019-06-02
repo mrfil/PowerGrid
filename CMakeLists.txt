@@ -4,23 +4,25 @@ cmake_minimum_required(VERSION 3.2) #CMake version 3.2 required to properly supp
 ## need to be set BEFORE calling project command (which does introspection and sets
 ## variables about the behavior of the compiler).
 set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_CXX_EXTENSIONS ON)
 
 project("PowerGrid" C CXX)
 
 option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" ON)
 option(OPENACC_MP "Enable OpenACC support on CPU (PGI Only) " OFF)
-option(MPISupport "Enable MPI Support" OFF)
+option(MPISupport "Enable MPI Support" ON)
 
 if(OPENACC_GPU AND OPENACC_MP)
-message( FATAL_ERROR "You cannot build with both OPENACC_GPU AND OPENACC_MP at the same time")
+message(FATAL_ERROR "You cannot build with both OPENACC_GPU AND OPENACC_MP at the same time")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # Find Boost
-set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu)
-#set(BOOST_ROOT /usr/local/lib)
+set(Boost_USE_STATIC_LIBS OFF)
+# Boost version >= 1.70.0 have improved support for cmake built into the boost install
+# Unfortunately, this support breaks when used with PGI compilers
+# As a work around, ignore the generated cmake modules
+set(Boost_NO_BOOST_CMAKE ON)
 
 if(MPISupport)
     find_package(MPI)
@@ -29,20 +31,21 @@ else(MPISupport)
     find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization)
 endif(MPISupport)
 
-set(Boost_USE_STATIC_LIBS OFF)
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
-include_directories(${Boost_INCLUDE_DIRS})
+if(Boost_FOUND)
+	set(LIBS ${LIBS} ${Boost_LIBRARIES})
+	include_directories(${Boost_INCLUDE_DIRS})
+endif()
 
-set(CUDAVER 9.1)
-
+set(CUDAVER 9.2)
+set(PGI_YEAR 2019)
 if(OPENACC_GPU)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/include)
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/include)
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64)
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
-	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
+	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
-	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS $ENV{PGI}/linux86-64/2018/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
+	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
 	set(LIBS ${LIBS} ${nvToolsExt_LIBRARIES})
 	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
 	find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
@@ -65,14 +68,13 @@ find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 message(${ARMADILLO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${ARMADILLO_LIBRARIES})
-#set(HDF5_ROOT /usr/local)
-#find_package(HDF5)
+
+
 find_package(HDF5 COMPONENTS CXX)
 include_directories(${HDF5_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${HDF5_C_LIBRARIES})
 set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
-#find_library(GPERFTOOLS_LIBRARIES NAMES profiler libprofiler.so.0 HINTS /usr/)
-#set(LIBS ${LIBS} ${GPERFTOOLS_LIBRARIES})
+
 include_directories(Support/ArmaExtensions)
 
 #Define files to be compiled
@@ -109,6 +111,8 @@ endif(MPISupport)
 find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/ ~/CIVIC/lib)
 set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
 
+message(STATUS "Libraries to be linked in: ${LIBS}")
+
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
 else()
@@ -118,14 +122,14 @@ else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC_GPU)
 			add_definitions(-DOPENACC_GPU)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mllvm -Minfo=accel -acc -mp -fast -O3 -tp=px -ta=tesla:cc35,cc60,cuda9.1,flushz -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mnollvm -Mcuda -Minfo=accel -acc -fast -ta=tesla:cc35,cc60,cuda${CUDAVER},flushz -pgf90libs")
 		elseif(OPENACC_MP)
 			add_definitions(-DOPENACC_MP)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minfo=accel -acc -mp -fast -O3 -tp=px -ta=multicore -pgf77libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minfo=accel -acc -fast -ta=multicore -pgf90libs")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=ccff -fpermissive ")
 		endif()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
+		#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --c++11")
     endif()
 endif()
 
@@ -155,7 +159,6 @@ add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
 target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
 
 if (MPISupport)
-	add_definitions(-DPowerGridMPI)
     add_subdirectory(PowerGrid/MPI)
 endif (MPISupport)
 

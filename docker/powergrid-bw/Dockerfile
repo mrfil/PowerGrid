@@ -35,20 +35,20 @@ RUN  apt-get -y update && apt-get install -y curl libopenblas-dev \
 
 
 # Instal MPICH 3.2 using example from NERSC
-RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && CC=pgcc && CXX=pgc++ && F77=pgfortran && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
-	&& ./configure --enable-static --enable-shared --with-device=ch3:nemesis --with-thread-package=posix --with-pm=hydra --without-valgrind --disable-fast && make -j6 && make install && rm /root/mpich-3.2.tar.gz
+#RUN unset F90 && unset F90FLAGS && unset F77 && unset F77FLAGS && CPP=cpp && CC=pgcc && CXX=pgc++ && F77=pgfortran && cd /root && wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz && tar xvzf mpich-3.2.tar.gz && cd /root/mpich-3.2 \
+#	&& ./configure --enable-static --enable-shared --with-device=ch3:nemesis --with-thread-package=posix --with-pm=hydra --without-valgrind --disable-fast && make -j6 && make install && rm /root/mpich-3.2.tar.gz
 
-ENV LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}"
+#ENV LD_LIBRARY_PATH="/usr/local/lib/:${LD_LIBRARY_PATH}"
 
 # Install custom compile of boost for mpi.
-RUN wget -O ~/boost_1_66_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2' --max-redirect=100\
- && tar xjf ~/boost_1_66_0.tar.bz2 \
- && cd ~/boost_1_66_0/ \
- && ./bootstrap.sh --prefix=/usr/local --with-libraries=atomic,chrono,container,context,coroutine,date_time,exception,filesystem,graph,iostreams,locale,log,math,mpi,program_options,random,regex,serialization,signals,system,test,thread,timer,wave \
- && cp ~/boost_1_66_0/tools/build/example/user-config.jam ~/boost_1_66_0/tools/build/src/user-config.jam \
- && echo "using mpi ; " >> ~/boost_1_66_0/tools/build/src/user-config.jam
+RUN wget -O ~/boost_1_70_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2' --max-redirect=100\
+ && tar xjf ~/boost_1_70_0.tar.bz2 \
+ && cd ~/boost_1_70_0/ \
+ && ./bootstrap.sh --prefix=/usr/local --with-toolset=pgi --with-libraries=mpi,program_options,serialization \
+ && cp ~/boost_1_70_0/tools/build/example/user-config.jam ~/boost_1_70_0/tools/build/src/user-config.jam \
+ && echo "using mpi : /opt/pgi/linux86-64/2018/mpi/openmpi-2.1.2/bin/mpic++; " >> ~/boost_1_70_0/tools/build/src/user-config.jam
 
-RUN cd ~/boost_1_66_0 && ./b2 -j 4 toolset=gcc install || true
+RUN cd ~/boost_1_70_0 && ./b2 -j 4 toolset=pgi install || true
 
 # Install SuperLU5
 RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
@@ -72,10 +72,10 @@ RUN git clone https://gitlab.com/conradsnicta/armadillo-code; \
 	ldconfig
 
 # Install Latest CMake
-RUN curl -O -J -L http://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.tar.gz; \
+RUN curl -O -J -L http://cmake.org/files/v3.14/cmake-3.14.4-Linux-x86_64.tar.gz; \
 	apt-get -y purge cmake; \
-	tar -xvf ./cmake-3.14.0-Linux-x86_64.tar.gz; \
-	cd ./cmake-3.14.0-Linux-x86_64; \
+	tar -xvf ./cmake-3.14.4-Linux-x86_64.tar.gz; \
+	cd ./cmake-3.14.4-Linux-x86_64; \
 	cp -r bin /usr/; \
 	cp -r doc /usr/share/; \
 	cp -r man /usr/share/; \
@@ -87,7 +87,7 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     git checkout matlab; \
     mkdir ./build; \
     cd build; \
-    cmake ../; \
+    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_C_COMPILER=pgcc; \
     make;  \
     make install
 
