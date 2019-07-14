@@ -44,7 +44,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
     n2 = b; // Image size
     // L == 0 or 1 is ambiguous. In matlab we would often specific L = 0 to mean no time segmentation.
     if ((nTimeSegs == 0) || (nTimeSegs == 1)) {
-        L = 0;
+        L = 1;
     } else {
         L = nTimeSegs;
     } // number of time segments
@@ -56,26 +56,27 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
     //cout << "N2 = " << n2 << endl;
     //cout << "L = " << L << endl;
 
-    outData.set_size(n1, L + 1);
-    outImg.set_size(n2, L + 1);
-    tempD.set_size(n2, L + 1);
-    tempAD.set_size(n1, L + 1);
+    outData.set_size(n1, L);
+    outImg.set_size(n2, L);
+    tempD.set_size(n2, L);
+    tempAD.set_size(n1, L);
 
     AA.set_size(n1, L + 1); // time segments weights
     timeVec = timeVec_in;
     T_min = timeVec.min();
     T1 rangt = timeVec.max() - T_min;
-    tau = (rangt + datum::eps) / (L - 1); // it was L-1 before
+    tau = (rangt + datum::eps) / L;
     timeVec = timeVec - T_min;
 
     uword NOneShot = n1 / Nshots;
-    if (L == 0) {
+    if (L <= 1) {
+        L = 1;
         tau = 0;
         AA.ones();
-        Wo.ones(n2, L + 1);
-        WoH.ones(n2, L + 1);
+        Wo.ones(n2, 1);
+        WoH.ones(n2, 1);
     } else {
-        Mat<complex<T1>> tempAA(NOneShot, L + 1);
+        Mat<complex<T1>> tempAA(NOneShot, L);
         if (type == 1) { // Hanning interpolator
             cout << "Using Hanning window temporal interpolator" << endl;
             cout << "Field Map size = " << this->fieldMap.n_rows << endl;
@@ -89,7 +90,7 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
                 }
             }
             AA = repmat(tempAA, Nshots, 1);
-
+            //AA.save("AA.csv", arma::csv_ascii);
         } else if (type == 2) { // Min-max interpolator: Exact LS interpolator
 
             cout << "Using exact LS minmax temporal interpolator" << endl;
@@ -211,7 +212,6 @@ TimeSegmentation<T1, Tobj>::TimeSegmentation(Tobj& G, Col<T1> map_in,
 
         Wo.set_size(n2, L + 1);
         WoH.set_size(n2, L + 1);
-#pragma omp parallel for shared(Wo, WoH)
         for (unsigned int ii = 0; ii < L + 1; ii++) {
             Wo.col(ii) = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
             WoH.col(ii) = exp(i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
@@ -264,19 +264,19 @@ operator*(const Col<complex<T1>>& d) const
     //uvec dataMaskTrimmed;
     // loop through time segments
     tempD = Wo;
-#pragma omp parallel for schedule(dynamic) shared(tempD)
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
-        tempD.unsafe_col(ii) %= d;
+
+    for (unsigned int ii = 0; ii < this->L; ii++) {
+        tempD.col(ii) %= d;
     }
 
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
+    for (unsigned int ii = 0; ii < this->L; ii++) {
         // cout << "Entering time segmentation loop" << endl;
         // apply a phase to each time segment
         //Wo = exp(-i * (this->fieldMap) * ((ii) * this->tau + this->T_min));
 
         // perform multiplication by the object and sum up the time segments
         //temp = (this->Wo.col(ii)) % d;
-        outData.unsafe_col(ii) = (*G * tempD.unsafe_col(ii));
+        outData.col(ii) = (*G * tempD.col(ii));
 
         // dataMaskTrimmed = find(abs(this->AA.col(ii)) > 0);
         // std::cout << "Length dataMaskTrimmed = " << dataMaskTrimmed.n_rows <<
@@ -287,9 +287,9 @@ operator*(const Col<complex<T1>>& d) const
         //    this->AA.col(ii)));
     }
 
-#pragma omp parallel for schedule(dynamic) shared(outData, AA)
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
-        outData.unsafe_col(ii) %= AA.unsafe_col(ii);
+
+    for (unsigned int ii = 0; ii < this->L; ii++) {
+        outData.col(ii) %= AA.col(ii);
     }
 
     return sum(outData, 1);
@@ -304,21 +304,20 @@ operator/(const Col<complex<T1>>& d) const
     tempAD = conj(AA);
 // output is the size of the image
 //Col<complex<T1>> outData = zeros<Col<complex<T1>>>(this->n2);
-#pragma omp parallel for schedule(dynamic) shared(tempAD)
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
-        tempAD.unsafe_col(ii) %= d;
+
+    for (unsigned int ii = 0; ii < this->L; ii++) {
+        tempAD.col(ii) %= d;
     }
     // loop through the time segments
 
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
+    for (unsigned int ii = 0; ii < this->L; ii++) {
 
         // perform adjoint operation by the object and sum up the time segments
-        outImg.unsafe_col(ii) = ((*G) / tempAD.unsafe_col(ii));
+        outImg.col(ii) = ((*G) / tempAD.col(ii));
     }
 
-#pragma omp parallel for schedule(dynamic) shared(WoH, outImg)
-    for (unsigned int ii = 0; ii < this->L + 1; ii++) {
-        outImg.unsafe_col(ii) %= WoH.unsafe_col(ii);
+    for (unsigned int ii = 0; ii < this->L; ii++) {
+        outImg.col(ii) %= WoH.col(ii);
     }
 
     return sum(outImg, 1);

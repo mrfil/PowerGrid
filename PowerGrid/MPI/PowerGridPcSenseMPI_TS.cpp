@@ -28,13 +28,10 @@ Developed by:
  *****************************************************************************/
 
 // //Project headers.
-#include "../PowerGrid.h"
-#include "ismrmrd/dataset.h"
-#include "ismrmrd/ismrmrd.h"
-#include "ismrmrd/version.h"
-#include "ismrmrd/xml.h"
-#include "../processIsmrmrd.hpp"
-#include "../processNIFTI.hpp"
+#include "PowerGrid.h"
+#include "processIsmrmrd.hpp"
+#include "processNIFTI.hpp"
+
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -42,77 +39,65 @@ namespace bmpi = boost::mpi;
 
 //using namespace PowerGrid;
 
-int main(int argc, char **argv) {
-  //required for boost::mpi to work.
-  bmpi::environment env(argc, argv, true);
-  bmpi::communicator world;
-  
-  std::cout << "I am rank #: " << world.rank() << std::endl;
+int main(int argc, char** argv)
+{
+    //required for boost::mpi to work.
+    bmpi::environment env(argc, argv, true);
+    bmpi::communicator world;
 
-  std::string rawDataFilePath, outputImageFilePath, TimeSegmentationInterp;
-  uword Nx, Ny, Nz, NShots = 1, NIter = 10, L = 0, type = 1;
-  //uword  type, L = 0;
-  double beta = 0.0;
-  uword dims2penalize = 3;
-  po::options_description desc("Allowed options");
-  desc.add_options()("help,h", "produce help message")(
-      "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
-      "input ISMRMRD Raw Data file")
-      ("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-       ("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
-       ("Ny,y", po::value<uword>(&Ny)->required(),
-                                     "Image size in Y (Required)")
-      ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
-      ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
-      ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
-      ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
-      ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
-      ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
-      ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main "
-          "solver");
+    std::string rawDataFilePath, outputImageFilePath, TimeSegmentationInterp;
+    uword Nx, Ny, Nz, NShots = 1, NIter = 10, L = 0, type = 1;
+    //uword  type, L = 0;
+    double beta = 0.0;
+    uword dims2penalize = 3;
+    po::options_description desc("Allowed options");
+    desc.add_options()("help,h", "produce help message")(
+        "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
+        "input ISMRMRD Raw Data file")("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")("Ny,y", po::value<uword>(&Ny)->required(),
+        "Image size in Y (Required)")("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")("NShots,s", po::value<uword>(&NShots), "Number of shots per image")("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main "
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "solver");
 
-  po::variables_map vm;
+    po::variables_map vm;
 
-  try {
+    try {
 
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
 
-    if (vm.count("help")) {
-      std::cout << desc << std::endl;
-      return 1;
+        if (vm.count("help")) {
+            std::cout << desc << std::endl;
+            return 1;
+        }
+
+        if (TimeSegmentationInterp.compare("hanning") == 0) {
+            type = 1;
+        } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+            type = 2;
+        } else if (TimeSegmentationInterp.compare("histo") == 0) {
+            type = 3;
+        } else {
+            std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                      << "Acceptable values are hanning or minmax." << std::endl;
+            return 1;
+        }
+
+    } catch (boost::program_options::error& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        std::cout << desc << std::endl;
+        return 1;
     }
 
-    if (TimeSegmentationInterp.compare("hanning") == 0) {
-        type = 1;
-      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-        type = 2;
-      } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
-      } else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning or minmax."            << std::endl;
-        return 1;
-      }
+    arma::Col<float> FM;
+    arma::Col<std::complex<float> > sen;
+    arma::Col<float> PMap;
+    arma::Col<float> FMap;
+    arma::Col<std::complex<float> > SMap;
 
+    ISMRMRD::Dataset* d;
+    ISMRMRD::IsmrmrdHeader hdr;
+    acqTracking* acqTrack;
+    uword nro, nc;
 
-  } catch (boost::program_options::error &e) {
-    std::cerr << "Error: " << e.what() << std::endl;
-    std::cout << desc << std::endl;
-    return 1;
-  }
-
-  arma::Col<float> FM;
-  arma::Col<std::complex<float>> sen;
-  arma::Col<float> PMap;
-  arma::Col<float> FMap;
-  arma::Col<std::complex<float>> SMap;
-
-  ISMRMRD::Dataset *d;
-  ISMRMRD::IsmrmrdHeader hdr;
-	acqTracking* acqTrack;
-  uword nro, nc;
-	if (world.rank() == 0) {
     processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
     std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
     std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
@@ -125,44 +110,35 @@ int main(int argc, char **argv) {
     d->readAcquisition(0, acq);
     nro = acq.number_of_samples();
     nc = acq.active_channels();
-    bmpi::broadcast(world,nro,0);
-    bmpi::broadcast(world,nc,0);
-  } else {
-    bmpi::broadcast(world,nro,0);
-    bmpi::broadcast(world,nc,0);
-  }
 
-  Col<float> ix, iy, iz;
-  initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
-  Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
-  Col<std::complex<float>> data(nro * nc);
-  Col<std::complex<float>> ImageTemp(Nx * Ny * Nz);
+    Col<float> ix, iy, iz;
+    initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
+    Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
+    Col<std::complex<float> > data(nro * nc);
+    Col<std::complex<float> > ImageTemp(Nx * Ny * Nz);
 
-  if (world.rank() == 0) {
-  // Check and abort if we have more than one encoding space (No Navigators for
-  // now).
     if (hdr.encoding.size() != 1) {
 
-      std::cout << "There are " << hdr.encoding.size()
-                << " encoding spaces in this file" << std::endl;
-      std::cout
-              << "This recon does not handle more than one encoding space. Aborting."
-              << std::endl;
+        std::cout << "There are " << hdr.encoding.size()
+                  << " encoding spaces in this file" << std::endl;
+        std::cout
+            << "This recon does not handle more than one encoding space. Aborting."
+            << std::endl;
 
-      return -1;
+        return -1;
     }
-  }
-  uword NSliceMax, NSetMax, NRepMax, NAvgMax, NSegMax, NEchoMax, NPhaseMax;
 
-  if (world.rank() == 0) {
-	  NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-	  NSetMax   = hdr.encoding[0].encodingLimits.set->maximum;
-	  NRepMax   = hdr.encoding[0].encodingLimits.repetition->maximum;
-	  NAvgMax   = hdr.encoding[0].encodingLimits.average->maximum;
-	  NSegMax   = hdr.encoding[0].encodingLimits.segment->maximum;
-	  NEchoMax  = hdr.encoding[0].encodingLimits.contrast->maximum;
-	  NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
+    uword NSliceMax, NSetMax, NRepMax, NAvgMax, NSegMax, NEchoMax, NPhaseMax, NParMax, NShotMax;
 
+    NShotMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
+    NParMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
+    NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum + 1;
+    NSetMax = hdr.encoding[0].encodingLimits.set->maximum + 1;
+    NRepMax = hdr.encoding[0].encodingLimits.repetition->maximum + 1;
+    NAvgMax = hdr.encoding[0].encodingLimits.average->maximum + 1;
+    NSegMax = hdr.encoding[0].encodingLimits.segment->maximum + 1;
+    NEchoMax = hdr.encoding[0].encodingLimits.contrast->maximum + 1;
+    NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum + 1;
 
     std::cout << "NSliceMax = " << NSliceMax << std::endl;
     std::cout << "NSetMax = " << NSetMax << std::endl;
@@ -173,120 +149,128 @@ int main(int argc, char **argv) {
     std::cout << "NSegMax = " << NSegMax << std::endl;
     std::cout << "About to loop through the counters and scan the file"
               << std::endl;
-    bmpi::broadcast(world,NSliceMax,0);
-    bmpi::broadcast(world,NSetMax,0);
-    bmpi::broadcast(world,NRepMax,0);
-    bmpi::broadcast(world,NAvgMax,0);
-    bmpi::broadcast(world,NEchoMax,0);
-    bmpi::broadcast(world,NPhaseMax,0);
-    bmpi::broadcast(world,NSegMax,0);
-  } else{
-    bmpi::broadcast(world,NSliceMax,0);
-    bmpi::broadcast(world,NSetMax,0);
-    bmpi::broadcast(world,NRepMax,0);
-    bmpi::broadcast(world,NAvgMax,0);
-    bmpi::broadcast(world,NEchoMax,0);
-    bmpi::broadcast(world,NPhaseMax,0);
-    bmpi::broadcast(world,NSegMax,0);
 
-  }
-  
     std::string baseFilename = "img";
-  	std::string filename;
-    uword dataNrows;
-    uword dataNcols;
-    uword PMapNrows;
-    uword kxNrows;
-	
-  uword NSet = 0; //Set is only used for arrayed ADCs
-	uword NSeg = 0;
-	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
-		for (uword NEcho = 0; NEcho<=NEchoMax; NEcho++) {
-			for (uword NAvg = 0; NAvg<=NAvgMax; NAvg++) {
-				for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
-					for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
-            
-            filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) +
-								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
-								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
-
-              if (world.rank() == 0) {
-						    getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
-								  kz, tvec);
-
-						    PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
-								  (uword) (Nx*Ny*Nz));
-						    SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
-						    FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
-
-                std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
-                std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
-                std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
-                std::cout << "Number of rows in phase map = " << PMap.n_rows << std::endl;
-                std::cout << "Number of rows in data = " << data.n_rows << std::endl;
-                std::cout << "Number of columns in data = " << data.n_cols << std::endl;
-
-                dataNrows = data.n_rows;
-                dataNcols = data.n_cols;
-                PMapNrows = PMap.n_rows;
-                kxNrows = kx.n_rows;
-                
-                bmpi::broadcast(world,dataNrows,0);
-                bmpi::broadcast(world,dataNcols,0); 
-                bmpi::broadcast(world,PMapNrows,0);
-                bmpi::broadcast(world,kxNrows,0);  
-
-              } else { // Let's make sure that the armadillo objects are initialized 
-              // properly for later usage with boost::mpi
-                
-                bmpi::broadcast(world,dataNrows,0);
-                bmpi::broadcast(world,dataNcols,0); 
-                bmpi::broadcast(world,PMapNrows,0); 
-                bmpi::broadcast(world,kxNrows,0);  
-
-                PMap.zeros(PMapNrows);
-                SMap.zeros(Nx*Ny*Nz*nc);
-                FMap.zeros(Nx*Ny*Nz);
-                data.zeros(dataNrows,dataNcols);
-                tvec.zeros(kxNrows);
-                kx.zeros(kxNrows);
-                ky.zeros(kxNrows);
-                kz.zeros(kxNrows);
-
-              }
-
-              //Let's avoid hammering the parallel file system by reading from every process.
-              bmpi::broadcast(world,data,0);
-              bmpi::broadcast(world,PMap,0);
-              bmpi::broadcast(world,SMap,0);
-              bmpi::broadcast(world,FMap,0);
-              bmpi::broadcast(world,kx,0);
-              bmpi::broadcast(world,ky,0);
-              bmpi::broadcast(world,kz,0);
-              bmpi::broadcast(world,tvec,0);
-              
-              //Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
-              // iy, iz);
-              //Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
-              mpipcSENSETimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
-		              0 - PMap, env, world);
-              //pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
-              QuadPenalty<float> R(Nx, Ny, Nz, beta);
-
-              ImageTemp = reconSolve<float, mpipcSENSETimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz, Nx,
-                Ny, Nz, tvec, NIter);
-              //writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
-              if (world.rank() == 0) {
-                writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
-              }
-            }
-          }
-        }
-      }
+    std::string filename;
+    if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
+        outputImageFilePath += '/';
     }
 
-  // Close ISMRMRD::Dataset
-  delete d;
+    //uword dataNrows;
+    //uword dataNcols;
+    //uword PMapNrows;
+    //uword kxNrows;
 
-  return 0;
+    // Figure out what slices to work on in this rank
+    Col<uword> sliceList;
+    Col<uword> phaseList;
+    Col<uword> echoList;
+    Col<uword> avgList;
+    Col<uword> repList;
+
+    uword numTasks = NSliceMax * NPhaseMax * NEchoMax * NAvgMax * NRepMax;
+
+    sliceList.resize(numTasks);
+    phaseList.resize(numTasks);
+    echoList.resize(numTasks);
+    avgList.resize(numTasks);
+    repList.resize(numTasks);
+
+    // Now we make lists of the tasks such that we are mapping out all the tasks
+    for (uword ii = 0; ii < NSliceMax; ii++) { // slice loop
+        for (uword jj = 0; jj < NPhaseMax; jj++) { // phase Loop
+            for (uword kk = 0; kk < NEchoMax; kk++) { // echo loop
+                for (uword ll = 0; ll < NAvgMax; ll++) { // avg Loop
+                    for (uword mm = 0; mm < NRepMax; mm++) { // rep loop
+                        sliceList(ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = ii;
+                        phaseList(ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = jj;
+                        echoList(ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = kk;
+                        avgList(ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = ll;
+                        repList(ii * NPhaseMax * NEchoMax * NAvgMax * NRepMax + jj * NEchoMax * NAvgMax * NRepMax + kk * NAvgMax * NRepMax + ll * NRepMax + mm) = mm;
+                    }
+                }
+            }
+        }
+    }
+
+    // Start by creating a 2D vector (vector of vectors) to hold the MPI rank ->
+    // task mapping
+    vector<uword> init(0);
+    std::vector<std::vector<uword> >* taskList = new std::vector<std::vector<uword> >(world.size(), init);
+    uword process = 0;
+    for (uword task = 0; task < numTasks; task++) {
+        (*taskList)[process].push_back(task);
+
+        process++;
+        if (process == world.size()) {
+            process = 0;
+        }
+    }
+    uword taskIndex;
+    std::cout << " Number of tasks = " << numTasks << std::endl;
+
+#ifdef OPENACC_GPU
+    // Spread out our tasks across GPUs.
+    uword gpunum;
+    uword ngpus = acc_get_num_devices(acc_device_nvidia);
+    if (ngpus) {
+        gpunum = world.rank() % ngpus;
+        acc_set_device_num(gpunum, acc_device_nvidia);
+    } else {
+        acc_set_device_type(acc_device_host);
+    }
+#endif
+
+    std::cout << "Rank = " << world.rank() << std::endl;
+
+    uword NSlice, NRep, NAvg, NEcho, NPhase;
+    uword NSet = 0, NSeg = 0;
+    for (uword ii = 0; ii < (*taskList)[world.rank()].size(); ii++) {
+
+        taskIndex = (*taskList)[world.rank()].at(ii);
+
+        NSlice = sliceList(taskIndex);
+        NRep = repList(taskIndex);
+        NAvg = avgList(taskIndex);
+        NEcho = echoList(taskIndex);
+        NPhase = phaseList(taskIndex);
+
+        std::cout << "NSlice = " << NSlice << std::endl;
+        std::cout << "NRep   = " << NRep << std::endl;
+        std::cout << "NAvg   = " << NAvg << std::endl;
+        std::cout << "NEcho  = " << NEcho << std::endl;
+        std::cout << "NPhase = " << NPhase << std::endl;
+
+        filename = baseFilename + "_" + "Slice" + std::to_string(NSlice) + "_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) + "_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
+
+        getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
+            kz, tvec);
+
+        PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
+            (uword)(Nx * Ny * Nz));
+        SMap = getISMRMRDCompleteSENSEMap<std::complex<float> >(d, sen, NSlice, (uword)(Nx * Ny * Nz));
+        FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword)(Nx * Ny * Nz));
+
+        std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
+        std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
+        std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
+        std::cout << "Number of rows in phase map = " << PMap.n_rows << std::endl;
+        std::cout << "Number of rows in data = " << data.n_rows << std::endl;
+        std::cout << "Number of columns in data = " << data.n_cols << std::endl;
+        QuadPenalty<float> R(Nx, Ny, Nz, beta);
+
+        
+        pcSenseTimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, 1, SMap, FMap,
+            0 - PMap);
+
+        ImageTemp = reconSolve<float, pcSenseTimeSeg<float>, QuadPenalty<float> >(data, S_DWI, R, kx, ky, kz, Nx,
+            Ny, Nz, tvec, NIter);
+        
+        writeNiftiMagPhsImage<float>(filename, ImageTemp, Nx, Ny, Nz);
+    }
+
+    // Close ISMRMRD::Dataset, hdr, and acqTrack
+    closeISMRMRDData(d, hdr, acqTrack);
+
+    return 0;
 }

@@ -84,8 +84,6 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
         Iz = vectorise(iz);
 
         AObj = new Gdft<T1> *[Ns];
-		//G = new Gnufft<T1> *[Ns];
-		//AObj = new TimeSegmentation <T1, Gnufft<T1>> *[Ns];
 
         // Initialize the field correction and G objects we need for this
         // reconstruction
@@ -94,9 +92,6 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
                 AObj[jj] =
                         new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
                                      Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
-	            //G[jj] = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
-                //AObj[jj] = new TimeSegmentation <T1, Gnufft<T1>>(*G[jj], vectorise(FMap),
-                // vectorise(Tvec.col(jj)), (uword) Nd, (uword)(Nx * Ny * Nz), (uword) L, type, (uword) 1);
         }
 }
 
@@ -114,23 +109,6 @@ Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
         // Coil loop. Each coil exists for each shot, so we need to work with these.
         for (unsigned int ii = 0; ii < Nc; ii++) {
 
-                /*
-                   Gnufft <T1>*  G = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj),
-                   Ky.col(jj), Kz.col(jj), Ix, Iy, Iz);
-                   TimeSegmentation<T1,Gnufft<T1>>*  AObj = new
-                   TimeSegmentation<T1,Gnufft<T1>>(*G, vectorise(FMap),
-                   vectorise(Tvec.col(jj)), (uword)Nd, (uword)(Nx * Ny * Nz), (uword)L,
-                                                     type , (uword) 1);
-                 */
-                /*
-                   std::cout << "A address = " << &AObj << std::endl;
-                   std::cout << "Nd = " << Nd << std::endl;
-                   std::cout << "NxNyNz = " << (uword)(Nx * Ny * Nz) << std::endl;
-                   std::cout << "A.n1 = " << AObj->n1 << std::endl;
-                   std::cout << "A.n2 = " << AObj->n2 << std::endl;
-                   std::cout << "A.L = " << AObj->L << std::endl;
-                   std::cout << "A.Nshots = " << AObj->Nshots << std::endl;
-                 */
                 // Shot loop. Each shot has its own kspace trajectory
                 for (unsigned int jj = 0; jj < Ns; jj++) {
                         outData.col(jj + ii * Ns) =
@@ -156,17 +134,6 @@ Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
         // Coil Loop - for each shot we have a full set of coil data.
         for (unsigned int ii = 0; ii < Nc; ii++) {
         
-                // Use grid or DFT?
-                // Gdft<T1> G(Nd, Ni, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix, Iy, Iz,FMap,
-                // vectorise(Tvec.col(jj)));
-                /*
-                   Gnufft <T1>* G = new Gnufft<T1>(Nd, 2.0, Nx, Ny, Nz, Kx.col(jj), Ky.col(jj),
-                   Kz.col(jj), Ix, Iy, Iz);
-                   TimeSegmentation <T1, Gnufft<T1>>* AObj = new
-                   TimeSegmentation<T1,Gnufft<T1>>(*G, vectorise(FMap),
-                   vectorise(Tvec.col(jj)), Nd, Nx * Ny * Nz, L, type);
-                 */
-
                 // Shot Loop. Each shot has it's own k-space trajectory
                 for (unsigned int jj = 0; jj < Ns; jj++) {
                         //outData += conj(SMap.col(ii) % exp(-i * (PMap.col(jj)))) %
@@ -175,8 +142,6 @@ Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
                                    ((*AObj[jj]) / inData.col(jj + ii * Ns));
                         //std::cout << "Processed shot # " << jj << " coil # " << ii << std::endl;
                 }
-                // delete AObj;
-                // delete G;
         }
         
         // equivalent to returning col(output) in MATLAB with IRT

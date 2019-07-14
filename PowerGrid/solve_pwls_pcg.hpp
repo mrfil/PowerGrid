@@ -53,6 +53,8 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
   // Initialize projection
   cout << "Entering solve_pwls_pcg" << endl;
   Col<CxT1> Ax = A * xInitial;
+  if (Ax.has_nan())
+    cout << "Warning: Ax has NaN in solve_pwls_pcg" << endl;
   // cout << "Ax length = " << Ax.n_rows << endl;
   Col<CxT1> x = xInitial;
   CxT1 oldinprod = 0;
@@ -79,6 +81,9 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
     // Compute negative gradient
 
     ngrad = A / (W % (yi - Ax));
+    if(ngrad.has_nan())
+      cout << "Warning: ngrad has NaN in solve_pwls_pcg" << endl;
+
 
     if (norm_grad<T1>(ngrad, yi, W) < 1e-10) {
       cout << "Terminating early due to zero gradient." << endl;
@@ -112,6 +117,8 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
 
     // Step size in search direction
     Adir = A * ddir;
+    if (Adir.has_nan())
+      cout << "Warning: NaN found in Adir in solve_pwls_pcg" << endl;
 
     WAdir = W % Adir;
     dAWAd = as_scalar(real(cdot(Adir, WAdir)));
@@ -124,7 +131,9 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
       // from pwls_pcg1.m
       pdenom = R.Denom(ddir, x + step * ddir);
       denom = dAWAd + pdenom;
-      
+      if( denom != denom)
+        cout << "Warning: denom has NaN in solve_pwls_pcg" << endl;
+
       if (std::abs(denom) < 1e-20 || std::abs(denom) > 1e25) {
         if (norm(ngrad, 2) == 0) {
           cout << " Found exact solution" << endl;
@@ -141,7 +150,7 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
       stepIntermediate = (-dAWr + step * dAWAd + pdot) / denom;
       step -= as_scalar(stepIntermediate);
     }
-    cout << "denom = " << std::abs(denom) << endl;
+    //cout << "denom = " << std::abs(denom) << endl;
     // Check downhill direction
     if (as_scalar(real(step)) < 0) {
       cout << "Warning downhill?" << endl;
@@ -150,7 +159,7 @@ Col<complex<T1>> solve_pwls_pcg(const Col<complex<T1>> &xInitial, Tobj const &A,
     // Update
     Ax += step * Adir;
     x += (step * ddir);
-    
+    cout << "Iteration Error Norm = " << norm(yi - Ax, 2) << endl;
     cout << "Iteration Complete = " << ii << endl;
 
   }

@@ -485,7 +485,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
 
     int imageNumElems = params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
-    // Have to set 'gridData' and 'sampleDensity' to zero.
+    // Have to set 'gridData' to zero.
     // Because they will be involved in accumulative operations
     // inside gridding functions.
 #pragma acc enter data copyin(samples [0:n])
@@ -510,7 +510,6 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
             params.gridSize[1], params.gridSize[2]);
     }
 
-    // Need to deal with 1/N normalization from the inverse FFT
 //#ifdef _OPENACC // We're on GPU
 #ifdef OPENACC_GPU // We're on GPU
     // Inside this region the device data pointer will be used for cuFFT
@@ -538,7 +537,7 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
     }
 
 #endif
-
+    /* 
     //#pragma acc update device(pGridData_d[0:2*gridNumElems])
     if (Nz == 1) {
         normalize_fft2d<T1>(pGridData, pGridData_d, params.gridSize[0],
@@ -547,21 +546,21 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
         normalize_fft3d<T1>(pGridData, pGridData_d, params.gridSize[0],
             params.gridSize[1], params.gridSize[2]);
     }
-
+    */
     if (Nz == 1) {
-        fftshift2<T1>(pGridData_d, pGridData, params.gridSize[0],
+        fftshift2<T1>(pGridData, pGridData_d, params.gridSize[0],
             params.gridSize[1]);
     } else {
-        fftshift3<T1>(pGridData_d, pGridData, params.gridSize[0],
+        fftshift3<T1>(pGridData, pGridData_d, params.gridSize[0],
             params.gridSize[1], params.gridSize[2]);
     }
 
     if (Nz == 1) {
-        crop_center_region2d<T1>(pGridData_crop_d, pGridData_d, params.imageSize[0],
+        crop_center_region2d<T1>(pGridData_crop_d, pGridData, params.imageSize[0],
             params.imageSize[1], params.gridSize[0],
             params.gridSize[1]);
     } else {
-        crop_center_region3d<T1>(pGridData_crop_d, pGridData_d, params.imageSize[0],
+        crop_center_region3d<T1>(pGridData_crop_d, pGridData, params.imageSize[0],
             params.imageSize[1], params.imageSize[2],
             params.gridSize[0], params.gridSize[1],
             params.gridSize[2]);
@@ -576,16 +575,6 @@ void computeFH_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
             kernelWidth, beta, params.gridOS);
     }
 
-    // Copy results from gridData_crop_d to outR_d and outI_d
-    // gridData_crop_d is cufftComplex, interleaving
-    // De-interleaving the data from cufftComplex to outR_d-and-outI_d
-    /*
-  if (Nz == 1) {
-    deinterleave_data2d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny);
-  } else {
-    deinterleave_data3d<T1>(pGridData_crop_deAp, outR_d, outI_d, Nx, Ny, Nz);
-  }
-  */
 #pragma acc exit data delete (samples [0:n])
 #pragma acc update self(pGridData_crop_deAp [0:2 * imageNumElems])
     free(samples);
@@ -643,12 +632,6 @@ void computeFd_CPU_Grid(int numK_per_coil, const T1* __restrict kx,
     int imageNumElems = params.imageSize[0] * params.imageSize[1] * params.imageSize[2];
 
     memcpy(pGridData, dIn, sizeof(T1) * 2 * imageNumElems);
-    /*
-for (int i = 0; i < 2*imageNumElems; i++) {
-  pGridData[i]     = dIn[i];
-}
-*/
-
 #pragma acc update device(pGridData [0:2 * imageNumElems])
 
 #pragma acc parallel loop present(pSamples [0:2 * n])
