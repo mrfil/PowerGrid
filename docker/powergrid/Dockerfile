@@ -8,10 +8,8 @@ ENV PGI=/opt/pgi
 RUN echo $PGI; \
 	ls "${PGI}/linux86-64/2018/cuda/9.1/include"
 
-ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
-
-RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
-    cd PrivatePG; \
+RUN git clone https://github.com/mrfil/PowerGrid.git; \
+    cd PowerGrid; \
     git fetch; \
     git checkout master; \
     mkdir build; \

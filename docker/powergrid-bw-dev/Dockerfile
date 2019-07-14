@@ -88,23 +88,6 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
 ENV LD_LIBRARY_PATH="/opt/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:/opt/pgi/linux86-64/2019/cuda/9.2/lib64:${LD_LIBRARY_PATH}"
 ENV PATH="/opt/PowerGrid/bin:${PATH}"
-#RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
-#    cd PrivatePG; \
-#    git fetch; \
-#    git checkout master; \
-#    mkdir build; \
-#    cd build; \
-#    cmake ../ -DCMAKE_CXX_COMPILER=pgc++ -DCMAKE_INSTALL_PREFIX=/opt/PowerGrid -DMPISupport=ON; \
-#	make -j4;  \
-#	make install
-	
-#ENV LD_LIBRARY_PATH="/opt/lib:${LD_LIBRARY_PATH}"
-#ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
-#ENV PATH="/opt/PowerGrid/bin:${PATH}"
 
-#RUN wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz; \
-#    tar xf osu-micro-benchmarks-5.3.2.tar.gz; \
-#    cd osu-micro-benchmarks-5.3.2; \
-#    ./configure CC=$(which mpicc) CXX=$(which mpicxx); \
-#    make; \
-#    make install
+# For singularity compatibility
+RUN ldconfig

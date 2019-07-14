@@ -91,10 +91,8 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     make;  \
     make install
 
-    ARG GITHUBTOKEN=983877d3d082851c3560ddbee074b124bdf46150
-
-RUN git clone https://acerjanic:$GITHUBTOKEN@github.com/acerjanic/PrivatePG.git; \
-    cd PrivatePG; \
+RUN git clone https://github.com/mrfil/PowerGrid.git; \
+    cd PowerGrid; \
     git fetch; \
     git checkout master; \
     mkdir build; \
@@ -107,9 +105,3 @@ ENV LD_LIBRARY_PATH="/opt/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:/opt/pgi/linux86-64/2018/cuda/9.1/lib64:${LD_LIBRARY_PATH}"
 ENV PATH="/opt/PowerGrid/bin:${PATH}"
 
-#RUN wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz; \
-#    tar xf osu-micro-benchmarks-5.3.2.tar.gz; \
-#    cd osu-micro-benchmarks-5.3.2; \
-#    ./configure CC=$(which mpicc) CXX=$(which mpicxx); \
-#    make; \
-#    make install
