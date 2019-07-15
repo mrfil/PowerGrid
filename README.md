@@ -1,6 +1,6 @@
 # PowerGrid
 
-Software for CPU and GPU accelerated iterative magnetic resonance imaging reconstruction. Quickly transate code from MATLAB/Image Reconstruction Toolbox to C++ code. Implements GPU accelerated non-uniform Fast Fourier Transforms and field correction via two algorithms. Also supports distributed memory computations via MPI for pcSENSE for correction of motion induced phase error.
+Software for CPU and GPU accelerated iterative magnetic resonance imaging reconstruction. Quickly transate code from MATLAB/Image Reconstruction Toolbox to C++0 code. Implements GPU accelerated non-uniform Fast Fourier Transforms and field correction via two algorithms. Also supports distributed memory computations via MPI for pcSENSE for correction of motion induced phase error.
 
 ## Depedenencies 
 *   Armadillo (http://arma.sourceforge.net) - Templated Linear Algebra library. Gives us MATLAB like syntax in C++
