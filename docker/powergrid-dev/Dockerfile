@@ -61,7 +61,7 @@ RUN git clone https://github.com/acerjanic/ismrmrd.git; \
     cd build; \
     cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DBoost_FOUND=OFF; \
     make;  \
-    make installcd
+    make install
 
 ENV LD_LIBRARY_PATH="/opt/PowerGrid/lib:${LD_LIBRARY_PATH}"
 ENV PATH="${PATH}:/opt/PowerGrid/bin"
