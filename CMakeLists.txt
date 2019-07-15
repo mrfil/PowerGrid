@@ -4,146 +4,165 @@ cmake_minimum_required(VERSION 3.2) #CMake version 3.2 required to properly supp
 ## need to be set BEFORE calling project command (which does introspection and sets
 ## variables about the behavior of the compiler).
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED 1)
-#include(CheckCXXCompilerFlag)
-#CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-#CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-#if(COMPILER_SUPPORTS_CXX11)
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#elseif(COMPILER_SUPPORTS_CXX0X)
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-#else()
-#        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-#endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-if(APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
+
+project("PowerGrid" C CXX)
+
+option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" ON)
+option(OPENACC_MP "Enable OpenACC support on CPU (PGI Only) " OFF)
+option(MPISupport "Enable MPI Support" ON)
+
+if(OPENACC_GPU AND OPENACC_MP)
+message(FATAL_ERROR "You cannot build with both OPENACC_GPU AND OPENACC_MP at the same time")
 endif()
 
-project("PowerGrid" CXX)
-
-
-option(OPENACC "Enable OpenACC support" OFF)
-option(ISMRMRD "Enable ISMRMRD Support" OFF)
-option(MPI "Enable MPI Support" OFF)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-find_package(MATIO REQUIRED)
-include_directories(${MATIO_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${MATIO_LIBRARIES})
-set(BOOST_LIBRARYDIR /usr/lib/x86_64-linux-gnu/)
-set(BOOST_ROOT /u/sciteam/cerjanic/PGProj/libraries)
-find_package(Boost 1.43 COMPONENTS program_options serialization mpi)
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
-include_directories(${Boost_INCLUDE_DIRS})
 
+# Find Boost
+set(Boost_USE_STATIC_LIBS OFF)
+# Boost version >= 1.70.0 have improved support for cmake built into the boost install
+# Unfortunately, this support breaks when used with PGI compilers
+# As a work around, ignore the generated cmake modules
+set(Boost_NO_BOOST_CMAKE ON)
 
-if(OPENACC)
-	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS /usr/local/cuda/include
-$ENV{CUDATOOLKIT_HOME}/include )
+if(MPISupport)
+    find_package(MPI)
+    find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization mpi)
+else(MPISupport)
+    find_package(Boost 1.43 REQUIRED COMPONENTS program_options serialization)
+endif(MPISupport)
+
+if(Boost_FOUND)
+	set(LIBS ${LIBS} ${Boost_LIBRARIES})
+	include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+set(CUDAVER 9.2)
+set(PGI_YEAR 2019)
+if(OPENACC_GPU)
+	find_path(cuFFT_INCLUDE_DIR cufft.h HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/include)
 	include_directories(${cuFFT_INCLUDE_DIR})
-	find_library(cuFFT_LIBRARIES cufft HINTS /usr/local/cuda/lib64
-	$ENV{CUDATOOLKIT_HOME}/lib64)
+	find_library(cuFFT_LIBRARIES cufft HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64)
 	set(LIBS ${LIBS} ${cuFFT_LIBRARIES})
-	#find_library(cudaRT_LIBRARIES cudart HINTS /usr/local/cuda/lib64)
-	#set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
+	find_library(cudaRT_LIBRARIES cudart HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
+	set(LIBS ${LIBS} ${cudaRT_LIBRARIES})
+	find_library(nvToolsExt_LIBRARIES nvToolsExt HINTS $ENV{PGI}/linux86-64/${PGI_YEAR}/cuda/${CUDAVER}/lib64 /usr/local/cuda/lib64)
+	set(LIBS ${LIBS} ${nvToolsExt_LIBRARIES})
+	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
+	find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
+	find_library(FFTWF_LIBRARIES NAMES fftw3f HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
+	include_directories(${FFTW_INCLUDE_DIR})
+	set(LIBS ${LIBS} ${FFTW_LIBRARIES})
+	set(LIBS ${LIBS} ${FFTWF_LIBRARIES})
 else()
 	#find_package(FFTW REQUIRED)
-	find_path(FFTW_INCLUDE_DIR fftw3.h)
-        find_library(FFTW_LIBRARIES NAMES fftw3 HINTS /usr/lib/x86_64-linux-gnu/)
-        find_library(FFTWF_LIBRARIES NAMES fftw3f HINTS /usr/lib/x86_64-linux-gnu/)
+	find_path(FFTW_INCLUDE_DIR fftw3.h HINTS $ENV{FFTW_INC})
+    find_library(FFTW_LIBRARIES NAMES fftw3 HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
+    find_library(FFTWF_LIBRARIES NAMES fftw3f HINTS $ENV{FFTW_DIR} /usr/lib/x86_64-linux-gnu/)
 	include_directories(${FFTW_INCLUDE_DIR})
 	set(LIBS ${LIBS} ${FFTW_LIBRARIES})
 	set(LIBS ${LIBS} ${FFTWF_LIBRARIES})
 endif()
-if(${USE_ACML})
-	find_package(ACML)
-	set(LIBS ${LIBS} ${ACML_LIBRARIES})
-endif()
 
-
+# Find Armadillo
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 message(${ARMADILLO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${ARMADILLO_LIBRARIES})
-find_package(Xerces)
-include_directories(${XERCESC_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${XERCESC_LIBRARY})
-if(ISMRMRD)
-    find_package(HDF5)
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif()
 
+
+find_package(HDF5 COMPONENTS CXX)
+include_directories(${HDF5_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${HDF5_C_LIBRARIES})
 set(LIBS ${LIBS} ${HDF5_CXX_LIBRARIES})
 
-set(POWERGRID_TEST_GDFT
-    ./PowerGrid/PowerGridGdft.cpp
-    ./PowerGrid/config.cxx
+include_directories(Support/ArmaExtensions)
+
+#Define files to be compiled
+set(PG_FILES
+	${PROJECT_SOURCE_DIR}/PowerGrid/Robject.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/QuadPenalty.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/TVPenalty.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/fftCPU.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/fftGPU.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/ftCpu.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/ftCpuWithGrads.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/Gdft.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/GdftR2.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/Gfft.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/TimeSegmentation.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/griddingSupport.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/gridding.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/Gnufft.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/SENSE.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/pcSENSE.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/pcSenseTimeSeg.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/reconSolve.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
+	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
 )
 
-set(POWERGRID_TEST_Gnufft
-	./PowerGrid/PowerGridGnufft.cpp
-	./PowerGrid/config.cxx
-)
+add_library(PowerGrid SHARED ${PG_FILES})
+target_link_libraries(PowerGrid ${LIBS})
 
-set(POWERGRID_TEST_DWI3DDFT
-		./PowerGrid/PowerGridDWI3DDFT.cpp
-		./PowerGrid/config.cxx
-		)
+if(MPISupport)
+	include_directories(MPI)
+endif(MPISupport)
 
-set(POWERGRID_STEAM
-		./PowerGrid/PowerGridSTEAM.cpp
-		./PowerGrid/config.cxx
-		)
+find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/ ~/CIVIC/lib)
+set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
 
-add_executable(PowerGridGdft ${POWERGRID_TEST_GDFT})
-add_executable(PowerGridGnufft ${POWERGRID_TEST_Gnufft})
-add_executable(PowerGridDWI3DDFT ${POWERGRID_TEST_DWI3DDFT})
-add_executable(PowerGridSTEAM ${POWERGRID_STEAM})
-target_link_libraries(PowerGridGdft ${LIBS})
-target_link_libraries(PowerGridGnufft ${LIBS})
-target_link_libraries(PowerGridDWI3DDFT ${LIBS})
-target_link_libraries(PowerGridSTEAM ${LIBS})
-if (ISMRMRD)
-	set(POWERGRID_ISMRMRD
-			./PowerGrid/PowerGridIsmrmrd.cpp
-			./PowerGrid/config.cxx
-	)
-	find_library(ISMRMRD_LIBRARIES ismrmrd HINTS /usr/lib/)
-	set(LIBS ${LIBS} ${ISMRMRD_LIBRARIES})
-	add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD})
-	target_link_libraries(PowerGridIsmrmrd ${LIBS})
+message(STATUS "Libraries to be linked in: ${LIBS}")
 
-endif ()
-
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/include")
 if(APPLE)
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lgfortran")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -flto")
 else()
 	if(CMAKE_COMPILER_IS_GNUCXX)
-		#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  ")
+
 	else()
-		if(OPENACC)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4 -gopt -Minfo=accel -ta=tesla:cc35 -fpermissive")
+	add_definitions(-DBOOST_NO_ALIGNMENT)
+		if(OPENACC_GPU)
+			add_definitions(-DOPENACC_GPU)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mnollvm -Mcuda -Minfo=accel -fast -acc -ta=tesla:cc35,cc60,cuda${CUDAVER},flushz -pgf90libs")
+		elseif(OPENACC_MP)
+			add_definitions(-DOPENACC_MP)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mnollvm -O1 -Minfo=accel -acc  -ta=multicore -pgf90libs")
 		else()
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gopt -O -fpermissive -pgf77libs ")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -Minfo=opt -pgf90libs")
 		endif()
-	endif()
+
+    endif()
 endif()
-#Needed for CMake 2.8 or so to not add the -rdynamic flag to compilers like PGI
-#PGI chokes on link because it does not understand the -rdynamic flag
-#Why CMake insists on passing this flag, I don't know...
-#set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-#set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -lfftw3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lfftw3")
 
-#add_definitions(-D__STRICT_ANSI__)
-#remove_definitions(-DARMA_NO_DEBUG)
-add_definitions(-DARMA_DONT_USE_CXX11)
+#add_definitions(-DARMA_NO_DEBUG)
+add_definitions(-DARMA_DONT_USE_HDF5)
+add_definitions(-DARMA_DONT_USE_OPENMP)
+if(OPENACC_GPU)
+	add_definitions(-DUSE_NVTX)
+endif()
 
+set(POWERGRID_ISMRMRD
+	./PowerGrid/PowerGridIsmrmrd.cpp
+)
+add_executable(PowerGridIsmrmrd ${POWERGRID_ISMRMRD})
+target_link_libraries(PowerGridIsmrmrd ${LIBS} PowerGrid)
 
-if (MPI)
+set(POWERGRID_PCSENSE
+	./PowerGrid/PowerGridPcSense.cpp
+)
+add_executable(PowerGridPcSense ${POWERGRID_PCSENSE})
+target_link_libraries(PowerGridPcSense ${LIBS} PowerGrid)
+
+set(POWERGRID_PCSENSE_TIMESEG
+	./PowerGrid/PowerGridPcSenseTimeSeg.cpp
+)
+add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
+target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
+
+if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
-endif ()
+endif (MPISupport)
+
+# Manage installing targets to sane locations in /opt
+install(TARGETS PowerGridPcSense DESTINATION bin)
+install(TARGETS PowerGridIsmrmrd DESTINATION bin)
+install(TARGETS PowerGrid DESTINATION lib)
