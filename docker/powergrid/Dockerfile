@@ -1,4 +1,4 @@
-FROM acerja2/powergrid-dev:latest
+FROM mrfil/powergrid-dev:latest
 
 # Run everything in /root
 WORKDIR /root
