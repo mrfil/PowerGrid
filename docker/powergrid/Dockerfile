@@ -5,8 +5,7 @@ WORKDIR /root
 
 # Looks like we lost the PGI environmental variable
 ENV PGI=/opt/pgi
-RUN echo $PGI; \
-	ls "${PGI}/linux86-64/2018/cuda/9.1/include"
+RUN echo $PGI; 
 
 RUN git clone https://github.com/mrfil/PowerGrid.git; \
     cd PowerGrid; \

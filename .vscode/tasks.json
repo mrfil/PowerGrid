@@ -14,18 +14,6 @@
             "problemMatcher": []
         },
         {
-            "label": "start develop MPI env",
-            "type": "shell",
-            "command": "docker-compose -f ./docker/develop-mpi-compose.yml run --name devmpienv dev-mpi-image bash",
-            "problemMatcher": []
-        },
-        {
-            "label": "stop develop MPI env",
-            "type": "shell",
-            "command": "docker-compose -f ./docker/develop-mpi-compose.yml down",
-            "problemMatcher": []
-        },
-        {
             "label": "start prod env",
             "type": "shell",
             "command": "docker-compose -f ./docker/prod-compose.yml run --name prodenv prod-image bash",
@@ -35,18 +23,6 @@
             "label": "stop prod env",
             "type": "shell",
             "command": "docker-compose -f ./docker/prod-compose.yml down",
-            "problemMatcher": []
-        },
-        {
-            "label": "start prod MPI env",
-            "type": "shell",
-            "command": "docker-compose -f ./docker/prod-mpi-compose.yml run --name prodmpienv prod-mpi-image bash",
-            "problemMatcher": []
-        },
-        {
-            "label": "stop prod MPI env",
-            "type": "shell",
-            "command": "docker-compose -f ./docker/prod-mpi-compose.yml down",
             "problemMatcher": []
         },
         {
@@ -77,21 +53,9 @@
             "problemMatcher": []
         },
         {
-            "label": "build develop MPI image",
-            "type": "shell",
-            "command": "cd docker; docker build -t powergrid-bw-dev powergrid-bw-dev",
-            "problemMatcher": []
-        },
-        {
             "label": "build prod image",
             "type": "shell",
             "command": "cd docker; docker build -t powergrid powergrid",
-            "problemMatcher": []
-        },
-        {
-            "label": "build prod MPI image",
-            "type": "shell",
-            "command": "cd docker; docker build -t powergrid-bw powergrid-bw",
             "problemMatcher": []
         }
     ]
