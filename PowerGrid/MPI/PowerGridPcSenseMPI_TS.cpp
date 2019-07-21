@@ -53,9 +53,17 @@ int main(int argc, char** argv)
     po::options_description desc("Allowed options");
     desc.add_options()("help,h", "produce help message")(
         "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
-        "input ISMRMRD Raw Data file")("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")("Ny,y", po::value<uword>(&Ny)->required(),
-        "Image size in Y (Required)")("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")("NShots,s", po::value<uword>(&NShots), "Number of shots per image")("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main "
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "solver");
+        "input ISMRMRD Raw Data file")
+        ("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
+		("Nx,x", po::value<uword>(&Nx), "Image size in X")
+		("Ny,y", po::value<uword>(&Ny), "Image size in Y")
+		("Nz,z", po::value<uword>(&Nz), "Image size in Z")
+        ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
+        ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp), "Field Correction Interpolator")
+        ("TimeSegments,t", po::value<uword>(&L), "Number of time segments")
+        ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
+        ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
+        ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver");
 
     po::variables_map vm;
 
@@ -66,18 +74,6 @@ int main(int argc, char** argv)
 
         if (vm.count("help")) {
             std::cout << desc << std::endl;
-            return 1;
-        }
-
-        if (TimeSegmentationInterp.compare("hanning") == 0) {
-            type = 1;
-        } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-            type = 2;
-        } else if (TimeSegmentationInterp.compare("histo") == 0) {
-            type = 3;
-        } else {
-            std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                      << "Acceptable values are hanning or minmax." << std::endl;
             return 1;
         }
 
@@ -110,6 +106,34 @@ int main(int argc, char** argv)
     d->readAcquisition(0, acq);
     nro = acq.number_of_samples();
     nc = acq.active_channels();
+
+    	// Set default time segmentation interpolator to hanning interpolator
+	if(!vm.count("TimeSegmentationInterp")) {
+		TimeSegmentationInterp = "hanning";
+	} 
+
+	if (TimeSegmentationInterp.compare("hanning") == 0) {
+        type = 1;
+    } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+    	type = 2;
+    } else if (TimeSegmentationInterp.compare("histo") == 0) {
+        type = 3;
+	} else {
+        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
+        return 1;
+    }
+
+    // Handle Nx, Ny, Nz
+	if(!vm.count("Nx")) {
+		Nx = hdr.encoding[0].encodedSpace.matrixSize.x;
+	} 
+	if(!vm.count("Ny")) {
+		Ny = hdr.encoding[0].encodedSpace.matrixSize.y;
+	} 
+	if(!vm.count("Nz")) {
+		Nz = hdr.encoding[0].encodedSpace.matrixSize.z;
+	} 
 
     Col<float> ix, iy, iz;
     initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
@@ -245,6 +269,25 @@ int main(int argc, char** argv)
 
         getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
             kz, tvec);
+
+
+       // Deal with the number of time segments
+		if(!vm.count("TimeSegments")) {
+			switch(type) {
+		    	case 1:
+			    	L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+				break;
+				case 2:
+					L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+				break;
+				case 3:
+			    	L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+				break;
+				default: 
+					L = 0;
+			}
+			std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+		}
 
         PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
             (uword)(Nx * Ny * Nz));

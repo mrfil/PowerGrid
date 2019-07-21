@@ -52,27 +52,11 @@ int main(int argc, char **argv)
 			"inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
 			"input ISMRMRD Raw Data file")
 			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-			/*
-			("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
-			ISMRMRD Navigator Raw Data")
-			("outputImage,o",
-			po::value<std::string>(&outputImageFilePath)->required(), "output ISMRMRD
-			Image file")
-			("SENSEMap,S", po::value<std::string>(&senseMapFilePath),
-			 "Enable SENSE recon with the specified SENSE map in ISMRMRD image
-			format")
-			("FieldMap,F", po::value<std::string>(&fieldMapFilePath),
-			"Enable field corrected reconstruction with the specified field map in
-			ISMRMRD format")
-			("Precision,P", po::value<std::string>(&precisionString),
-			 "Numerical precision to use, float or double currently supported")
-			 */
-			("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
-			("Ny,y", po::value<uword>(&Ny)->required(),
-					"Image size in Y (Required)")
-			("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
-            ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
-            ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
+			("Nx,x", po::value<uword>(&Nx), "Image size in X")
+			("Ny,y", po::value<uword>(&Ny), "Image size in Y")
+			("Nz,z", po::value<uword>(&Nz), "Image size in Z")
+            ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp), "Field Correction Interpolator ")
+            ("TimeSegments,t", po::value<uword>(&L), "Number of time segments ")
 			("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
 			("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
 			("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
@@ -90,28 +74,6 @@ int main(int argc, char **argv)
 			std::cout << desc << std::endl;
 			return 1;
 		}
-		/*
-		if(precisionString.compare("double") ==0) {
-				typedef double PGPrecision;
-		} else if(precisionString.compare("float") == 0) {
-				typedef float PGPrecision;
-		} else {
-				typedef double PGPrecision;
-				std::cout << "Did not recognize precision option. Defaulting to
-		double precision." << std::endl;
-		}
-		*/
-	  if (TimeSegmentationInterp.compare("hanning") == 0) {
-        type = 1;
-      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-        type = 2;
-      } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
-      } else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
-        return 1;
-      }
 
 	}
 	catch (boost::program_options::error& e) {
@@ -130,9 +92,6 @@ int main(int argc, char **argv)
 	acqTracking* acqTrack;
 	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
 
-	//savemat("testFM.mat", "FM", FM);
-	//savemat("testSen.mat", "sen", sen);
-
 	std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
 	std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
 
@@ -144,6 +103,34 @@ int main(int argc, char **argv)
 	d->readAcquisition(0, acq);
 	uword nro = acq.number_of_samples();
 	uword nc = acq.active_channels();
+
+	// Set default time segmentation interpolator to hanning interpolator
+	if(!vm.count("TimeSegmentationInterp")) {
+		TimeSegmentationInterp = "hanning";
+	} 
+
+	if (TimeSegmentationInterp.compare("hanning") == 0) {
+        type = 1;
+    } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+    	type = 2;
+    } else if (TimeSegmentationInterp.compare("histo") == 0) {
+        type = 3;
+	} else {
+        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
+        return 1;
+    }
+
+	// Handle Nx, Ny, Nz
+	if(!vm.count("Nx")) {
+		Nx = hdr.encoding[0].encodedSpace.matrixSize.x;
+	} 
+	if(!vm.count("Ny")) {
+		Ny = hdr.encoding[0].encodedSpace.matrixSize.y;
+	} 
+	if(!vm.count("Nz")) {
+		Nz = hdr.encoding[0].encodedSpace.matrixSize.z;
+	} 
 
 	Col<float> ix, iy, iz;
 	initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
@@ -203,6 +190,26 @@ int main(int argc, char **argv)
 						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 								kz, tvec);
 
+
+						// Deal with the number of time segments
+						if(!vm.count("TimeSegments")) {
+							switch(type) {
+								case 1:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+								break;
+								case 2:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								break;
+								case 3:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								break;
+								default: 
+									L = 0;
+							}
+							std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+						}
+
+
 						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
 								(uword) (Nx*Ny*Nz));
 						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
@@ -217,18 +224,14 @@ int main(int argc, char **argv)
 
 						std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-						//Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
-						// iy, iz);
-						//Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
 						pcSenseTimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
 								0-PMap);
-						//pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 						QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 
 						ImageTemp = reconSolve<float, pcSenseTimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
 								Nx,
 								Ny, Nz, tvec, NIter);
-						//writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+
 						writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
 					}
 				}

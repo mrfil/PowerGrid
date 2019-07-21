@@ -49,32 +49,16 @@ int main(int argc, char **argv) {
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
  			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-
-      /*
-      ("inputDataNav,-N", po::value<std::string>(&rawDataNavFilePath), "input
-      ISMRMRD Navigator Raw Data")
-      ("outputImage,o",
-      po::value<std::string>(&outputImageFilePath)->required(), "output ISMRMRD
-      Image file")
-      ("SENSEMap,S", po::value<std::string>(&senseMapFilePath),
-       "Enable SENSE recon with the specified SENSE map in ISMRMRD image
-      format")
-      ("FieldMap,F", po::value<std::string>(&fieldMapFilePath),
-      "Enable field corrected reconstruction with the specified field map in
-      ISMRMRD format")
-      ("Precision,P", po::value<std::string>(&precisionString),
-       "Numerical precision to use, float or double currently supported")
-       */
-      ("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
-          ("Ny,y", po::value<uword>(&Ny)->required(), "Image size in Y (Required)")
-          ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
-          ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
-          ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
-          ("FourierTransform,F", po::value<std::string>(&FourierTrans)->required(), "Implementation of Fourier Transform")
-          ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
-          ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
-          ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver")
-          ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3).");
+			("Nx,x", po::value<uword>(&Nx), "Image size in X")
+			("Ny,y", po::value<uword>(&Ny), "Image size in Y")
+			("Nz,z", po::value<uword>(&Nz), "Image size in Z")
+      ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
+      ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp), "Field Correction Interpolator (Required)")
+      ("FourierTransform,F", po::value<std::string>(&FourierTrans)->required(), "Implementation of Fourier Transform")
+      ("TimeSegments,t", po::value<uword>(&L), "Number of time segments (Required)")
+      ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
+      ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver")
+      ("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3).");
 
 
   po::variables_map vm;
@@ -88,17 +72,7 @@ int main(int argc, char **argv) {
       std::cout << desc << std::endl;
       return 1;
     }
-    /*
-    if(precisionString.compare("double") ==0) {
-            typedef double PGPrecision;
-    } else if(precisionString.compare("float") == 0) {
-            typedef float PGPrecision;
-    } else {
-            typedef double PGPrecision;
-            std::cout << "Did not recognize precision option. Defaulting to
-    double precision." << std::endl;
-    }
-    */
+
 
     if (FourierTrans.compare("DFT") == 0) {
         FtType = 2;
@@ -106,16 +80,20 @@ int main(int argc, char **argv) {
     } else if (FourierTrans.compare("NUFFT") == 0) {
       
       FtType = 1;
-      if (TimeSegmentationInterp.compare("hanning") == 0) {
+      if(!vm.count("TimeSegmentationInterp")) {
         type = 1;
-      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-        type = 2;
-      } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
       } else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning or minmax."            << std::endl;
-        return 1;
+        if (TimeSegmentationInterp.compare("hanning") == 0) {
+          type = 1;
+        } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+          type = 2;
+        } else if (TimeSegmentationInterp.compare("histo") == 0) {
+          type = 3;
+        } else {
+          std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                    << "Acceptable values are hanning or minmax."            << std::endl;
+          return 1;
+        }
       }
     } else if (FourierTrans.compare("DFTGrads") == 0) {
       FtType = 3;
@@ -224,6 +202,25 @@ int main(int argc, char **argv) {
 						            fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 	                      getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
+
+                          // Deal with the number of time segments
+						            if(!vm.count("TimeSegments")) {
+							            switch(type) {
+								            case 1:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+								            break;
+								            case 2:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								            break;
+								            case 3:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								            break;
+								            default: 
+									          L = 0;
+							            }
+							            std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+						            }
+
 
 	                    std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
 	                    std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
