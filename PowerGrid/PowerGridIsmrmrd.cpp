@@ -72,17 +72,7 @@ int main(int argc, char **argv) {
       std::cout << desc << std::endl;
       return 1;
     }
-    /*
-    if(precisionString.compare("double") ==0) {
-            typedef double PGPrecision;
-    } else if(precisionString.compare("float") == 0) {
-            typedef float PGPrecision;
-    } else {
-            typedef double PGPrecision;
-            std::cout << "Did not recognize precision option. Defaulting to
-    double precision." << std::endl;
-    }
-    */
+
 
     if (FourierTrans.compare("DFT") == 0) {
         FtType = 2;
@@ -90,16 +80,20 @@ int main(int argc, char **argv) {
     } else if (FourierTrans.compare("NUFFT") == 0) {
       
       FtType = 1;
-      if (TimeSegmentationInterp.compare("hanning") == 0) {
+      if(!vm.count("TimeSegmentationInterp")) {
         type = 1;
-      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-        type = 2;
-      } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
       } else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning or minmax."            << std::endl;
-        return 1;
+        if (TimeSegmentationInterp.compare("hanning") == 0) {
+          type = 1;
+        } else if (TimeSegmentationInterp.compare("minmax") == 0) {
+          type = 2;
+        } else if (TimeSegmentationInterp.compare("histo") == 0) {
+          type = 3;
+        } else {
+          std::cout << "Did not recognize temporal interpolator selection. " << std::endl
+                    << "Acceptable values are hanning or minmax."            << std::endl;
+          return 1;
+        }
       }
     } else if (FourierTrans.compare("DFTGrads") == 0) {
       FtType = 3;
@@ -219,6 +213,25 @@ int main(int argc, char **argv) {
 						            fmSlice = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 	                      getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 			                    kz, tvec);
+
+                          // Deal with the number of time segments
+						            if(!vm.count("TimeSegments")) {
+							            switch(type) {
+								            case 1:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+								            break;
+								            case 2:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								            break;
+								            case 3:
+									            L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								            break;
+								            default: 
+									          L = 0;
+							            }
+							            std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+						            }
+
 
 	                    std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
 	                    std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;

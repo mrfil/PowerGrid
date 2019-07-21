@@ -74,28 +74,6 @@ int main(int argc, char **argv)
 			std::cout << desc << std::endl;
 			return 1;
 		}
-		/*
-		if(precisionString.compare("double") ==0) {
-				typedef double PGPrecision;
-		} else if(precisionString.compare("float") == 0) {
-				typedef float PGPrecision;
-		} else {
-				typedef double PGPrecision;
-				std::cout << "Did not recognize precision option. Defaulting to
-		double precision." << std::endl;
-		}
-		*/
-	  if (TimeSegmentationInterp.compare("hanning") == 0) {
-        type = 1;
-      } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-        type = 2;
-      } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
-      } else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
-        return 1;
-      }
 
 	}
 	catch (boost::program_options::error& e) {
@@ -113,9 +91,6 @@ int main(int argc, char **argv)
 	ISMRMRD::IsmrmrdHeader hdr;
 	acqTracking* acqTrack;
 	processISMRMRDInput<float>(rawDataFilePath, d, hdr, FM, sen, acqTrack);
-
-	//savemat("testFM.mat", "FM", FM);
-	//savemat("testSen.mat", "sen", sen);
 
 	std::cout << "Number of elements in SENSE Map = " << sen.n_rows << std::endl;
 	std::cout << "Number of elements in Field Map = " << FM.n_rows << std::endl;
@@ -198,6 +173,26 @@ int main(int argc, char **argv)
 						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
 								kz, tvec);
 
+
+						// Deal with the number of time segments
+						if(!vm.count("TimeSegments")) {
+							switch(type) {
+								case 1:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+								break;
+								case 2:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								break;
+								case 3:
+									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+								break;
+								default: 
+									L = 0;
+							}
+							std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+						}
+
+
 						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
 								(uword) (Nx*Ny*Nz));
 						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
@@ -212,18 +207,14 @@ int main(int argc, char **argv)
 
 						std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-						//Gnufft<float> A(kx.n_rows, (float) 2.0, Nx, Ny, Nz, kx, ky, kz, ix,
-						// iy, iz);
-						//Gdft<float> A(kx.n_rows, Nx*Ny*Nz,kx,ky,kz,ix,iy,iz,FM,tvec);
 						pcSenseTimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
 								0-PMap);
-						//pcSENSE<float, Gnufft<float>> Sg(A, sen, kx.n_rows, Nx*Ny*Nz, nc);
 						QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 
 						ImageTemp = reconSolve<float, pcSenseTimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
 								Nx,
 								Ny, Nz, tvec, NIter);
-						//writeISMRMRDImageData<float>(d, ImageTemp, Nx, Ny, Nz);
+
 						writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
 					}
 				}

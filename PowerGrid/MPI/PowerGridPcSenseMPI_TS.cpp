@@ -76,18 +76,6 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        if (TimeSegmentationInterp.compare("hanning") == 0) {
-            type = 1;
-        } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-            type = 2;
-        } else if (TimeSegmentationInterp.compare("histo") == 0) {
-            type = 3;
-        } else {
-            std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                      << "Acceptable values are hanning or minmax." << std::endl;
-            return 1;
-        }
-
     } catch (boost::program_options::error& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cout << desc << std::endl;
@@ -263,6 +251,25 @@ int main(int argc, char** argv)
 
         getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
             kz, tvec);
+
+
+       // Deal with the number of time segments
+		if(!vm.count("TimeSegments")) {
+			switch(type) {
+		    	case 1:
+			    	L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+				break;
+				case 2:
+					L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+				break;
+				case 3:
+			    	L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+				break;
+				default: 
+					L = 0;
+			}
+			std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
+		}
 
         PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
             (uword)(Nx * Ny * Nz));
