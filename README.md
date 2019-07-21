@@ -16,9 +16,11 @@ Software for CPU and GPU accelerated iterative magnetic resonance imaging recons
 * 	Install Docker (https://docs.docker.com/install/linux/docker-ce/ubuntu)
 * 	Install Nvidia-docker (https://github.com/NVIDIA/nvidia-docker)
 
+Useful options include `-v /Source/On/Host:/Target/On/Container` to mount a directory of data and/or code onto the scanner.
+
 ```shell
 docker pull mrfil/powergrid-dev
-docker run --runtime=nvidia -it mrfil/powergrid
+docker run --runtime=nvidia -it mrfil/powergrid-dev
 ```
 
 ### Installing dependencies on Ubuntu 16.04 (Not recommended - for advanced users only)

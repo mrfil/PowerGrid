@@ -53,9 +53,9 @@ int main(int argc, char **argv) {
       "inputData,i", po::value<std::string>(&rawDataFilePath)->required(),
       "input ISMRMRD Raw Data file")
  			("outputImage,o", po::value<std::string>(&outputImageFilePath)->required(), "output file path for NIFTIimages")
-      ("Nx,x", po::value<uword>(&Nx)->required(), "Image size in X (Required)")
-          ("Ny,y", po::value<uword>(&Ny)->required(), "Image size in Y (Required)")
-          ("Nz,z", po::value<uword>(&Nz)->required(), "Image size in Z (Required)")
+			("Nx,x", po::value<uword>(&Nx), "Image size in X")
+			("Ny,y", po::value<uword>(&Ny), "Image size in Y")
+			("Nz,z", po::value<uword>(&Nz), "Image size in Z")
           ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
           ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
           ("FourierTransform,F", po::value<std::string>(&FourierTrans)->required(), "Implementation of Fourier Transform")
@@ -126,6 +126,17 @@ int main(int argc, char **argv) {
   d->readAcquisition(0, acq);
   uword nro = acq.number_of_samples();
   uword nc = acq.active_channels();
+
+	// Handle Nx, Ny, Nz
+	if(!vm.count("Nx")) {
+		Nx = hdr.encoding[0].encodedSpace.matrixSize.x;
+	} 
+	if(!vm.count("Ny")) {
+		Ny = hdr.encoding[0].encodedSpace.matrixSize.y;
+	} 
+	if(!vm.count("Nz")) {
+		Nz = hdr.encoding[0].encodedSpace.matrixSize.z;
+	} 
 
   Col<float> ix, iy, iz;
   initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
