@@ -55,8 +55,8 @@ int main(int argc, char **argv)
 			("Nx,x", po::value<uword>(&Nx), "Image size in X")
 			("Ny,y", po::value<uword>(&Ny), "Image size in Y")
 			("Nz,z", po::value<uword>(&Nz), "Image size in Z")
-            ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp), "Field Correction Interpolator ")
-            ("TimeSegments,t", po::value<uword>(&L), "Number of time segments ")
+            ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
+            ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
 			("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
 			("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")
 			("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
@@ -103,23 +103,6 @@ int main(int argc, char **argv)
 	d->readAcquisition(0, acq);
 	uword nro = acq.number_of_samples();
 	uword nc = acq.active_channels();
-
-	// Set default time segmentation interpolator to hanning interpolator
-	if(!vm.count("TimeSegmentationInterp")) {
-		TimeSegmentationInterp = "hanning";
-	} 
-
-	if (TimeSegmentationInterp.compare("hanning") == 0) {
-        type = 1;
-    } else if (TimeSegmentationInterp.compare("minmax") == 0) {
-    	type = 2;
-    } else if (TimeSegmentationInterp.compare("histo") == 0) {
-        type = 3;
-	} else {
-        std::cout << "Did not recognize temporal interpolator selection. " << std::endl
-                  << "Acceptable values are hanning, minmax, or histo."            << std::endl;
-        return 1;
-    }
 
 	// Handle Nx, Ny, Nz
 	if(!vm.count("Nx")) {
