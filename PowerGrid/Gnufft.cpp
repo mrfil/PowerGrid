@@ -209,158 +209,133 @@ inline Col<complex<T1>> Gnufft<T1>::operator/(const Col<complex<T1>> &d) const {
   Col<CxT1> temp(reinterpret_cast<CxT1 *>(pGridData), n1, false, true);
   return temp; // Return a vector of type T1
 }
-/*
+
 template <typename T1>
-Col<complex<T1>> Gnufft<T1>::trimmedForwardOp(
-    const Col<complex<T1>> &d,
-    const Col<complex<T1>> &tempInterp) const // Don't change these arguments
-{
-  // Let's trim the operations to avoid data overhead and transfers
-  // Basically if we know that the data points are zero, they have no impact
-  // on the transform
+inline Col<complex<T1>> Gnufft<T1>::forwardSpatialInterp(const Col<complex<T1>> &d) const {
   uword dataLength = this->n2;
-  uvec dataMaskTrimmed = find(abs(tempInterp) > 0);
 
-  Col<T1> kxTrimmed = kx.elem(dataMaskTrimmed);
-  Col<T1> kyTrimmed = ky.elem(dataMaskTrimmed);
+  const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
 
-  Col<T1> kzTrimmed = kz.elem(dataMaskTrimmed);
-  uword dataLengthTrimmed = kxTrimmed.n_rows;
-  // std::cout << "Length of DataMaskTrimmed = " << dataLengthTrimmed <<
-  // std::endl;
-  // cout << "Separating real and imaginary data." << endl;
+  parameters<T1> params;
+  params.sync = 0;
+  params.binsize = 128;
+  params.useLUT = 1;
+  params.kernelWidth = kernelWidth;
+  params.gridOS = gridOS;
+  params.imageSize[0] = Nx; // gridSize is gridOS times larger than imageSize.
+  params.imageSize[1] = Ny;
+  params.imageSize[2] = Nz;
+  params.gridSize[0] = std::ceil(gridOS * (T1)Nx);
+  params.gridSize[1] = std::ceil(gridOS * (T1)Ny);
+  if (params.gridSize[0] % 2) // 3D case, gridOS is adjusted on the z dimension:
+    params.gridSize[0] += 1; // That why we need to make sure here that the xy
+  if (params.gridSize[1] % 2) // dimensions have even sizes.
+    params.gridSize[1] += 1;
+  params.gridSize[2] = (Nz == 1) ? Nz : (std::ceil(gridOS * (T1)Nz)); // 2D or 3D
+  params.numSamples = dataLength;
 
-  Col<T1> realData = real(d).eval();
-  Col<T1> imagData = imag(d).eval();
+  unsigned int n = params.numSamples;
+  
+  memcpy(pGridData_os, dataPtr, sizeof(T1) * 2 * gridNumElems);
+  #pragma acc update device(pGridData_os[0:2 * gridNumElems])
 
-  // Now we grab the data out of armadillo with the memptr() function
-  // This returns a pointer of the type of the elements of the
-  // array/vector/matrix/cube (3d matrix)
-  // Armadillo uses column major like MATLAB and Fortran, but different from
-  // 2D C++ arrays which are row major.
+  //#pragma acc parallel loop present(pSamples [0:2 * n])
+    for (int ii = 0; ii < 2 * n; ii++) {
+        pSamples[ii] = (T1)0.0;
+    }
+    #pragma acc update device(pSamples [0:2 * n])
 
-  T1 *realDataPtr = realData.memptr();
-  T1 *imagDataPtr = imagData.memptr();
+    if (Nz == 1) {
+      gridding_forward_2D(n, params, kx,
+                         ky, beta, pSamples, LUT,
+                          sizeLUT, pGridData_os);
+    } else {
+      gridding_forward_3D(n, params, kx,
+                      ky, kz, beta, pSamples, LUT,
+                      sizeLUT, pGridData_os);
+    }
 
-  // cout << "Allocating memory for transformed data." << endl;
-  Col<T1> realXformedDataTrimmed(dataLengthTrimmed);
-  Col<T1> imagXformedDataTrimmed(dataLengthTrimmed);
+  #pragma acc update host(pSamples [0:2 * n])
 
-  // realXformedData.zeros();
-  // imagXformedData.zeros();
-  // cout << "Grabbing pointers for new memory." << endl;
+  Col<CxT1> temp(reinterpret_cast<CxT1 *>(pSamples), n, false, true);
+  return temp; // Return a vector of type T1
 
-  T1 *realXformedDataPtr = realXformedDataTrimmed.memptr();
-  T1 *imagXformedDataPtr = imagXformedDataTrimmed.memptr();
-
-  // Process data here, like calling a brute force transform, dft...
-  // I assume you create the pointers to the arrays where the transformed data
-  // will be stored
-  // realXformedDataPtr and imagXformedDataPtr and they are of type float*
-
-  // cout << "About to call the forward gridding routine." << endl;
-  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
-  computeFd_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed,
-                         kyTrimmed, kzTrimmed, realDataPtr,
-                         imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
-                         stream, nPlan, pGridData, pGridData_d, pGridData_os,
-                         pGridData_os_d, pSamples);
-
-  // To return data, we need to put our data back into Armadillo objects
-  // We are telling the object how long it is because it will copy the data
-  // back into managed memory
-  // realXformedData(realXformedDataPtr, dataLength);
-  // imagXformedData(imagXformedDataPtr, dataLength);
-
-  // We can free the realDataXformPtr and imagDataXformPtr at this point and
-  // Armadillo will manage armadillo object memory as things change size or go
-  // out of scope and need to be destroyed
-  Col<complex<T1>> XformedDataTrimmed(dataLengthTrimmed);
-  Col<complex<T1>> XformedData(dataLength);
-  XformedDataTrimmed.set_real(realXformedDataTrimmed);
-  XformedDataTrimmed.set_imag(imagXformedDataTrimmed);
-  XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
-
-  return conv_to<Col<complex<T1>>>::from(
-      XformedData); // Return a vector of type T1
 }
 
-// Adjoint transform operation
 template <typename T1>
-Col<complex<T1>>
-Gnufft<T1>::trimmedAdjointOp(const Col<complex<T1>> &d,
-                             const Col<complex<T1>> &tempInterp) const {
-
-  // uword dataLength = n2;
-  // Let's trim the operations to avoid data overhead and transfers
-  // Basically if we know that the data points are zero, they have no impact
-  // on the transform
+inline Col<complex<T1>> Gnufft<T1>::adjointSpatialInterp(const Col<complex<T1>> &d) const {
 
   uword dataLength = this->n2;
-  uvec dataMaskTrimmed = find(abs(tempInterp) > 0);
-  uword dataLengthTrimmed = dataMaskTrimmed.n_rows;
-  // std::cout << "Length of DataMaskTrimmed = " << dataLengthTrimmed <<
-  // std::endl;
 
-  Col<complex<T1>> dTrimmed = d.elem(dataMaskTrimmed);
-  Col<T1> kxTrimmed = kx.elem(dataMaskTrimmed);
-  Col<T1> kyTrimmed = ky.elem(dataMaskTrimmed);
-  Col<T1> kzTrimmed = kz.elem(dataMaskTrimmed);
+  const T1 *dataPtr = reinterpret_cast<const T1 *>(d.memptr());
 
-  Col<T1> realData = real(dTrimmed).eval();
-  Col<T1> imagData = imag(dTrimmed).eval();
+  parameters<T1> params;
+  params.sync = 0;
+  params.binsize = 128;
+  params.useLUT = 1;
+  params.kernelWidth = kernelWidth;
+  params.gridOS = gridOS;
+  params.imageSize[0] = Nx; // gridSize is gridOS times larger than imageSize.
+  params.imageSize[1] = Ny;
+  params.imageSize[2] = Nz;
+  params.gridSize[0] = std::ceil(gridOS * (T1)Nx);
+  params.gridSize[1] = std::ceil(gridOS * (T1)Ny);
+  if (params.gridSize[0] % 2) // 3D case, gridOS is adjusted on the z dimension:
+    params.gridSize[0] += 1; // That why we need to make sure here that the xy
+  if (params.gridSize[1] % 2) // dimensions have even sizes.
+    params.gridSize[1] += 1;
+  params.gridSize[2] = (Nz == 1) ? Nz : (std::ceil(gridOS * (T1)Nz)); // 2D or 3D
+  params.numSamples = dataLength;
 
-  T1 *realDataPtr = realData.memptr();
-  T1 *imagDataPtr = imagData.memptr();
+  unsigned int n = params.numSamples;
 
-  Col<T1> realXformedData(n1);
-  Col<T1> imagXformedData(n1);
+  ReconstructionSample<T1>* samples; // Input Data
+  // allocate samples
+  samples = (ReconstructionSample<T1>*)malloc(
+  params.numSamples * sizeof(ReconstructionSample<T1>));
 
-  // realXformedData.zeros();
-  // imagXformedData.zeros();
+  if (samples == NULL) {
+    printf("ERROR: Unable to allocate memory for input data\n");
+    exit(1);
+  }
 
-  T1 *realXformedDataPtr = realXformedData.memptr();
-  T1 *imagXformedDataPtr = imagXformedData.memptr();
-  // Process data here, like calling a brute force transform, dft...
-  // I assume you create the pointers to the arrays where the transformed data
-  // will be stored
-  // realXformedDataPtr and imagXformedDataPtr and they are of type float*
+  //
+  for (int i = 0; i < params.numSamples; i++) {
 
-  // T2 gridOS = 2.0;
-  cufftHandle *nPlan = const_cast<cufftHandle *>(&plan);
-  computeFH_CPU_Grid<T1>(dataLengthTrimmed, kxTrimmed,
-                         kyTrimmed, kzTrimmed, realDataPtr,
-                         imagDataPtr, Nx, Ny, Nz, gridOS, realXformedDataPtr,
-                         imagXformedDataPtr, kernelWidth, beta, LUT, sizeLUT,
-                         stream, nPlan, pGridData, pGridData_d, pGridData_os,
-                         pGridData_os_d);
+    samples[i].kX = kx[i];
+    samples[i].kY = ky[i];
+    samples[i].kZ = kz[i];
 
-  //iftCpu<T2>(realXformedDataPtr,imagXformedDataPtr,
-  //           realDataPtr, imagDataPtr, kx.memptr(),
-  //           ky.memptr(), kz.memptr(),
-  //           ix.memptr(), iy.memptr(), iz.memptr(),
-  //           FM.memptr(), t.memptr(),
-  //           this->n2, this->n1
-  //           );
+    samples[i].real = dataPtr[2 * i];
+    samples[i].imag = dataPtr[2 * i + 1];
 
-  // realXformedData(realXformedDataPtr, dataLength);
-  // imagXformedData(imagXformedDataPtr, dataLength);
+    samples[i].sdc = (T1)1.0;
+    // samples[i].t = t[i];
+  }
 
-  // We can free the realDataXformPtr and imagDataXformPtr at this point and
-  // Armadillo will manage armadillo object memory as things change size or go
-  // out of scope and need to be destroyed
+  #pragma acc enter data copyin(samples [0:n])
 
-  Col<complex<T1>> XformedData(n1);
-  XformedData.set_real(realXformedData);
-  XformedData.set_imag(imagXformedData);
-  // XformedData.elem(dataMaskTrimmed) = XformedDataTrimmed;
-  // savemat("/shared/mrfil-data/data/PowerGridTest/64_64_16_4coils/ggrid.mat","img",XformedData);
+  //#pragma acc parallel loop 
+    for (int i = 0; i < gridNumElems; i++) {
+        pGridData_os[2 * i] = (T1)0.0;
+        pGridData_os[2 * i + 1] = (T1)0.0;
+    }
+  
+  #pragma acc update device(pGridData_os[0:2*gridNumElems])
 
-  return conv_to<Col<complex<T1>>>::from(
-      XformedData); // Return a vector of type T1
+  if (Nz == 1) {
+    gridding_adjoint_2D(n, params, beta, samples,
+                        LUT, sizeLUT, pGridData_os);
+  } else {
+    gridding_adjoint_3D(n, params, beta, samples,
+                        LUT, sizeLUT, pGridData_os);
+  }
+
+  #pragma acc update host(pGridData_os[0:2*gridNumElems])
+  Col<CxT1> temp(reinterpret_cast<CxT1 *>(pGridData_os), gridNumElems, false, true);
+  return temp; // Return a vector of type T1
 }
-*/
+
 // Explicit Instantiation
 template class Gnufft<float>;
 template class Gnufft<double>;

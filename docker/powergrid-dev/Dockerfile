@@ -24,17 +24,17 @@ RUN curl -O -J -L http://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.tar.gz;
 RUN wget -O ~/boost_1_70_0.tar.bz2 -c 'http://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2' --max-redirect=100\
  && tar xjf ~/boost_1_70_0.tar.bz2 \
  && cd ~/boost_1_70_0/ \
- && ./bootstrap.sh --prefix=/usr/local --with-toolset=pgi --with-libraries=mpi,program_options,serialization \
+ && ./bootstrap.sh --prefix=/usr/local --with-toolset=gcc --with-libraries=mpi,program_options,serialization \
  && cp ~/boost_1_70_0/tools/build/example/user-config.jam ~/boost_1_70_0/tools/build/src/user-config.jam \
  && echo "using mpi : /opt/pgi/linux86-64/2019/mpi/openmpi-3.1.3/bin/mpic++ ; " >> ~/boost_1_70_0/tools/build/src/user-config.jam
 
-RUN cd ~/boost_1_70_0 && ./b2 -j 4 toolset=pgi install || true
+RUN cd ~/boost_1_70_0 && ./b2 -j 4 toolset=gcc install || true
 
 # Install SuperLU5
-RUN curl -O -J -L crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_5.2.1.tar.gz; \
-	tar xvf superlu_5.2.1.tar.gz; \
-	mkdir /root/SuperLU_5.2.1/build; \
-	cd /root/SuperLU_5.2.1/build; \
+RUN curl -O -J -L https://github.com/xiaoyeli/superlu/archive/v5.2.1.tar.gz; \
+	tar xvf superlu-5.2.1.tar.gz; \
+	mkdir /root/superlu-5.2.1/build; \
+	cd /root/superlu-5.2.1/build; \
 	cmake ../ -DBUILD_SHARED_LIBS=ON; \
 	make; \
 	make install;
