@@ -27,7 +27,8 @@
 #include "LRobj.h"
 
 template <typename T1, typename Gobj>
-LRobj<T1,Gobj>::LRobj(uword NimgSize, uword N_data, uword n_rank, uword n_img, Mat<CxT1> vBasis, Gobj** All) {
+LRobj<T1,Gobj>::LRobj(uword NimgSize, uword N_data, uword n_rank, uword n_img, Mat<CxT1> vBasis, Gobj** All) {  
+    RANGE("LRobj::LRobj()")
     this->Nimg = n_img;
     this->N = NimgSize;
     this->Nrank = n_rank;
@@ -38,7 +39,7 @@ LRobj<T1,Gobj>::LRobj(uword NimgSize, uword N_data, uword n_rank, uword n_img, M
 
 template <typename T1, typename Gobj>
 Col<complex<T1> > LRobj<T1,Gobj>::operator*(const Col<complex<T1> > &d) const {
-    RANGE("pcSENSE::operator*")
+    RANGE("LRobj::operator*")
         
     Mat<complex<T1>> tempData = reshape(d,this->N, this->Nrank);
     Mat<complex<T1>> tempOut(this->Ndata, this->Nimg);
@@ -53,6 +54,7 @@ Col<complex<T1> > LRobj<T1,Gobj>::operator*(const Col<complex<T1> > &d) const {
 
 template <typename T1, typename Gobj>
 Col<complex<T1> > LRobj<T1,Gobj>::operator/(const Col<complex<T1> > &d) const {
+    RANGE("LRobj::operator/")
 
     Mat<complex<T1>> tempData = reshape(d, this->Ndata, this->Nimg);
     Mat<complex<T1>> tempOut = zeros<Mat<complex<T1>>>(this->N, this->Nimg);

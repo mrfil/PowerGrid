@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 project("PowerGrid" C CXX)
 
-option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" OFF)
+option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" ON)
 option(OPENACC_MP "Enable OpenACC support on CPU (PGI Only) " OFF)
 option(MPISupport "Enable MPI Support" ON)
 
