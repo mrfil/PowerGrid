@@ -59,8 +59,8 @@ int main(int argc, char** argv)
 		("Ny,y", po::value<uword>(&Ny), "Image size in Y")
 		("Nz,z", po::value<uword>(&Nz), "Image size in Z")
         ("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
-        ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
-        ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
+        ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp), "Field Correction Interpolator (Required)")
+        ("TimeSegments,t", po::value<uword>(&L), "Number of time segments (Required)")
         ("Beta,B", po::value<double>(&beta), "Spatial regularization penalty weight")("Dims2Penalize,D", po::value<uword>(&dims2penalize), "Dimensions to apply regularization to (2 or 3)")
         ("CGIterations,n", po::value<uword>(&NIter), "Number of preconditioned conjugate gradient interations for main solver");
 

@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 project("PowerGrid" C CXX)
 
-option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" ON)
+option(OPENACC_GPU "Enable OpenACC support on NVIDIA GPU" OFF)
 option(OPENACC_MP "Enable OpenACC support on CPU (PGI Only) " OFF)
 option(MPISupport "Enable MPI Support" ON)
 
@@ -98,7 +98,8 @@ set(PG_FILES
 	${PROJECT_SOURCE_DIR}/PowerGrid/pcSenseTimeSeg.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/reconSolve.cpp
 	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.cpp
-	${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
+	#${PROJECT_SOURCE_DIR}/PowerGrid/acqTracking.h
+	${PROJECT_SOURCE_DIR}/PowerGrid/reconSupport/directRecon.cpp
 )
 
 add_library(PowerGrid SHARED ${PG_FILES})
@@ -122,7 +123,7 @@ else()
 	add_definitions(-DBOOST_NO_ALIGNMENT)
 		if(OPENACC_GPU)
 			add_definitions(-DOPENACC_GPU)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mnollvm -Mcuda -Minfo=accel -fast -acc -ta=tesla:cc35,cc60,cuda${CUDAVER},flushz -pgf90libs")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tp=px -Mnollvm -Mcuda -Minfo=accel -fast -acc -ta=tesla:cc35,cc60,cuda${CUDAVER},flushz -pgf90libs")
 		elseif(OPENACC_MP)
 			add_definitions(-DOPENACC_MP)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Mnollvm -O1 -Minfo=accel -acc  -ta=multicore -pgf90libs")
@@ -158,7 +159,11 @@ set(POWERGRID_PCSENSE_TIMESEG
 add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
 target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
 
+<<<<<<< HEAD
 add_subdirectory(PowerGrid/lowRank)
+=======
+add_subdirectory(PowerGrid/reconSupport)
+>>>>>>> c4138ea7aceb4d98aaaaf90c3e1ddb242e881bc5
 
 if (MPISupport)
     add_subdirectory(PowerGrid/MPI)

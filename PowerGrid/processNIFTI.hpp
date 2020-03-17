@@ -39,7 +39,9 @@ using namespace arma;
 #include "../Support/nifti1.h"
 
 template<typename T1>
-void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uword Ny, uword Nz) {
+void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uword Ny, uword Nz = 1, uword Nslab = 1, uword N_TR = 1) {
+
+  filename = filename + ".nii";
 
   nifti_1_header hdr;
   nifti1_extender pad = {0,0,0};
@@ -50,8 +52,8 @@ void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uwor
   hdr.dim[1] = Nx;
   hdr.dim[2] = Ny;
   hdr.dim[3] = Nz;
-  hdr.dim[4] = 1;
-  hdr.dim[5] = 1;
+  hdr.dim[4] = Nslab;
+  hdr.dim[5] = N_TR;
   hdr.dim[6] = 1;
   hdr.dim[7] = 1;
   hdr.datatype = NIFTI_TYPE_FLOAT32;
@@ -94,7 +96,7 @@ void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uwor
   ofsNii.write((const char *) &pad,4);
   float temp = 0;
   // Write image data to disk
-  for(uword ii = 0; ii < Nx*Ny*Nz; ii++) {
+  for(uword ii = 0; ii < Nx * Ny * Nz * Nslab * N_TR; ii++) {
     temp = static_cast<float>(imageData(ii));
     ofsNii.write(reinterpret_cast<char *>(&temp), sizeof(float));
   }
@@ -105,17 +107,17 @@ void writeNiftiRealImage(std::string filename, Col<T1> imageData, uword Nx, uwor
   // Start with Magnitude
 
   template<typename T1>
-  void writeNiftiMagPhsImage(std::string filename, Col<std::complex<T1>> imageData, uword Nx, uword Ny, uword Nz) {
+  void writeNiftiMagPhsImage(std::string filename, Col<std::complex<T1>> imageData, uword Nx, uword Ny, uword Nz, uword Nslab = 1, uword N_TR = 1) {
     // Separate data into magnitude and phase to be written.
     Col<T1> magImage = abs(imageData);
     Col<T1> phsImage = arg(imageData);
 
-    std::string filenameMag = filename + "_mag" + ".nii";
-    std::string filenamePhs = filename + "_phs" + ".nii";
+    std::string filenameMag = filename + "_mag";
+    std::string filenamePhs = filename + "_phs";
 
     //Write out separate magnitude and phase images
-    writeNiftiRealImage<T1>(filenameMag, magImage,Nx,Ny,Nz);
-    writeNiftiRealImage<T1>(filenamePhs, phsImage,Nx,Ny,Nz);
+    writeNiftiRealImage<T1>(filenameMag, magImage, Nx, Ny, Nz, Nslab, N_TR);
+    writeNiftiRealImage<T1>(filenamePhs, phsImage, Nx, Ny, Nz, Nslab, N_TR);
 
   }
 
