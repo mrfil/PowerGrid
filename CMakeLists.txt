@@ -159,11 +159,8 @@ set(POWERGRID_PCSENSE_TIMESEG
 add_executable(PowerGridPcSenseTimeSeg ${POWERGRID_PCSENSE_TIMESEG})
 target_link_libraries(PowerGridPcSenseTimeSeg ${LIBS} PowerGrid)
 
-<<<<<<< HEAD
 add_subdirectory(PowerGrid/lowRank)
-=======
 add_subdirectory(PowerGrid/reconSupport)
->>>>>>> c4138ea7aceb4d98aaaaf90c3e1ddb242e881bc5
 
 if (MPISupport)
     add_subdirectory(PowerGrid/MPI)
