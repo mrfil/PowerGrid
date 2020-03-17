@@ -44,7 +44,7 @@ namespace po = boost::program_options;
 int main(int argc, char **argv)
 {
 	std::string rawDataFilePath, outputImageFilePath, TimeSegmentationInterp;
-	uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10;
+	uword Nx, Ny, Nz, NShots = 1, type = 1, L = 0, NIter = 10, rank = 1;
 	//uword type, L = 0;
 	double beta = 0.0;
 	uword dims2penalize = 3;
@@ -56,6 +56,7 @@ int main(int argc, char **argv)
 			("Nx,x", po::value<uword>(&Nx), "Image size in X")
 			("Ny,y", po::value<uword>(&Ny), "Image size in Y")
 			("Nz,z", po::value<uword>(&Nz), "Image size in Z")
+			("Rank,L", po::value<uword>(&rank), "Rank (model order) of the temporal basis")
             ("TimeSegmentationInterp,I", po::value<std::string>(&TimeSegmentationInterp)->required(), "Field Correction Interpolator (Required)")
             ("TimeSegments,t", po::value<uword>(&L)->required(), "Number of time segments (Required)")
 			("NShots,s", po::value<uword>(&NShots), "Number of shots per image")
@@ -85,7 +86,7 @@ int main(int argc, char **argv)
 
 	arma::Col<float> FM;
 	arma::Col<std::complex<float>> sen;
-	arma::Col<float> PMap;
+	
 	arma::Col<float> FMap;
 	arma::Col<std::complex<float>> SMap;
 	ISMRMRD::Dataset* d;
@@ -118,8 +119,8 @@ int main(int argc, char **argv)
 
 	Col<float> ix, iy, iz;
 	initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
-	Col<float> kx(nro), ky(nro), kz(nro), tvec(nro);
-	Col<std::complex<float>> data(nro*nc);
+	Col<float> kxTemp(nro), kyTemp(nro), kzTemp(nro), tvecTemp(nro);
+
 	Col<std::complex<float>> ImageTemp(Nx*Ny*Nz);
 
 	// Check and abort if we have more than one encoding space (No Navigators for
@@ -159,21 +160,44 @@ int main(int argc, char **argv)
 	if (!outputImageFilePath.empty() && *outputImageFilePath.rbegin() != '/') {
     	outputImageFilePath += '/';
 	}
+
+	Mat<std::complex<float>> data(nro*nc,NRepMax);
+	Col<std::complex<float>> dataTemp(nro*nc);
+	Mat<float> kx(nro, NRepMax), ky(nro, NRepMax), kz(nro, NRepMax), tvec(nro, NRepMax);
+	Mat<float> PMap(Nx*Ny*Nz*NShotMax, NRepMax);
+
+	// Declare array of pcSENSE pointers to generate obejcts for the low rank object.
+	pcSenseTimeSeg<float>** A_list = NULL; 
+
 	uword NSet = 0; //Set is only used for arrayed ADCs
 	uword NSeg = 0;
 	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
 		for (uword NEcho = 0; NEcho<=NEchoMax; NEcho++) {
 			for (uword NAvg = 0; NAvg<=NAvgMax; NAvg++) {
-				for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
-					for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+				for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
 
-						filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
-								"_" + "Rep" + std::to_string(NRep) + "_" + "Avg" + std::to_string(NAvg) +
-								"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
+					filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
+						"_" + "Avg" + std::to_string(NAvg) +
+						"_" + "Echo" + std::to_string(NEcho) + "_" + "Phase" + std::to_string(NPhase);
 
-						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, data, kx, ky,
-								kz, tvec);
+					SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
+					FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
 
+					//Allocate array of pcSenseTimeSeg objects
+					A_list = new pcSenseTimeSeg<float> *[NRepMax];
+
+					for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
+
+
+						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, dataTemp, kxTemp, kyTemp,
+								kzTemp, tvecTemp);
+
+						// Collect and assemble a complete data vector (once the matrix is flattened with vectorise() )
+						data.col(NRep) = dataTemp;
+						kx.col(NRep) = kxTemp;
+						ky.col(NRep) = kyTemp;
+						kz.col(NRep) = kzTemp;
+						tvec.col(NRep) = tvecTemp;
 
 						// Deal with the number of time segments
 						if(!vm.count("TimeSegments")) {
@@ -193,31 +217,39 @@ int main(int argc, char **argv)
 							std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
 						}
 
+						PMap.col(ii) = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
+																(uword) (Nx*Ny*Nz));
 
-						PMap = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
-								(uword) (Nx*Ny*Nz));
-						SMap = getISMRMRDCompleteSENSEMap<std::complex<float>>(d, sen, NSlice, (uword) (Nx*Ny*Nz));
-						FMap = getISMRMRDCompleteFieldMap<float>(d, FM, NSlice, (uword) (Nx*Ny*Nz));
+						
 
-						std::cout << "Number of elements in SMap = " << SMap.n_rows << std::endl;
-						std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
-						std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
-						std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
-						std::cout << "Number of rows in phase map = " << PMap.n_rows << std::endl;
-						std::cout << "Number of rows in data = " << data.n_rows << std::endl;
+						A_list[rep] = new pcSenseTimeSeg<float>(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
+															   0-PMap);
 
-						std::cout << "Number of columns in data = " << data.n_cols << std::endl;
+					} // End of rep loop
 
-						pcSenseTimeSeg<float> S_DWI(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
-								0-PMap);
-						QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
+					std::cout << "Number of elements in SMap = " << SMap.n_rows << std::endl;
+					std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
+					std::cout << "Number of elements in ky = " << ky.n_rows << std::endl;
+					std::cout << "Number of elements in kz = " << kz.n_rows << std::endl;
+					std::cout << "Number of rows in phase map = " << PMap.n_rows << std::endl;
+					std::cout << "Number of rows in data = " << data.n_rows << std::endl;
 
-						ImageTemp = reconSolve<float, pcSenseTimeSeg<float>, QuadPenalty<float>>(data, S_DWI, R, kx, ky, kz,
-								Nx,
-								Ny, Nz, tvec, NIter);
+					std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-						writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz);
-					}
+					LRobj<float, pcSesneTimeSeg<float>> A_lr(Nx*Ny*Nz, nro*nc, rank, NRepMax, A_list);
+					QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
+					R_lowRank<float, QuadPenalty<float>> R_lr(R, rank, NRepMax, v);
+
+					Col<float> W;
+  					W.ones(vectorise(data).n_rows);
+  					Col<std::complex<T1>> xinit;
+  					xinit.zeros(Nx * Ny * Nz * rank);
+
+  					Col<CxT1> imageOut;
+  					imageOut = solve_pwls_pcg<T1, TObj, RObj>(xinit, A_lr, W, vectorise(data), R_lr, Niter);
+					
+					writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz,NRepNax);
+					
 				}
 			}
 		}

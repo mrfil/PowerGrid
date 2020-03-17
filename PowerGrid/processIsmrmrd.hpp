@@ -128,6 +128,21 @@ arma::Col<T1> getISMRMRDPhaseMaps(ISMRMRD::Dataset *d) {
 	return pMaps;
 }
 
+template<typename T1>
+arma::Col<complex<T1>> getISMRMRDTemporalBasis(ISMRMRD::Dataset *d) {
+	RANGE()
+    const std::string tempBasis = "v";
+    arma::Col<complex<double>> vBasis_temp;
+    arma::Col<complex<T1>> vBasis;
+    if (d->getNumberOfNDArrays(tempBasis) > 1) {
+        //Throw error here
+    }
+    ISMRMRD::NDArray<complex<double>> tempArray;
+    d->readNDArray(tempBasis, 0, tempArray);
+    vBasis_temp = convertFromNDArrayToArma<complex<double>>(tempBasis);
+    vBasis = conv_to<arma::Col<complex<T1>>>::from(vBasis_temp);
+    return vBasis;
+}
 
 template<typename T1>
 arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uword NSet, uword NRep, uword NAvg, uword NPhase, uword NEcho, uword NSeg, uword imageSize)

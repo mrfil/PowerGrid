@@ -106,11 +106,17 @@ Col<complex<float> > reconSolve<float, SENSE<float, GdftR2<float> >, QuadPenalty
                                                                                            Col<float>, uword, uword, uword, Col<float>,
                                                                                            uword);
 
-
 extern template
 Col<complex<float>>
 reconSolve(Col<complex<float>>, pcSENSE<float>&, QuadPenalty<float>, Col<float>, Col<float>, Col<float>, uword,
 		uword, uword, Col<float>, uword);
+
+
+extern template  
+Col<complex<float>> reconSolve(Col<complex<float>>, LRobj<float, pcSenseTimeSeg<float>>&,
+		R_lowRank<float, QuadPenalty<float>>, Col<float>, Col<float>,
+		Col<float>, uword, uword, uword, Col<float>,
+		uword);
 
 extern template
 Col<complex<double>>
@@ -123,12 +129,11 @@ Col<complex<double> > reconSolve<double, SENSE<double, Gdft<double> >, QuadPenal
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);
 
-        extern template
+extern template
 Col<complex<double> > reconSolve<double, SENSE<double, GdftR2<double> >, QuadPenalty<double>>(Col<complex<double>>, SENSE<double, GdftR2<double>>&,
 		QuadPenalty<double>, Col<double>, Col<double>,
 		Col<double>, uword, uword, uword, Col<double>,
 		uword);
-
 
 extern template
 Col<complex<double>>
