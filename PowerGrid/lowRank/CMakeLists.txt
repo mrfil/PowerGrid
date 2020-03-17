@@ -3,6 +3,7 @@
     set(POWERGRID_oscillateRecon
             oscillateRecon.cpp
             R_lowRank.cpp
+            LRobj.cpp
             )
 
     add_executable(oscillateRecon ${POWERGRID_oscillateRecon})

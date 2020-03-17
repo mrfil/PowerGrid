@@ -37,7 +37,6 @@ using namespace std;
 template <typename T1, typename Robj> class R_lowRank {
   typedef complex<T1> CxT1;
   
-
 public:
   // R_lowRank();
   R_lowRank(){};
