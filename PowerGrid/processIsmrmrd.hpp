@@ -139,7 +139,7 @@ arma::Col<complex<T1>> getISMRMRDTemporalBasis(ISMRMRD::Dataset *d) {
     }
     ISMRMRD::NDArray<complex<double>> tempArray;
     d->readNDArray(tempBasis, 0, tempArray);
-    vBasis_temp = convertFromNDArrayToArma<complex<double>>(tempBasis);
+    vBasis_temp = convertFromNDArrayToArma<complex<double>>(tempArray);
     vBasis = conv_to<arma::Col<complex<T1>>>::from(vBasis_temp);
     return vBasis;
 }
@@ -412,7 +412,7 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 
 				ISMRMRD::EncodingCounters encIdx = acq.idx();
 
-				//std::cout << "Grabbing acq index #" << acqIndx << std::endl;
+				std::cout << "Grabbing acq index #" << acqIndx << std::endl;
 
 				for (uword jj = 0; jj<nc; jj++) {
 					for (uword kk = 0; kk<nro; kk++) {

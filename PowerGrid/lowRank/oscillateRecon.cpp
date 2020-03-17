@@ -37,6 +37,8 @@ Developed by:
 #include "processIsmrmrd.hpp"
 #include "processNIFTI.hpp"
 #include <boost/program_options.hpp>
+#include "R_lowRank.h"
+#include "LRobj.h"
 
 namespace po = boost::program_options;
 //using namespace PowerGrid;
@@ -121,7 +123,6 @@ int main(int argc, char **argv)
 	initImageSpaceCoords(ix, iy, iz, Nx, Ny, Nz);
 	Col<float> kxTemp(nro), kyTemp(nro), kzTemp(nro), tvecTemp(nro);
 
-	Col<std::complex<float>> ImageTemp(Nx*Ny*Nz);
 
 	// Check and abort if we have more than one encoding space (No Navigators for
 	// now).
@@ -134,15 +135,15 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	int NShotMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum;
-	int NParMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum;
-	int NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum;
-	int NSetMax = hdr.encoding[0].encodingLimits.set->maximum;
-	int NRepMax = hdr.encoding[0].encodingLimits.repetition->maximum;
-	int NAvgMax = hdr.encoding[0].encodingLimits.average->maximum;
-	int NSegMax = hdr.encoding[0].encodingLimits.segment->maximum;
-	int NEchoMax = hdr.encoding[0].encodingLimits.contrast->maximum;
-	int NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum;
+	uword NShotMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_1->maximum + 1;
+	uword NParMax = hdr.encoding[0].encodingLimits.kspace_encoding_step_2->maximum + 1;
+	uword NSliceMax = hdr.encoding[0].encodingLimits.slice->maximum + 1;
+	uword NSetMax = hdr.encoding[0].encodingLimits.set->maximum + 1;
+	uword NRepMax = hdr.encoding[0].encodingLimits.repetition->maximum + 1;
+	uword NAvgMax = hdr.encoding[0].encodingLimits.average->maximum + 1;
+	uword NSegMax = hdr.encoding[0].encodingLimits.segment->maximum + 1;
+	uword NEchoMax = hdr.encoding[0].encodingLimits.contrast->maximum + 1;
+	uword NPhaseMax = hdr.encoding[0].encodingLimits.phase->maximum + 1;
 
 	std::cout << "NParMax = " << NParMax << std::endl;
 	std::cout << "NShotMax = " << NShotMax << std::endl;
@@ -161,20 +162,29 @@ int main(int argc, char **argv)
     	outputImageFilePath += '/';
 	}
 
-	Mat<std::complex<float>> data(nro*nc,NRepMax);
-	Col<std::complex<float>> dataTemp(nro*nc);
-	Mat<float> kx(nro, NRepMax), ky(nro, NRepMax), kz(nro, NRepMax), tvec(nro, NRepMax);
-	Mat<float> PMap(Nx*Ny*Nz*NShotMax, NRepMax);
+	Mat<std::complex<float>> data(nro * nc * NShotMax * NParMax, NRepMax);
+	Col<std::complex<float>> dataTemp;
+	Mat<float> kx(nro * NShotMax * NParMax, NRepMax), 
+			   ky(nro * NShotMax * NParMax, NRepMax), 
+			   kz(nro * NShotMax * NParMax, NRepMax), 
+			   tvec(nro * NShotMax * NParMax, NRepMax);
 
+	Mat<float> PMap(Nx * Ny * Nz * NShotMax * NParMax, NRepMax);
+	Col<complex<float>> vTemp = getISMRMRDTemporalBasis<float>(d);
+	Mat<complex<float>> v = reshape(vTemp, NRepMax, NRepMax);
+	
+	Mat<complex<float>> vLR = trans(v.cols(0,rank-1)).eval();
 	// Declare array of pcSENSE pointers to generate obejcts for the low rank object.
 	pcSenseTimeSeg<float>** A_list = NULL; 
 
+	Col<std::complex<float>> ImageTemp(Nx * Ny * Nz * NRepMax);
+
 	uword NSet = 0; //Set is only used for arrayed ADCs
 	uword NSeg = 0;
-	for (uword NPhase = 0; NPhase<=NPhaseMax; NPhase++) {
-		for (uword NEcho = 0; NEcho<=NEchoMax; NEcho++) {
-			for (uword NAvg = 0; NAvg<=NAvgMax; NAvg++) {
-				for (uword NSlice = 0; NSlice<=NSliceMax; NSlice++) {
+	for (uword NPhase = 0; NPhase < NPhaseMax; NPhase++) {
+		for (uword NEcho = 0; NEcho < NEchoMax; NEcho++) {
+			for (uword NAvg = 0; NAvg < NAvgMax; NAvg++) {
+				for (uword NSlice = 0; NSlice < NSliceMax; NSlice++) {
 
 					filename = outputImageFilePath + baseFilename + "_" + "Slice" + std::to_string(NSlice) +
 						"_" + "Avg" + std::to_string(NAvg) +
@@ -186,30 +196,34 @@ int main(int argc, char **argv)
 					//Allocate array of pcSenseTimeSeg objects
 					A_list = new pcSenseTimeSeg<float> *[NRepMax];
 
-					for (uword NRep = 0; NRep<NRepMax+1; NRep++) {
-
+					for (uword NRep = 0; NRep < NRepMax; NRep++) {
 
 						getCompleteISMRMRDAcqData<float>(d, acqTrack, NSlice, NRep, NAvg, NEcho, NPhase, dataTemp, kxTemp, kyTemp,
 								kzTemp, tvecTemp);
-
+						cout << "about to copy in rep data" << endl;
 						// Collect and assemble a complete data vector (once the matrix is flattened with vectorise() )
+						cout << "data size = " << data.n_rows << " and dataTemp size = " << dataTemp.n_rows << endl;
 						data.col(NRep) = dataTemp;
-						kx.col(NRep) = kxTemp;
-						ky.col(NRep) = kyTemp;
-						kz.col(NRep) = kzTemp;
+						cout << "kx size = " << kx.n_rows << " and kxTemp size = " << kxTemp.n_rows << endl;
+						kx.col(NRep)   = kxTemp;
+						cout << "ky size = " << ky.n_rows << " and kyTemp size = " << kyTemp.n_rows << endl;
+						ky.col(NRep)   = kyTemp;
+						cout << "kz size = " << kz.n_rows << " and kzTemp size = " << kzTemp.n_rows << endl;
+						kz.col(NRep)   = kzTemp;
+						cout << "tvec size = " << tvec.n_rows << " and tvecTemp size = " << tvecTemp.n_rows << endl;
 						tvec.col(NRep) = tvecTemp;
-
+						
 						// Deal with the number of time segments
 						if(!vm.count("TimeSegments")) {
 							switch(type) {
 								case 1:
-									L = ceil((arma::max(tvec) - arma::min(tvec))/2E-3);
+									L = ceil((arma::max(tvecTemp) - arma::min(tvecTemp))/2E-3);
 								break;
 								case 2:
-									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+									L = ceil((arma::max(tvecTemp) - arma::min(tvecTemp))/3E-3);
 								break;
 								case 3:
-									L = ceil((arma::max(tvec) - arma::min(tvec))/3E-3);
+									L = ceil((arma::max(tvecTemp) - arma::min(tvecTemp))/3E-3);
 								break;
 								default: 
 									L = 0;
@@ -217,15 +231,17 @@ int main(int argc, char **argv)
 							std::cout << "Info: Setting L = " << L << " by default." << std::endl; 
 						}
 
-						PMap.col(ii) = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
+						PMap.col(NRep) = getISMRMRDCompletePhaseMap<float>(d, NSlice, NSet, NRep, NAvg, NPhase, NEcho, NSeg,
 																(uword) (Nx*Ny*Nz));
 
-						
+						cout << "Returned from getISMRMRDCompletePhaseMap" << endl;
 
-						A_list[rep] = new pcSenseTimeSeg<float>(kx, ky, kz, Nx, Ny, Nz, nc, tvec, L, type, SMap, FMap,
-															   0-PMap);
+						A_list[NRep] = new pcSenseTimeSeg<float>(kx.col(NRep), ky.col(NRep), kz.col(NRep), Nx, Ny, Nz, nc, tvec.col(NRep), L, type, SMap, FMap,
+															   0-PMap.col(NRep));
 
 					} // End of rep loop
+					
+					cout << "End of rep loop" << endl;
 
 					std::cout << "Number of elements in SMap = " << SMap.n_rows << std::endl;
 					std::cout << "Number of elements in kx = " << kx.n_rows << std::endl;
@@ -236,20 +252,25 @@ int main(int argc, char **argv)
 
 					std::cout << "Number of columns in data = " << data.n_cols << std::endl;
 
-					LRobj<float, pcSesneTimeSeg<float>> A_lr(Nx*Ny*Nz, nro*nc, rank, NRepMax, A_list);
+					LRobj<float, pcSenseTimeSeg<float>> A_lr(Nx * Ny * Nz, nro * nc * NShotMax * NParMax, rank, NRepMax, vLR, A_list);
 					QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
 					R_lowRank<float, QuadPenalty<float>> R_lr(R, rank, NRepMax, v);
 
 					Col<float> W;
-  					W.ones(vectorise(data).n_rows);
-  					Col<std::complex<T1>> xinit;
+  					W.ones(data.n_elem);
+  					Col<complex<float>> xinit;
   					xinit.zeros(Nx * Ny * Nz * rank);
 
-  					Col<CxT1> imageOut;
-  					imageOut = solve_pwls_pcg<T1, TObj, RObj>(xinit, A_lr, W, vectorise(data), R_lr, Niter);
+  					Col<complex<float>> imageOut;
+  					imageOut = solve_pwls_pcg<float, LRobj<float, pcSenseTimeSeg<float>>, R_lowRank<float, QuadPenalty<float>>>(xinit, A_lr, W, vectorise(data), R_lr, NIter);
 					
-					writeNiftiMagPhsImage<float>(filename,ImageTemp,Nx,Ny,Nz,NRepNax);
+					Mat<complex<float>> imgB = reshape(imageOut, Nx * Ny * Nz, rank);
 					
+					// Form complete image set
+					ImageTemp = vectorise(imgB * vLR);
+					
+					writeNiftiMagPhsImage<float>(filename, ImageTemp, Nx, Ny, Nz, NRepMax);
+					 
 				}
 			}
 		}

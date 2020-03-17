@@ -101,11 +101,6 @@ template  Col<complex<float>> reconSolve(Col<complex<float>>, pcSenseTimeSeg<flo
 		Col<float>, uword, uword, uword, Col<float>,
 		uword);
 
-template  Col<complex<float>> reconSolve(Col<complex<float>>, LRobj<float, pcSenseTimeSeg<float>>&,
-		R_lowRank<float, QuadPenalty<float>>, Col<float>, Col<float>,
-		Col<float>, uword, uword, uword, Col<float>,
-		uword);
-
 template
 Col<complex<double>>
 reconSolve(Col<complex<double>>, SENSE<double, Gnufft<double>>&,

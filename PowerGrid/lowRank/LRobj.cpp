@@ -40,7 +40,7 @@ template <typename T1, typename Gobj>
 Col<complex<T1> > LRobj<T1,Gobj>::operator*(const Col<complex<T1> > &d) const {
     RANGE("pcSENSE::operator*")
         
-    Mat<complex<T1>> tempData = reshape(d,this->N,this->Nimg);
+    Mat<complex<T1>> tempData = reshape(d,this->N, this->Nrank);
     Mat<complex<T1>> tempOut(this->Ndata, this->Nimg);
     Mat<complex<T1>> tempFullRank = tempData * this->v;
 
@@ -54,8 +54,8 @@ Col<complex<T1> > LRobj<T1,Gobj>::operator*(const Col<complex<T1> > &d) const {
 template <typename T1, typename Gobj>
 Col<complex<T1> > LRobj<T1,Gobj>::operator/(const Col<complex<T1> > &d) const {
 
-    Mat<complex<T1>> tempOut = zeros<Mat<complex<T1>>>(this->N, this->Nimg);
     Mat<complex<T1>> tempData = reshape(d, this->Ndata, this->Nimg);
+    Mat<complex<T1>> tempOut = zeros<Mat<complex<T1>>>(this->N, this->Nimg);
 
     for(uword ii = 0; ii < this->Nimg; ii++) {
         tempOut.col(ii) = (*A_all[ii]) / tempData.col(ii);
