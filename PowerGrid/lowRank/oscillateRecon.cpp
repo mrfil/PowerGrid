@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 
 					LRobj<float, pcSenseTimeSeg<float>> A_lr(Nx * Ny * Nz, nro * nc * NShotMax * NParMax, rank, NRepMax, vLR, A_list);
 					QuadPenalty<float> R(Nx, Ny, Nz, beta, dims2penalize);
-					R_lowRank<float, QuadPenalty<float>> R_lr(R, rank, NRepMax, v);
+					R_lowRank<float, QuadPenalty<float>> R_lr(R, rank, NRepMax, vLR);
 
 					Col<float> W;
   					W.ones(data.n_elem);

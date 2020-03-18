@@ -50,8 +50,10 @@ uword Nc = 0;   // number of coils
 uword Ns = 0;   // number of shots
 Mat<CxT1> SMap;   // coil sensitivity, dimensions Image size(n1) by number of
                   // coils (nc)
+Mat<CxT1> conjSMap;
 Mat<T1> PMap;   // shot phase, dimensions Image size(n1) by number of shots. in
                 // radians.
+Mat<CxT1> expiPMap;
 Col<T1> FMap;   // Fieldmap
 Mat<T1> Kx;     // kspace coordinates in x direction
 Mat<T1> Ky;     // kspace coordinates in y direction
