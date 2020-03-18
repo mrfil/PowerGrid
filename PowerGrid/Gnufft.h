@@ -99,6 +99,10 @@ public:
   Col<CxT1> operator*(const Col<CxT1> &d) const;
   // Adjoint transform operation
   Col<CxT1> operator/(const Col<CxT1> &d) const;
+
+  Col<CxT1> forwardSpatialInterp(const Col<CxT1> &d) const;
+  // Adjoint transform operation
+  Col<CxT1> adjointSpatialInterp(const Col<CxT1> &d) const;
 /*
   Col<CxT1> trimmedForwardOp(const Col<CxT1> &d,
                              const Col<CxT1> &tempInterp) const;

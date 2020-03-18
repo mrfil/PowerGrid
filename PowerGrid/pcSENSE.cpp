@@ -93,6 +93,10 @@ pcSENSE<T1>::pcSENSE(Col<T1> kx, Col<T1> ky, Col<T1> kz, uword nx, uword ny,
                         new Gdft<T1>(Nd, Nx * Ny * Nz, Kx.col(jj), Ky.col(jj), Kz.col(jj), Ix,
                                      Iy, Iz, vectorise(FMap), vectorise(Tvec.col(jj)));
         }
+        
+        //Precompute some things used in the forward and adjoint operations
+        expiPMap = conj(exp(-i * PMap));
+        conjSMap = conj(SMap);
 }
 
 // Overloaded operators go here
@@ -104,8 +108,8 @@ template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator*(const Col<complex<T1> > &d) const {
         RANGE("pcSENSE::operator*")
         Mat<complex<T1> > outData = zeros<Mat<complex<T1> > >(Nd, Ns * Nc);
-        Mat<complex<T1> > expiPMap = exp(-i * PMap);
-        Mat<T1> temp2;
+        //Mat<complex<T1> > expiPMap = exp(-i * PMap);
+        //Mat<T1> temp2;
         // Coil loop. Each coil exists for each shot, so we need to work with these.
         for (unsigned int ii = 0; ii < Nc; ii++) {
 
@@ -128,8 +132,8 @@ template <typename T1>
 Col<complex<T1> > pcSENSE<T1>::operator/(const Col<complex<T1> > &d) const {
         RANGE("pcSENSE::operator/");
         Mat<complex<T1> > inData = reshape(d, Nd, Ns * Nc);
-        Mat<complex<T1> > expiPMap = conj(exp(-i * PMap));
-        Mat<complex<T1> > conjSMap = conj(SMap);
+        //Mat<complex<T1> > expiPMap = conj(exp(-i * PMap));
+        //Mat<complex<T1> > conjSMap = conj(SMap);
         Col<complex<T1> > outData = zeros<Col<complex<T1> > >(Ni);
         // Coil Loop - for each shot we have a full set of coil data.
         for (unsigned int ii = 0; ii < Nc; ii++) {

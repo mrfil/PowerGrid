@@ -128,6 +128,21 @@ arma::Col<T1> getISMRMRDPhaseMaps(ISMRMRD::Dataset *d) {
 	return pMaps;
 }
 
+template<typename T1>
+arma::Col<complex<T1>> getISMRMRDTemporalBasis(ISMRMRD::Dataset *d) {
+	RANGE()
+    const std::string tempBasis = "v";
+    arma::Col<complex<double>> vBasis_temp;
+    arma::Col<complex<T1>> vBasis;
+    if (d->getNumberOfNDArrays(tempBasis) > 1) {
+        //Throw error here
+    }
+    ISMRMRD::NDArray<complex<double>> tempArray;
+    d->readNDArray(tempBasis, 0, tempArray);
+    vBasis_temp = convertFromNDArrayToArma<complex<double>>(tempArray);
+    vBasis = conv_to<arma::Col<complex<T1>>>::from(vBasis_temp);
+    return vBasis;
+}
 
 template<typename T1>
 arma::Col<T1> getISMRMRDCompletePhaseMap(ISMRMRD::Dataset *d, uword NSlice, uword NSet, uword NRep, uword NAvg, uword NPhase, uword NEcho, uword NSeg, uword imageSize)
@@ -397,7 +412,7 @@ void getCompleteISMRMRDAcqData(ISMRMRD::Dataset *d, acqTracking *acqTrack, uword
 
 				ISMRMRD::EncodingCounters encIdx = acq.idx();
 
-				//std::cout << "Grabbing acq index #" << acqIndx << std::endl;
+				std::cout << "Grabbing acq index #" << acqIndx << std::endl;
 
 				for (uword jj = 0; jj<nc; jj++) {
 					for (uword kk = 0; kk<nro; kk++) {

@@ -57,7 +57,7 @@ int gridding_adjoint_2D(unsigned int n, parameters<T1> params, T1 beta,
     int gridNumElems = params.gridSize[0] * params.gridSize[1];
 
 #pragma acc parallel loop independent gang vector present(LUT [0:sizeLUT], \
-    pGData [0:gridNumElems * 2], sample [0:n])
+    pGData [0:gridNumElems * 2], sample [0:n]) copyin(params, params.gridSize[0:3])
     for (int i = 0; i < n; i++) {
         ReconstructionSample<T1> pt = sample[i];
 
@@ -241,7 +241,7 @@ int gridding_forward_2D(unsigned int n, parameters<T1> params, const T1* kx,
 
 
 #pragma acc parallel loop gang vector present(kx [0:n], ky [0:n], pSamples [0:n * 2], \
-    LUT [0:sizeLUT], pGridData [0:gridNumElems * 2])
+    LUT [0:sizeLUT], pGridData [0:gridNumElems * 2]) copyin(params, params.gridSize[0:3])
     for (int i = 0; i < n; i++) {
 
         shiftedKx = (gridOS) * (kx[i] + ((T1)Nx) / (T1)2.0);
@@ -340,7 +340,7 @@ int gridding_forward_3D(unsigned int n, parameters<T1> params, const T1* kx,
 
 #pragma acc parallel loop gang vector present(LUT [0:sizeLUT],    \
     pGridData [0:gridNumElems * 2], kx [0:n], ky [0:n], kz [0:n], \
-    pSamples [0:n * 2])
+    pSamples [0:n * 2]) copyin(params, params.gridSize[0:3])
     for (int i = 0; i < n; i++) {
         // complex<T1> pt = sample[i];
 

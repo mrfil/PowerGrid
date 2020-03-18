@@ -1,26 +1,30 @@
 # PowerGrid
 
-Software for CPU and GPU accelerated iterative magnetic resonance imaging reconstruction. Quickly transate code from MATLAB/Image Reconstruction Toolbox to C++0 code. Implements GPU accelerated non-uniform Fast Fourier Transforms and field correction via two algorithms. Also supports distributed memory computations via MPI for pcSENSE for correction of motion induced phase error.
+Software for CPU and GPU accelerated iterative magnetic resonance imaging reconstruction. Quickly transate code from MATLAB/Image Reconstruction Toolbox to C++0 code. Implements GPU accelerated non-uniform Fast Fourier Transforms and field correction via two algorithms. Also supports distributed memory computations via MPI for pcSENSE for correction of motion induced phase error as well as low rank reconstructions.
 
 ## Depedenencies 
-*   Armadillo (http://arma.sourceforge.net) - Templated Linear Algebra library. Gives us MATLAB like syntax in C++
+*   [Armadillo](http://arma.sourceforge.net) - Templated Linear Algebra library. Gives us MATLAB like syntax in C++
 
-*   ISMRMRD (http://ismrmrd.github.io) ISMRM Raw Data Format - HDF5 Based data format for Magnetic Resonance Imaging data
+*   [ISMRMRD](http://ismrmrd.github.io) ISMRM Raw Data Format - HDF5 Based data format for Magnetic Resonance Imaging data
 
-*   FFTW (http://www.fftw.org) - Fastest Fourier Transform in the West - Used for CPU implementations of the FFTs used in Gridding.
+*   [FFTW](http://www.fftw.org) - Fastest Fourier Transform in the West - Used for CPU implementations of the FFTs used in Gridding.
 
-## Installing PowerGrid
+*   [SuperLU5](https://github.com/xiaoyeli/superlu) - Library to support advanced matrix decompositions in Armadillo.
+
+## Installing PowerGrid on Linux distributions
+Note that GPU accelerated recons are only supported on Linux distributions due to limitations in Nvidia-docker only supporting Linux hosts. As docker support for GPUs expands to other platforms, this may change in the future.
 
 ### Using Docker (Recommended)
 
-* 	Install Docker (https://docs.docker.com/install/linux/docker-ce/ubuntu)
-* 	Install Nvidia-docker (https://github.com/NVIDIA/nvidia-docker)
+* 	Install NVIDIA proprietary drivers. Instructions vary depending on your Linux distribution.
+* 	Install [Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu)
+* 	Install [Nvidia-docker](https://github.com/NVIDIA/nvidia-docker) (Note that nvidia-docker is being phased out as native docker support for GPUs is landing in Docker CE 19.03 and later. For CentOS 7 and Ubuntu 18.04, you are likely to continute to use nvidia-docker for the forseeable future.)
 
 Useful options include `-v /Source/On/Host:/Target/On/Container` to mount a directory of data and/or code onto the scanner.
 
 ```shell
-docker pull mrfil/powergrid-dev
-docker run --runtime=nvidia -it mrfil/powergrid-dev
+docker pull mrfil/powergrid
+docker run --runtime=nvidia -it mrfil/powergrid
 ```
 
 ### Installing dependencies on Ubuntu 16.04 (Not recommended - for advanced users only)
