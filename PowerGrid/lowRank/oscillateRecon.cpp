@@ -270,7 +270,12 @@ int main(int argc, char **argv)
 					ImageTemp = vectorise(imgB * vLR);
 					
 					writeNiftiMagPhsImage<float>(filename, ImageTemp, Nx, Ny, Nz, NRepMax);
-					 
+					
+					for(uword rep = 0; rep < NRepMax; rep++){
+						delete A_list[rep];
+					}
+					delete[] A_list;
+					A_list = NULL;
 				}
 			}
 		}
